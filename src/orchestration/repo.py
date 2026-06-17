@@ -1,0 +1,90 @@
+"""
+=========================================================
+MÓDULO: repo.py
+---------------------------------------------------------
+Função Geral: Repositório do Apache Dagster. Modela os scripts como Software-Defined Assets (SDA).
+=========================================================
+"""
+import os
+import sys
+import subprocess
+from dagster import asset, Definitions, Definitions, AssetExecutionContext
+from src.config.constants import PROJECT_ROOT
+
+# Helper para rodar scripts como subprocesso (para isolar os ambientes se necessário)
+def run_python_script(context: AssetExecutionContext, script_path: str):
+    context.log.info(f"Rodando script: {script_path}")
+    result = subprocess.run([sys.executable, script_path], capture_output=True, text=True)
+    if result.returncode != 0:
+        context.log.error(result.stdout)
+        context.log.error(result.stderr)
+        raise Exception(f"Falha ao executar {script_path}")
+    context.log.info(result.stdout)
+
+# Caminhos absolutos
+ETL_DIR = os.path.join(str(PROJECT_ROOT), 'src', 'etl', 'pipelines')
+
+# ==========================================
+# 1. Assets Iniciais (Raw -> Dimensions Básicas)
+# ==========================================
+@asset(group_name="dimensions", compute_kind="python")
+def dim_municipios(context: AssetExecutionContext):
+    """Dimensão de Municípios WKT e GeoJSON"""
+    run_python_script(context, os.path.join(ETL_DIR, 'etl_dim_municipios.py'))
+
+@asset(group_name="dimensions", compute_kind="python")
+def dim_hospitais(context: AssetExecutionContext):
+    """Dimensão de Hospitais WKT e GeoJSON"""
+    run_python_script(context, os.path.join(ETL_DIR, 'etl_dim_hospitais.py'))
+
+@asset(group_name="dimensions", compute_kind="python")
+def dim_terras_indigenas(context: AssetExecutionContext):
+    """Dimensão de Terras Indígenas WKT e GeoJSON"""
+    run_python_script(context, os.path.join(ETL_DIR, 'etl_dim_terras_indigenas.py'))
+
+# ==========================================
+# 2. Infraestrutura ONS (Linear e Pontual)
+# ==========================================
+@asset(group_name="infra_ons", compute_kind="python")
+def infra_extracao(context: AssetExecutionContext):
+    """Extrai arquivos GeoJSON via API da ANEEL/ONS"""
+    run_python_script(context, os.path.join(ETL_DIR, 'coletor_ons.py'))
+
+@asset(deps=[infra_extracao], group_name="infra_ons", compute_kind="python")
+def dim_linhas_transmissao(context: AssetExecutionContext):
+    """Processa linhas de transmissão"""
+    run_python_script(context, os.path.join(ETL_DIR, 'etl_dim_ons_linhas_transmissao.py'))
+
+@asset(deps=[infra_extracao], group_name="infra_ons", compute_kind="python")
+def dim_subestacoes(context: AssetExecutionContext):
+    """Processa subestações e gera pontos"""
+    run_python_script(context, os.path.join(ETL_DIR, 'etl_dim_ons_subestacoes.py'))
+
+# ==========================================
+# 3. Network Science (Centralidade em Redes ONS)
+# ==========================================
+@asset(deps=[dim_linhas_transmissao, dim_subestacoes], group_name="science_models", compute_kind="networkx")
+def network_centrality_model(context: AssetExecutionContext):
+    """Calcula Betweenness Centrality e Risco em Cascata usando NetworkX"""
+    run_python_script(context, os.path.join(ETL_DIR, 'network_builder.py'))
+
+# ==========================================
+# 4. Spatio-Temporal Clustering (Incêndios)
+# ==========================================
+@asset(group_name="science_models", compute_kind="scikit-learn")
+def st_dbscan_fire_events(context: AssetExecutionContext):
+    """Agrupa focos isolados em Eventos Dinâmicos de Incêndio (Convex Hull)"""
+    run_python_script(context, os.path.join(ETL_DIR, 'st_dbscan_clustering.py'))
+
+defs = Definitions(
+    assets=[
+        dim_municipios, 
+        dim_hospitais, 
+        dim_terras_indigenas, 
+        infra_extracao, 
+        dim_linhas_transmissao, 
+        dim_subestacoes,
+        network_centrality_model,
+        st_dbscan_fire_events
+    ],
+)

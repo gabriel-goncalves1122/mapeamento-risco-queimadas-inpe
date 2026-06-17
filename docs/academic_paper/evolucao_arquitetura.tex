@@ -1,0 +1,109 @@
+\documentclass[12pt]{article}
+
+% Correção para erro \normalsfcodes no Overleaf / TeX Live 2025
+\makeatletter
+\DeclareRobustCommand{\normalsfcodes}{%
+  \sfcode`\.=3000
+  \sfcode`\?=3000
+  \sfcode`\!=3000
+  \sfcode`\:=2000
+  \sfcode`\;=1500
+  \sfcode`\,=1250
+}
+\makeatother
+
+\usepackage{sbc-template}
+\usepackage{graphicx,url}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+
+\sloppy
+
+\title{Evolução da Arquitetura DataOps Geoespacial: Otimização de Renderização WebGL, Modelagem Snowflake e Governança Orientada a IA}
+
+\author{Gabriel Gonçalves Sampaio\inst{1}, Barbara Pimenta Caetano\inst{1}}
+
+\address{Instituto de Engenharia de Sistemas e Tecnologia da Informação (IESTI) \\
+  Universidade Federal de Itajubá (UNIFEI)\\
+  Avenida BPS, 1303 -- 37500-903 -- Itajubá -- MG -- Brasil
+  \email{gabrielsampaio059@gmail.com, bpimentacaetano@unifei.edu.br}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  The growing demand for real-time geospatial data processing poses challenges related to the ingestion, storage, and continuous analysis of large volumes of information. This paper details the evolution of an event-driven DataOps architecture previously established. The current iteration focuses on three fundamental pillars: extreme optimization of vector payloads for WebGL rendering (transitioning from WKT to Path JSON arrays), strict enforcement of the Snowflake modeling in the streaming fact table to reduce Apache Druid's memory footprint, and the implementation of declarative DataOps governance. This governance includes the transition to Software-Defined Assets in Apache Dagster and the establishment of rigid architectural guidelines for AI-assisted development.
+\end{abstract}
+
+\begin{resumo}
+  A crescente demanda por processamento de dados geoespaciais em tempo real impõe desafios na ingestão, armazenamento e análise contínua de grandes volumes de informações. Este trabalho detalha a evolução de uma arquitetura DataOps orientada a eventos previamente estabelecida. A iteração atual foca em três pilares fundamentais: a otimização extrema de \textit{payloads} vetoriais para renderização WebGL (transição de WKT para arrays \textit{Path JSON}), a adoção estrita da modelagem \textit{Snowflake} na tabela fato de streaming para redução do consumo de memória no Apache Druid, e a implementação de governança DataOps declarativa. Essa governança abrange a transição para \textit{Software-Defined Assets} no Apache Dagster e o estabelecimento de manuais arquiteturais rígidos para o desenvolvimento assistido por Inteligência Artificial.
+\end{resumo}
+
+\section{Introdução e Nova Intenção do Projeto}
+
+O mercado atual exige que informações geoespaciais sejam processadas e entregues com latências mínimas. Em nosso trabalho anterior, apresentamos uma arquitetura DataOps orientada a eventos capaz de realizar a ingestão contínua, o cálculo de rotas espaciais e a clusterização de anomalias térmicas (focos de incêndio) advindas do INPE. Essa plataforma provou a viabilidade técnica da integração entre Apache Kafka, o banco colunar Apache Druid e o motor de renderização Apache Superset em ambientes de recursos computacionais limitados.
+
+No entanto, o avanço do projeto revelou que a simples ingestão funcional não era suficiente para garantir estabilidade a longo prazo. Gargalos arquiteturais foram identificados na forma como as geometrias pesadas eram trafegadas para o \textit{frontend} e em como atributos redundantes sobrecarregavam a memória RAM durante a ingestão massiva no Apache Druid.
+
+A nova intenção do projeto não é apenas "fazer os dados fluírem", mas consolidar a plataforma como um modelo de referência de classe \textit{Enterprise}. O foco agora recai sobre a otimização algorítmica, o banimento de dados textuais na esteira de *streaming*, a orquestração declarativa impecável e o controle restrito de código por meio de Inteligências Artificiais atuando sob manuais de governança.
+
+\section{Mudanças Implementadas e Embasamento Teórico}
+
+\subsection{Otimização Vetorial: Transição do WKT para o \textit{Path JSON}}
+Na versão original da arquitetura, o banco analítico armazenava e trafegava geometrias complexas (como polígonos de terras indígenas e infraestruturas elétricas lineares) utilizando o formato padronizado WKT (\textit{Well-Known Text}). 
+
+A teoria subjacente à renderização geoespacial web moderna, fundamentada no WebGL (como a biblioteca Deck.gl operante no Apache Superset), expõe uma fraqueza no uso de WKT. Enviar dezenas de megabytes de coordenadas literais em \textit{strings} forçava a \textit{thread} principal do JavaScript a realizar \textit{parsers} massivos e computacionalmente caros utilizando expressões regulares antes que as matrizes de dados chegassem à GPU. Isso gerava latência e quedas drásticas de quadros por segundo (\textit{framerate}).
+
+Nesta evolução, toda a camada de processamento de dimensões (ETL) foi reescrita para expurgar o WKT. O formato adotado é o \textit{Path JSON}, consistindo em matrizes numéricas multidimensionais diretas (e.g., \texttt{[[[lon, lat], ...]]]}). O embasamento teórico reside no fato de que arrays JSON aninhados são decodificados quase nativamente e passados para estruturas do tipo \textit{TypedArray} na camada WebGL, ignorando etapas de \textit{parsing} onerosas e permitindo uma fluidez sem precedentes na renderização de malhas de alta densidade no Superset.
+
+\subsection{Desnormalização Radical: Enforcement do Modelo \textit{Snowflake}}
+O \textit{payload} de focos de incêndio original disparado assincronamente pelo produtor Python para o Apache Kafka carregava, por conveniência, diversas descrições em formato de \textit{string} (e.g., nomes de estados, classificações de infraestruturas afetadas).
+
+Tabelas fato excessivamente largas (\textit{Wide Tables}), repletas de textos redundantes, impactam a performance do *broker* do Kafka e inflacionam linearmente a alocação de \textit{heap memory} das tarefas de ingestão (\textit{Peons/MiddleManagers}) do Apache Druid. O modelo dimensional Kimball estabelece que a tabela fato deve ser a mais delgada possível.
+
+Para alinhar o projeto a essa base teórica de \textit{Data Warehousing}, aplicou-se uma filtragem restritiva utilizando o validador \textit{Pydantic}. A tabela fato foi limpa de todas as descrições literais. Atualmente, trafegam na fila de streaming exclusivamente Chaves Estrangeiras (\textit{Foreign Keys}) numéricas/codificadas e métricas matemáticas precisas (como distâncias euclidianas e índices de severidade ambiental). O Apache Druid assume o fardo da junção textual através da funcionalidade de \textit{Lookups} dinâmicos em tempo de consulta, promovendo compactação máxima de \textit{bytes} na rede.
+
+\subsection{Governança Declarativa: \textit{BaseETL} e \textit{Software-Defined Assets}}
+Em sistemas DataOps em rápida expansão, a reprodutibilidade é a métrica principal de qualidade. Inicialmente, as rotinas de carga (ETL) residiam em scripts independentes engatilhados por agendadores de tarefas tradicionais do Sistema Operacional (CRON).
+
+A teoria do DataOps declarativo prescreve a observabilidade sistêmica. Diante disso:
+\begin{enumerate}
+    \item Todos os *pipelines* batch de ingestão territorial foram reescritos sob o paradigma de Programação Orientada a Objetos, herdando de uma classe abstrata unificadora (\texttt{BaseETL}), o que concentra o controle geográfico (CRSs) e a geração do \textit{Path JSON} numa única interface.
+    \item A orquestração foi migrada integralmente para o Apache Dagster. Scripts paralelos foram transformados em \textit{Software-Defined Assets} (@asset). Essa abordagem gera um Grafo Acíclico Dirigido (DAG) tipado, permitindo visualizar a linhagem dos dados (\textit{Data Lineage}), monitorar falhas inter-dependentes e assegurar agendamento reproduzível.
+    
+    Do ponto de vista prático e experimental, a arquitetura orquestrou estritamente os 7 principais \textit{pipelines} modulares (Terras Indígenas, Municípios, Hospitais, Rodovias, Subestações, Sistemas Isolados e Linhas de Transmissão). Testes de execução validaram que essa migração centralizou a lógica em um ponto focal invariável, eliminou a concorrência problemática entre CRONs do Sistema Operacional, e possibilitou a validação de cabeçalhos e coerência das matrizes espaciais antes da sua injeção nas Tabelas de Dimensões.
+\end{enumerate}
+
+\subsection{Governança de IA e Engenharia de Qualidade}
+Na etapa inicial do projeto, a geração de rotinas e blocos lógicos dependia de interações externas via \textit{APIs} isoladas ou instâncias de Inteligência Artificial abertas diretamente em navegadores web. Esta dinâmica engessava a rastreabilidade e limitava o escopo de atuação do algoritmo gerativo.
+
+A evolução do projeto marcou a migração para Agentes de Desenvolvimento Autônomos diretamente embarcados no ambiente de codificação, dispondo de ferramentas nativas de leitura profunda de diretórios, manipulação de arquivos e execução de comandos \textit{Bash}. Esse novo modelo hiper-acelerou as refatorações arquiteturais. No entanto, em uma topologia complexa sob a tutela direta de Inteligência Artificial, lacunas de contexto ocasionavam alucinações técnicas graves, como a regressão em métodos já refatorados, a poluição do \textit{payload} Kafka, ou o acionamento indesejado do interpretador Python global em detrimento do ambiente virtual isolado.
+
+Como contra-medida teórica, foi introduzida a figura dos Manuais Arquiteturais de Contexto (\texttt{agents.md}). Esses arquivos Markdown funcionam como \textit{Guardrails} (barreiras de proteção) injetadas diretamente na base de conhecimento do agente de desenvolvimento. Eles preestabelecem "Leis de Ouro", exigindo, por exemplo:
+\begin{itemize}
+    \item Execução obrigatória via binários contidos no \textit{Virtual Environment} (\texttt{uv run}).
+    \item Proibição formal do resgate do formato WKT nas camadas espaciais.
+    \item Obrigatoriedade de criação de testes parametrizados utilizando a suíte \texttt{pytest} sempre que novas entidades dimensionais ou regras matemáticas entrarem em produção.
+\end{itemize}
+
+\subsection{Validação Prática: Topologia de Redes e Risco de Cascata no SIN}
+Para validar o poder de processamento da nova infraestrutura DataOps aliada aos motores espaciais reescritos, foi instanciada uma modelagem baseada em Ciência de Redes sobre o Sistema Interligado Nacional (SIN). Aproveitando a velocidade de \textit{parsing} das geometrias, as intersecções físicas entre Linhas de Transmissão e Subestações foram mapeadas espacialmente para formar uma Matriz de Adjacência.
+
+Através dessa matriz, o sistema converteu a malha elétrica do país em um Grafo Complexo, permitindo o cálculo matemático da Centralidade de Intermediação (\textit{Betweenness Centrality}). Os resultados práticos da arquitetura revelaram instantaneamente os maiores gargalos do país: o motor matemático destacou, por exemplo, a \textbf{Subestação Rio Verde Norte} com um escore máximo de intermediação (100.00), dado o fato de atuar como um conector vital para múltiplas linhas de escoamento de altíssima tensão. Esse nível de inteligência permite que a Fato de Focos de Incêndio priorize automaticamente as anomalias térmicas que ameaçam nós críticos dessa topologia, comprovando que o *pipeline* transcende a ingestão bruta para atuar como um gerador de Inteligência Governamental.
+
+\section{Conclusão}
+A modernização descrita eleva o protótipo DataOps a uma fundação estrutural altamente profissional. A adoção rigorosa do array \textit{Path JSON} em detrimento do WKT resultou numa otimização imediata na renderização das *dashboards*. Em contrapartida, o enxugamento da tabela de *streaming* segundo o modelo *Snowflake* demonstrou poupar carga latente na memória dos injetores do Apache Druid.
+A integração final do Dagster como orquestrador de \textit{Assets} de software e a fixação de manuais estritos de desenvolvimento para IA garantem que a plataforma continue expandindo suas capacidades de modelagem preditiva no setor geoespacial de modo contínuo, resiliente e padronizado.
+
+\bibliographystyle{plain}
+\bibliography{referencias}
+
+\end{document}

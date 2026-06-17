@@ -1,77 +1,134 @@
-# src/streaming/processador.py
-
+"""
+=========================================================
+MÓDULO: processador.py
+---------------------------------------------------------
+Função Geral: Pipeline de Ingestão Contínua (Kafka). Processa anomalias térmicas brutos em tempo real.
+=========================================================
+"""
 import pandas as pd
-import math
-import unicodedata
+import warnings
+from src.config.constants import NOT_INFORMED
+
+# ==========================================
+# 0. Blindagem de Terminal
+# ==========================================
+warnings.filterwarnings("ignore", category=RuntimeWarning, module="shapely")
+
+from src.utils.cleaners import limpar_texto_druid
+from src.streaming.processors.extractor import FogoExtractor
+from src.streaming.processors.calculators import FogoCalculators
+from src.streaming.domain.models import FocoFatoPayload
 
 class ProcessadorFocos:
+    """
+    Processador Orquestrador da tabela fato FATO_FOCOS_INCENDIO.
+    
+    Refatorado para arquitetura Snowflake:
+    Gera um payload enxuto (FocoFatoPayload), validado via Pydantic,
+    contendo apenas Métricas Numéricas e Chaves Estrangeiras.
+    """
+
     def __init__(self, motor_espacial):
         self.motor = motor_espacial
 
-    @staticmethod
-    def limpar_texto(texto):
-        if pd.isna(texto) or not str(texto).strip(): 
-            return "NAO INFORMADO"
-        texto = str(texto).replace('\n', ' ').replace('\r', ' ').strip().upper()
-        return ''.join(c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')
-
-    @staticmethod
-    def limpar_valor_numerico(valor):
-        """
-        Tratamento de Outliers e Erros:
-        1. Converte NaN/Inf para 0.0.
-        2. Converte o outlier do INPE (-999.0) para 0.0.
-        """
-        try:
-            f_valor = float(valor)
-            # Se for NaN, Infinito ou o código de erro do INPE (-999)
-            if math.isnan(f_valor) or math.isinf(f_valor) or f_valor <= -900:
-                return 0.0
-            return f_valor
-        except:
-            return 0.0
-
     def transformar(self, linha_bruta):
-        """Transforma e enriquece o dado bruto para o schema final."""
-        
-        dt_hora = pd.to_datetime(linha_bruta.get('DataHora'), errors='coerce')
-        estado_norm = self.limpar_texto(linha_bruta.get('Estado'))
-        municipio_norm = self.limpar_texto(linha_bruta.get('Municipio'))
-        
-        lat = float(linha_bruta.get('Latitude', 0.0))
-        lon = float(linha_bruta.get('Longitude', 0.0))
+        # 1. Extração
+        datas = FogoExtractor.extrair_data(linha_bruta.get('DataHora'))
 
-        # Aciona o motor espacial (Certifique-se que o motor_espacial.py 
-        # retorna todas essas chaves no dicionário 'analise')
-        analise = self.motor.analisar_todas_ameacas(lat, lon)
+        estado_norm = limpar_texto_druid(linha_bruta.get('Estado'))
+        municipio_norm = limpar_texto_druid(linha_bruta.get('Municipio'))
+        bioma_norm = limpar_texto_druid(linha_bruta.get('Bioma'))
+        satelite_norm = limpar_texto_druid(linha_bruta.get('Satelite'))
 
-        return {
-            "id_data": int(dt_hora.strftime('%Y%m%d')) if pd.notna(dt_hora) else 0,
-            "data_hora": dt_hora.strftime('%Y-%m-%d %H:%M:%S') if pd.notna(dt_hora) else "1970-01-01 00:00:00",
-            "chave_localidade": f"{estado_norm}_{municipio_norm}",
+        fk_municipio_origem = f"{estado_norm}_{municipio_norm}"
+
+        lat, lon, coord_valida = FogoExtractor.extrair_coordenadas(linha_bruta)
+        foco_point = FogoExtractor.foco_point(lat, lon, coord_valida)
+
+        dias_sem_chuva = FogoExtractor.limpar_valor_numerico_nullable(linha_bruta.get('DiaSemChuva'))
+        precipitacao_mm = FogoExtractor.limpar_valor_numerico_nullable(linha_bruta.get('Precipitacao'))
+        risco_fogo_inpe = FogoExtractor.limpar_valor_numerico_nullable(linha_bruta.get('RiscoFogo'))
+        frp = FogoExtractor.limpar_valor_numerico_nullable(linha_bruta.get('FRP'))
+
+        # 2. Cálculos Puros (Apenas Índices contínuos, as classes de texto foram removidas para o Druid tratar)
+        indice_condicao_ambiental = FogoCalculators.indice_condicao_ambiental(risco_fogo_inpe, dias_sem_chuva, precipitacao_mm)
+        indice_queimada_evento = FogoCalculators.indice_queimada_evento(frp, risco_fogo_inpe, dias_sem_chuva, precipitacao_mm)
+
+        # 3. Motor Espacial
+        if coord_valida:
+            analise = self.motor.analisar_todas_ameacas(lat, lon)
+        else:
+            analise = {}
+
+        distancia_rodovia = analise.get('distancia_rodovia_km')
+        distancia_linha = analise.get('distancia_linha_km')
+        distancia_subestacao = analise.get('distancia_subestacao_km')
+        distancia_sistema = analise.get('distancia_sistema_isolado_km')
+        distancia_hospital = analise.get('distancia_hospital_km')
+        distancia_ti = analise.get('distancia_terra_indigena_km')
+
+        linha_tensao_kv = analise.get("linha_tensao_kv")
+        subestacao_capacidade_mw = analise.get("subestacao_capacidade_mw")
+
+        # 4. Cálculos Puros dependentes do Espacial
+        indices = FogoCalculators.calcular_indices_ameaca(
+            frp=frp, risco=risco_fogo_inpe,
+            dist_rodovia=distancia_rodovia, dist_linha=distancia_linha,
+            dist_sub=distancia_subestacao, dist_sis=distancia_sistema,
+            dist_hosp=distancia_hospital, dist_ti=distancia_ti,
+            tensao_kv=linha_tensao_kv, capac_mw=subestacao_capacidade_mw
+        )
+
+        indice_pressao_maxima = max(
+            indices["indice_ameaca_rodovia"], indices["indice_ameaca_linha"],
+            indices["indice_ameaca_subestacao"], indices["indice_ameaca_sistema_isolado"],
+            indices["indice_pressao_saude"], indices["indice_pressao_terra_indigena"]
+        )
+
+        # 5. Payload Assembly com validação Pydantic (Snowflake Fact Table)
+        payload_obj = FocoFatoPayload(
+            data_hora=datas["data_hora"],
             
-            # --- Chaves de Infraestrutura (CRUCIAL PARA O DRUID) ---
-            "codigo_ti": analise.get('codigo_ti', -1),
-            "codigo_ibge_espacial": analise.get('codigo_ibge_espacial', -1),
-            "id_trecho_rodoviario": analise.get('id_trecho_rodoviario', -1),
-            "distancia_rodovia_km": analise.get('distancia_rodovia_km', -1.0),
-            "id_linha_transmissao": analise.get('id_linha_transmissao', -1),
-            "distancia_linha_km": analise.get('distancia_linha_km', -1.0),
-            "id_subestacao": analise.get('id_subestacao', -1),
-            "distancia_subestacao_km": analise.get('distancia_subestacao_km', -1.0),
-            "id_sistema_isolado": analise.get('id_sistema_isolado', -1),
-            "distancia_sistema_isolado_km": analise.get('distancia_sistema_isolado_km', -1.0),
-            "codigo_cnes_prox": analise.get('codigo_cnes_prox', -1),
-            "distancia_hospital_km": analise.get('distancia_hospital_km', -1.0),
+            pais_origem=limpar_texto_druid(linha_bruta.get('Pais')),
+            fk_bioma=bioma_norm,
+            fk_satelite_sensor=satelite_norm,
             
-            "latitude": lat,
-            "longitude": lon,
-            "bioma_inpe": self.limpar_texto(linha_bruta.get('Bioma')),
-            "satelite_sensor": self.limpar_texto(linha_bruta.get('Satelite')),
-            
-            # --- Métricas com limpeza de Outliers ---
-            "dias_sem_chuva": self.limpar_valor_numerico(linha_bruta.get('DiaSemChuva')),
-            "precipitacao_mm": self.limpar_valor_numerico(linha_bruta.get('Precipitacao')),
-            "risco_fogo_inpe": self.limpar_valor_numerico(linha_bruta.get('RiscoFogo')),
-            "potencia_radiativa_fogo": self.limpar_valor_numerico(linha_bruta.get('FRP'))
-        }
+            fk_municipio=fk_municipio_origem,
+            fk_municipio_espacial=analise.get("codigo_ibge_espacial", NOT_INFORMED),
+            fk_terra_indigena=analise.get("codigo_ti", NOT_INFORMED),
+            fk_terra_indigena_proxima=analise.get("codigo_ti_proxima", NOT_INFORMED),
+            fk_trecho_rodoviario=analise.get("id_trecho_rodoviario", NOT_INFORMED),
+            fk_linha_transmissao=analise.get("id_linha_transmissao", NOT_INFORMED),
+            fk_subestacao=analise.get("id_subestacao", NOT_INFORMED),
+            fk_sistema_isolado=analise.get("id_sistema_isolado", NOT_INFORMED),
+            fk_hospital=analise.get("codigo_cnes_prox", NOT_INFORMED),
+
+            latitude=lat,
+            longitude=lon,
+            coordenada_valida=1 if coord_valida else 0,
+            foco_point=foco_point,
+
+            dias_sem_chuva=dias_sem_chuva,
+            precipitacao_mm=precipitacao_mm,
+            risco_fogo_inpe=risco_fogo_inpe,
+            potencia_radiativa_fogo=frp,
+            indice_condicao_ambiental=indice_condicao_ambiental,
+            indice_queimada_evento=indice_queimada_evento,
+
+            distancia_rodovia_km=distancia_rodovia,
+            distancia_linha_km=distancia_linha,
+            distancia_subestacao_km=distancia_subestacao,
+            distancia_sistema_isolado_km=distancia_sistema,
+            distancia_hospital_km=distancia_hospital,
+            distancia_terra_indigena_km=distancia_ti,
+
+            indice_ameaca_rodovia=indices["indice_ameaca_rodovia"],
+            indice_ameaca_linha=indices["indice_ameaca_linha"],
+            indice_ameaca_subestacao=indices["indice_ameaca_subestacao"],
+            indice_ameaca_sistema_isolado=indices["indice_ameaca_sistema_isolado"],
+            indice_pressao_saude=indices["indice_pressao_saude"],
+            indice_pressao_terra_indigena=indices["indice_pressao_terra_indigena"],
+            indice_pressao_maxima=round(indice_pressao_maxima, 6)
+        )
+
+        return payload_obj.model_dump(mode='json')

@@ -1,0 +1,144 @@
+"""
+=========================================================
+MÓDULO: Auxiliares Espaciais (geo_helpers.py)
+---------------------------------------------------------
+Função Geral: Abstrai a manipulação bruta de geometrias
+vetoriais (Shapely) e GeoDataFrames. Força projeções e
+limpa coordenadas sobrepostas para reduzir payload json.
+=========================================================
+"""
+import json
+import geopandas as gpd
+from shapely.geometry import LineString, MultiLineString, Point
+
+
+def garantir_crs_4326(gdf):
+    """
+    Força um GeoDataFrame a adotar a projeção geográfica global WGS 84 (EPSG:4326).
+    Necessário porque o Superset/Deck.gl não renderiza coordenadas projetadas (ex: SIRGAS 2000).
+    """
+    if gdf.crs is None:
+        gdf = gdf.set_crs(epsg=4326)
+    return gdf.to_crs(epsg=4326)
+
+
+def arredondar_coord(coord, casas=6):
+    return [round(float(coord[0]), casas), round(float(coord[1]), casas)]
+
+
+def remover_repeticoes_periodicas(coords):
+    if not coords:
+        return coords
+
+    coords_round = [tuple(arredondar_coord(c)) for c in coords]
+    n = len(coords_round)
+
+    for tamanho in range(2, (n // 2) + 1):
+        if n % tamanho != 0:
+            continue
+
+        base = coords_round[:tamanho]
+        repetido = True
+
+        for i in range(0, n, tamanho):
+            if coords_round[i:i + tamanho] != base:
+                repetido = False
+                break
+
+        if repetido:
+            return [list(c) for c in base]
+
+    return [list(c) for c in coords_round]
+
+
+def remover_consecutivos_duplicados(coords):
+    if not coords:
+        return coords
+
+    limpos = [coords[0]]
+
+    for coord in coords[1:]:
+        if coord != limpos[-1]:
+            limpos.append(coord)
+
+    return limpos
+
+
+def limpar_linestring_geometry(geom):
+    """
+    Remove coordenadas repetidas e anomalias de uma LineString ou MultiLineString.
+    
+    Por que isso é necessário?
+    Muitas bases do ONS contêm polígonos/linhas "sujos" com vértices sobrepostos.
+    Isso causa arquivos JSON massivos e lentidão no front-end do Apache Superset.
+    A função reduz drasticamente o peso espacial mantendo o formato intacto.
+    """
+    if geom is None or geom.is_empty:
+        return None
+
+    if isinstance(geom, LineString):
+        coords = list(geom.coords)
+        coords = remover_repeticoes_periodicas(coords)
+        coords = remover_consecutivos_duplicados(coords)
+
+        if len(coords) < 2:
+            return None
+
+        return LineString(coords)
+
+    if isinstance(geom, MultiLineString):
+        linhas = []
+
+        for linha in geom.geoms:
+            coords = list(linha.coords)
+            coords = remover_repeticoes_periodicas(coords)
+            coords = remover_consecutivos_duplicados(coords)
+
+            if len(coords) >= 2:
+                linhas.append(LineString(coords))
+
+        if not linhas:
+            return None
+
+        if len(linhas) == 1:
+            return linhas[0]
+
+        return MultiLineString(linhas)
+
+    return geom
+
+
+def geometry_para_path_json(geom):
+    """
+    Converte qualquer objeto geométrico Shapely num formato de Array JSON bidimensional.
+    Este é o formato estrito exigido pela camada de visualização Deck.gl (PathLayer/PolygonLayer).
+    """
+    if geom is None or geom.is_empty:
+        return "[]"
+
+    if geom.geom_type == 'Point':
+        return json.dumps([arredondar_coord(geom.coords[0])], ensure_ascii=False)
+
+    elif geom.geom_type == 'LineString':
+        coords = [arredondar_coord(c) for c in geom.coords]
+        return json.dumps(coords, ensure_ascii=False)
+
+    elif geom.geom_type == 'MultiLineString':
+        paths = []
+        for linha in geom.geoms:
+            coords = [arredondar_coord(c) for c in linha.coords]
+            paths.append(coords)
+        return json.dumps(paths, ensure_ascii=False)
+
+    elif geom.geom_type == 'Polygon':
+        coords = [arredondar_coord(c) for c in geom.exterior.coords]
+        return json.dumps([coords], ensure_ascii=False)
+
+    elif geom.geom_type == 'MultiPolygon':
+        polys = []
+        for poly in geom.geoms:
+            coords = [arredondar_coord(c) for c in poly.exterior.coords]
+            polys.append([coords])
+        return json.dumps(polys, ensure_ascii=False)
+
+    return "[]"

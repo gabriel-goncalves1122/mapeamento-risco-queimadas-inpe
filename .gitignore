@@ -8,6 +8,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+*.aux
+*.bbl
+*.blg
 
 # ==========================================
 # 2. DADOS MASSIVOS E GEOGRÁFICOS (CRÍTICO)
@@ -52,13 +55,21 @@ router_var/
 druid_shared/
 
 # ==========================================
-# 5. IDEs E SISTEMA OPERACIONAL
+# 5. IDEs E SISTEMA OPERACIONAL E OUTROS
 # ==========================================
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 ~$*
+.env
+/backups/
+
+# Backups/exports antigos do Superset devem ir para archive/legacy.
+infrastructure/superset/backups/
+infrastructure/superset/exports/*
+!infrastructure/superset/exports/superset_dashboards_export_20260518_231338.zip
+!infrastructure/superset/exports/superset_datasources_export_20260518_231344.yaml
 
 # ==========================================
 # 6. EXCEÇÕES (O QUE DEVE SER VERSIONADO)
@@ -69,6 +80,7 @@ Thumbs.db
 !data/raw/.gitkeep
 !data/results/.gitkeep
 
-# Força o Git a aceitar os arquivos JSON do Druid e o ZIP do Superset na pasta infrastructure
+# Força o Git a aceitar os arquivos JSON do Druid e exports atuais do Superset
 !infrastructure/druid_specs/*.json
 !infrastructure/superset/*.zip
+!infrastructure/superset/exports/

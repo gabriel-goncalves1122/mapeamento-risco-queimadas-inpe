@@ -51,9 +51,25 @@ O ambiente foi empacotado para ser 100% reprodutível em qualquer máquina que s
 ### 1. Pré-requisitos
 
 - Docker e Docker Compose instalados.
+- `uv` instalado para execução Python reprodutível.
 - Recomendado: Mínimo de 8GB de RAM dedicados ao Docker.
 
-### 2. Subindo a Infraestrutura Core
+### 2. Ambiente Python e Testes
+
+Sincronize as dependências e rode a suíte local sempre via `uv`:
+
+```bash
+uv sync
+uv run pytest -q
+```
+
+Em ambientes com cache restrito, use:
+
+```bash
+UV_CACHE_DIR=/tmp/uv-cache uv run pytest -q
+```
+
+### 3. Subindo a Infraestrutura Core
 
 Clone o repositório e inicialize a rede de containers (Zookeeper, Kafka, Druid, PostgreSQL e Superset):
 
@@ -62,11 +78,21 @@ Clone o repositório e inicialize a rede de containers (Zookeeper, Kafka, Druid,
 docker compose up -d
 ```
 
-### 3. Inicializando o Apache Superset
+### 4. Pipelines Locais
+
+Os pontos de entrada principais são:
+
+```bash
+uv run python -m src.etl.run_etl
+uv run python -m src.streaming.produtor_focos
+uv run dagster dev -m src.orchestration.repo
+```
+
+### 5. Inicializando o Apache Superset
 
 Como o Superset necessita de configurações de segurança e metadados internos, execute os comandos abaixo em sequência para preparar a camada visual:
 
-#### 3.1 Criar o usuário administrador do CCO
+#### 5.1 Criar o usuário administrador do CCO
 
     docker exec -it superset superset fab create-admin \
     --username admin \
@@ -75,15 +101,15 @@ Como o Superset necessita de configurações de segurança e metadados internos,
     --email admin@superset.com \
     --password admin
 
-#### 3.2 Atualizar as migrações do banco de dados interno
+#### 5.2 Atualizar as migrações do banco de dados interno
 
     docker exec -it superset superset db upgrade
 
-#### 3.3 Inicializar papéis e permissões padrão
+#### 5.3 Inicializar papéis e permissões padrão
 
     docker exec -it superset superset init
 
-### 4. Acessando as Interfaces
+### 6. Acessando as Interfaces
 
 Com tudo rodando, acesse através do seu navegador:
 
@@ -98,3 +124,7 @@ Com tudo rodando, acesse através do seu navegador:
 Este projeto foi desenvolvido por Gabriel Gonçalves Sampaio como parte de pesquisa vinculada ao curso de Engenharia de Computação da Universidade Federal de Itajubá (UNIFEI).
 
 A pesquisa documentada neste repositório explora a intersecção entre a Engenharia de Dados Moderna, o planejamento de hardware e a visualização tática de dados aplicados a cenários de resposta a crises.
+
+## Acervo histórico
+
+Materiais legados, templates acadêmicos, relatórios antigos, referências pesadas e backups históricos do Superset ficam em `archive/legacy/`. A árvore principal mantém apenas código, documentação ativa e artefatos operacionais recentes.

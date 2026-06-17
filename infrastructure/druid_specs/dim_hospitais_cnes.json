@@ -1,98 +1,6 @@
 {
   "type": "index_parallel",
-  "id": "index_parallel_dim_hospitais_cnes_gohlhdfe_2026-04-26T03:39:20.901Z",
-  "groupId": "index_parallel_dim_hospitais_cnes_gohlhdfe_2026-04-26T03:39:20.901Z",
-  "resource": {
-    "availabilityGroup": "index_parallel_dim_hospitais_cnes_gohlhdfe_2026-04-26T03:39:20.901Z",
-    "requiredCapacity": 1
-  },
   "spec": {
-    "dataSchema": {
-      "dataSource": "dim_hospitais_cnes",
-      "timestampSpec": {
-        "column": "!!!_no_such_column_!!!",
-        "format": "auto",
-        "missingValue": "2025-01-01T00:00:00.000Z"
-      },
-      "dimensionsSpec": {
-        "dimensions": [
-          {
-            "type": "long",
-            "name": "codigo_cnes",
-            "multiValueHandling": "SORTED_ARRAY",
-            "createBitmapIndex": false
-          },
-          {
-            "type": "string",
-            "name": "nome_hospital",
-            "multiValueHandling": "SORTED_ARRAY",
-            "createBitmapIndex": true
-          },
-          {
-            "type": "string",
-            "name": "tipo_unidade",
-            "multiValueHandling": "SORTED_ARRAY",
-            "createBitmapIndex": true
-          },
-          {
-            "type": "string",
-            "name": "funciona_24h",
-            "multiValueHandling": "SORTED_ARRAY",
-            "createBitmapIndex": true
-          },
-          {
-            "type": "long",
-            "name": "codigo_ibge_municipio",
-            "multiValueHandling": "SORTED_ARRAY",
-            "createBitmapIndex": false
-          },
-          {
-            "type": "string",
-            "name": "municipios_nome",
-            "multiValueHandling": "SORTED_ARRAY",
-            "createBitmapIndex": true
-          },
-          {
-            "type": "string",
-            "name": "estado_sigla",
-            "multiValueHandling": "SORTED_ARRAY",
-            "createBitmapIndex": true
-          },
-          {
-            "type": "double",
-            "name": "latitude",
-            "multiValueHandling": "SORTED_ARRAY",
-            "createBitmapIndex": false
-          },
-          {
-            "type": "double",
-            "name": "longitude",
-            "multiValueHandling": "SORTED_ARRAY",
-            "createBitmapIndex": false
-          }
-        ],
-        "dimensionExclusions": [
-          "__time",
-          "!!!_no_such_column_!!!"
-        ],
-        "includeAllDimensions": false,
-        "useSchemaDiscovery": false
-      },
-      "metricsSpec": [],
-      "granularitySpec": {
-        "type": "uniform",
-        "segmentGranularity": "YEAR",
-        "queryGranularity": {
-          "type": "none"
-        },
-        "rollup": false,
-        "intervals": []
-      },
-      "transformSpec": {
-        "filter": null,
-        "transforms": []
-      }
-    },
     "ioConfig": {
       "type": "index_parallel",
       "inputSource": {
@@ -103,75 +11,55 @@
       "inputFormat": {
         "type": "csv",
         "findColumnsFromHeader": true
-      },
-      "appendToExisting": false,
-      "dropExisting": false
+      }
     },
     "tuningConfig": {
       "type": "index_parallel",
-      "maxRowsPerSegment": 5000000,
-      "appendableIndexSpec": {
-        "type": "onheap",
-        "preserveExistingMetrics": false
+      "maxRowsPerSegment": 5000000
+    },
+    "dataSchema": {
+      "dataSource": "dim_hospitais_cnes",
+      "timestampSpec": {
+        "column": "!!!_no_magic_time_column_!!!",
+        "missingValue": "2025-01-01T00:00:00.000Z"
       },
-      "maxRowsInMemory": 1000000,
-      "maxBytesInMemory": 0,
-      "skipBytesInMemoryOverheadCheck": false,
-      "maxTotalRows": null,
-      "numShards": null,
-      "splitHintSpec": null,
-      "partitionsSpec": {
-        "type": "dynamic",
-        "maxRowsPerSegment": 5000000,
-        "maxTotalRows": null
+      "dimensionsSpec": {
+        "dimensions": [
+          { "type": "string", "name": "codigo_cnes" },
+
+          { "type": "string", "name": "nome_hospital" },
+
+          { "type": "string", "name": "tipo_unidade" },
+
+          { "type": "string", "name": "categoria_unidade" },
+
+          { "type": "string", "name": "tipo_unidade_idx" },
+
+          { "type": "string", "name": "tipo_unidade_critica" },
+
+          { "type": "string", "name": "categoria_atendimento" },
+
+          { "type": "string", "name": "funciona_24h" },
+          { "type": "string", "name": "funciona_24h_idx" },
+
+          { "type": "string", "name": "codigo_ibge" },
+
+          { "type": "string", "name": "municipios_nome" },
+
+          { "type": "string", "name": "estado_sigla" },
+
+          { "type": "double", "name": "latitude" },
+          { "type": "double", "name": "longitude" },
+
+          { "type": "string", "name": "hospital_point" }
+        ]
       },
-      "indexSpec": {
-        "bitmap": {
-          "type": "roaring"
-        },
-        "dimensionCompression": "lz4",
-        "stringDictionaryEncoding": {
-          "type": "utf8"
-        },
-        "metricCompression": "lz4",
-        "longEncoding": "longs"
-      },
-      "indexSpecForIntermediatePersists": {
-        "bitmap": {
-          "type": "roaring"
-        },
-        "dimensionCompression": "lz4",
-        "stringDictionaryEncoding": {
-          "type": "utf8"
-        },
-        "metricCompression": "lz4",
-        "longEncoding": "longs"
-      },
-      "maxPendingPersists": 0,
-      "forceGuaranteedRollup": false,
-      "reportParseExceptions": false,
-      "pushTimeout": 0,
-      "segmentWriteOutMediumFactory": null,
-      "maxNumConcurrentSubTasks": 1,
-      "maxRetry": 3,
-      "taskStatusCheckPeriodMs": 1000,
-      "chatHandlerTimeout": "PT10S",
-      "chatHandlerNumRetries": 5,
-      "maxNumSegmentsToMerge": 100,
-      "totalNumMergeTasks": 10,
-      "logParseExceptions": false,
-      "maxParseExceptions": 2147483647,
-      "maxSavedParseExceptions": 0,
-      "maxColumnsToMerge": -1,
-      "awaitSegmentAvailabilityTimeoutMillis": 0,
-      "maxAllowedLockCount": -1,
-      "numPersistThreads": 1,
-      "partitionDimensions": []
+      "granularitySpec": {
+        "type": "uniform",
+        "segmentGranularity": "ALL",
+        "queryGranularity": "NONE",
+        "rollup": false
+      }
     }
-  },
-  "context": {
-    "forceTimeChunkLock": true,
-    "useLineageBasedSegmentAllocation": true
-  },
-  "dataSource": "dim_hospitais_cnes"
+  }
 }

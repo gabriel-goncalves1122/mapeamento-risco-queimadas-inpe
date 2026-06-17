@@ -1,88 +1,13 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-import os
-import subprocess
+"""
+=========================================================
+MÓDULO: gerador_relatorio_cenario5.py
+---------------------------------------------------------
+Função Geral: Abstrai e executa testes analíticos ou geração de relatórios de benchmark do Druid.
+=========================================================
+"""
+from src.analytics.scenario_reports import ScenarioReportConfig, gerar_relatorio_cenario
 
-# =====================================================================
-# 1. CONFIGURAÇÕES E LEITURA DOS DADOS (CENÁRIO 5)
-# =====================================================================
-# Lendo o CSV correto gerado pelo benchmark de Compactação Anual (4 Cores)
-CSV_PATH = "data/results/tests/relatorio_estatistico_CompactYear_4Cores.csv"
-OUTPUT_DIR = "data/results/docs"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-print("📊 Iniciando a geração do Relatório (Cenário 5 - 4 Núcleos / Dados Compactados)...")
-df = pd.read_csv(CSV_PATH)
-
-# Limpando os nomes das consultas para os gráficos (removendo a tag do cenário)
-df['Nome_Limpo'] = df['Nome_Consulta'].str.replace('_CompactYear_4Cores', '', regex=False).str.replace('_', ' ')
-
-# =====================================================================
-# 2. GERAÇÃO DE GRÁFICOS (ESTÉTICA ACADÊMICA)
-# =====================================================================
-plt.style.use('seaborn-v0_8-whitegrid')
-plt.rcParams['font.family'] = 'serif'
-
-# Gráfico 1 - Comparativo de Latências Médias
-plt.figure(figsize=(10, 5))
-bar_width = 0.35
-index = np.arange(len(df['Nome_Limpo']))
-
-plt.bar(index, df['Media_Cold_ms'], bar_width, label='Cold Start (I/O Disco / CPU Bruta)', color='#4c72b0', edgecolor='black')
-plt.bar(index + bar_width, df['Media_Warm_ms'], bar_width, label='Warm Start (Cache RAM)', color='#55a868', edgecolor='black')
-
-plt.ylabel('Tempo de Resposta (ms)', fontsize=11)
-plt.title('Cenário 5: Latência com 4 Núcleos e Dados Compactados (Anual)', fontsize=12, fontweight='bold')
-plt.xticks(index + bar_width / 2, df['Nome_Limpo'], rotation=35, ha='right', fontsize=9)
-plt.legend(frameon=True, shadow=True)
-plt.tight_layout()
-plt.savefig(f"{OUTPUT_DIR}/fig_desemp_cenario5.png", dpi=300)
-plt.close()
-
-# Gráfico 2 - Dispersão de Iterações (O Fenômeno "Too Fast to Cache")
-# Focando na consulta 3, que obteve cache negativo (-3.14%) para ilustrar o fenômeno
-consulta_alvo = 'Bench_3_Filtros_Complexos_CompactYear_4Cores'
-if consulta_alvo in df['Nome_Consulta'].values:
-    linha_alvo = df[df['Nome_Consulta'] == consulta_alvo].iloc[0]
-else:
-    linha_alvo = df.iloc[2] # Fallback para a consulta 3
-    
-cold_runs = [linha_alvo[f'Cold_{i}_ms'] for i in range(1, 8)]
-warm_runs = [linha_alvo[f'Warm_{i}_ms'] for i in range(1, 8)]
-
-plt.figure(figsize=(9, 4.5))
-plt.plot(range(1, 8), cold_runs, marker='D', linestyle='-', color='#4c72b0', linewidth=2, label='Cold Start')
-plt.plot(range(1, 8), warm_runs, marker='s', linestyle='--', color='#55a868', linewidth=2, label='Warm Start')
-
-plt.xlabel('Iteração (Rodada)', fontsize=11)
-plt.ylabel('Latência Computacional (ms)', fontsize=11)
-plt.title('Dispersão: O Fenômeno "Too Fast to Cache" (Filtros Complexos)', fontsize=12, fontweight='bold')
-plt.xticks(range(1, 8))
-plt.legend(frameon=True, shadow=True)
-plt.tight_layout()
-plt.savefig(f"{OUTPUT_DIR}/fig_var_cenario5.png", dpi=300)
-plt.close()
-print("✅ Gráficos do Cenário 5 gerados com sucesso.")
-
-# =====================================================================
-# 3. CONSTRUÇÃO DA TABELA (PADRÃO BOOKTABS)
-# =====================================================================
-tabela_linhas = []
-for index, row in df.iterrows():
-    nome = str(row['Nome_Limpo'])
-    cold = f"{row['Media_Cold_ms']:.2f}"
-    warm = f"{row['Media_Warm_ms']:.2f}"
-    ganho = f"{row['Ganho_Cache_%']:.2f}"
-    linhas = str(row['Linhas_Retornadas'])
-    tabela_linhas.append(f"    {nome} & {cold} & {warm} & {ganho}\\% & {linhas} \\\\\n")
-
-conteudo_tabela = "".join(tabela_linhas)
-
-# =====================================================================
-# 4. TEMPLATE LATEX PARA RELATÓRIO DE TESTE (CENÁRIO 5)
-# =====================================================================
-latex_template = r"""\documentclass[12pt, a4paper]{article}
+texto_latex = r"""\documentclass[12pt, a4paper]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -157,23 +82,12 @@ O Cenário 5 sela uma importante conclusão empírica: a infraestrutura (\textit
 \end{document}
 """
 
-# Injeção blindada da tabela no documento
-latex_document = latex_template.replace("___CONTEUDO_TABELA___", conteudo_tabela)
-
-tex_path = f"{OUTPUT_DIR}/relatorio_cenario5.tex"
-with open(tex_path, 'w', encoding='utf-8') as f:
-    f.write(latex_document)
-    
-print("✅ Código LaTeX do Cenário 5 gerado!")
-
-# =====================================================================
-# 5. COMPILAÇÃO AUTOMÁTICA
-# =====================================================================
-print("⚙️ Compilando o PDF do Cenário 5 (Isso pode levar alguns segundos)...")
-try:
-    comando = ['pdflatex', '-interaction=nonstopmode', 'relatorio_cenario5.tex']
-    subprocess.run(comando, cwd=OUTPUT_DIR, check=True, stdout=subprocess.DEVNULL)
-    subprocess.run(comando, cwd=OUTPUT_DIR, check=True, stdout=subprocess.DEVNULL)
-    print(f"🎓 SUCESSO! Relatório Intermediário pronto em: {OUTPUT_DIR}/relatorio_cenario5.pdf")
-except subprocess.CalledProcessError:
-    print(f"⚠️  PDF compilado com avisos, verifique a pasta {OUTPUT_DIR}.")
+if __name__ == "__main__":
+    gerar_relatorio_cenario(ScenarioReportConfig(
+        csv_path="data/results/tests/relatorio_estatistico_CompactYear_4Cores.csv",
+        sufixo_remover="_CompactYear_4Cores",
+        consulta_alvo="Bench_3_Filtros_Complexos_CompactYear_4Cores",
+        titulo_grafico1="Cenário 5: Latência com 4 Núcleos e Dados Compactados (Anual)",
+        titulo_grafico2='Dispersão: O Fenômeno "Too Fast to Cache" (Filtros Complexos)',
+        output_pdf_nome="relatorio_cenario5"
+    ), texto_latex)

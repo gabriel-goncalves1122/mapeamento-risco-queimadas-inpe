@@ -1,3 +1,10 @@
+"""
+=========================================================
+MÓDULO: gerador_relatorio_final.py
+---------------------------------------------------------
+Função Geral: Abstrai e executa testes analíticos ou geração de relatórios de benchmark do Druid.
+=========================================================
+"""
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
