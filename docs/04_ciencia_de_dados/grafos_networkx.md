@@ -1,18 +1,16 @@
 # Ciência de Redes Aplicada ao Sistema Interligado Nacional (SIN)
 
-A robustez da matriz energética não repousa apenas em atributos individuais das subestações, mas na malha topológica estrita de transmissão e interdependência. O roteamento dinâmico estabelece que a vulnerabilidade de um nodo elétrico é proporcional à sua dominância no escoamento global de cargas na rede.
+A robustez da matriz energética subjaz a uma malha topológica interdependente e holística. O colapso incitado por focos térmicos massivos em hastes adjacentes incita propagação linear sob a teoria das redes complexas. Em virtude disto, uma simples contingência local é capaz de desencadear um efeito cascata catastrófico (Blackout em múltiplos estados).
 
-## 1. Abordagem Metodológica
-O script analítico `src/etl/pipelines/network_builder.py` executa a montagem matemática do grafo do SIN por meio dos seguintes rigores axiomáticos:
+## 1. Intersecção Espacial via Árvore Euclidiana
+A modelagem axiomática encabeçada por `src/science/network_builder.py` constrói de forma analítica as adjacências sistêmicas que não figuram explicitamente nas dimensões normativas do Setor Elétrico.
+- **Teia Eletromecânica**: As coordenadas massivas das subestações compõem e embasam uma Árvore Espacial de Consulta (`scipy.spatial.cKDTree`). Pelo rigor topológico, as extremidades desarticuladas das Linhas de Transmissão (Edges/Arestas) são associadas via varredura imediata Euclidiana às Suportes Condutores Específicos (Nodes/Nós), resultando em um Grafo Matemático Perfeito das ramificações nacionais energéticas.
 
-1. **Cruzamento Topológico**: Empregou-se Árvores K-Dimensionais (`scipy.spatial.cKDTree`) para avaliar intersecções espaciais contíguas entre as hastes de Linhas de Transmissão (Arestas/Edges) e os pontos focais de Subestações (Nodos/Nodes).
-2. **Grafo Matemático**: Uma vez extraída a matriz de adjacência geofísica, instanciou-se um modelo não-direcionado sobre a biblioteca `NetworkX`.
+## 2. Modelagem de Risco Iminente: Betweenness Centrality
+O axioma analítico exclui a mera tipagem nominal de potências instaladas (MW) das subestações e incorpora como métrica suprema de vulnerabilidade sistêmica a métrica *Betweenness Centrality* (Centralidade de Intermediação).
 
-## 2. Modelagem de Risco via Betweenness Centrality
-Ao invés de quantificar risco elétrico unicamente pela tensão do eixo (kV) ou potência instalada (MW), o modelo computa a **Centralidade de Intermediação (Betweenness Centrality)** de todas as subestações nacionais:
+Calculada globalmente através da biblioteca `NetworkX`, a centralidade desvenda quantas vezes uma subestação age ativamente como ponte conectiva para o tráfego nos *caminhos mais curtos* (*shortest paths*) entre todas as pontas isoladas do grafo do país.
 
 `$C_B(v) = \sum_{s \neq v \neq t} \frac{\sigma_{st}(v)}{\sigma_{st}}$`
 
-Onde `\sigma_{st}` representa a somatória dos caminhos mais curtos entre a origem `s` e o destino `t`, e `\sigma_{st}(v)` determina os caminhos que perpassam imperativamente pelo nó `v`. 
-
-O resultado final é normalizado em uma distribuição escalar de `0` a `100`, revelando os gargalos intrínsecos estruturais (e.g., *Subestação Rio Verde Norte*). Um sinistro geofísico (fogo florestal) adjacente a nodos de elevado *score* ativa *flags* analíticas de Risco de Colapso em Cascata (*Cascade Failure Risk*) iminente.
+Um elevado fator denota que o nodo carrega um ônus crítico inato à manutenção do Brasil Iluminado. Caso a esteira da Inteligência Geoespacial cruze a evolução temporal de um polígono de fogo destrutivo contra o raio geofísico de um desses Hubs primordiais, o Druid aciona as instâncias de Risco de Cascata (*Cascade Failure Risk*), direcionando os painéis analíticos do Superset em uma matriz global de alerta da infraestrutura nacional.

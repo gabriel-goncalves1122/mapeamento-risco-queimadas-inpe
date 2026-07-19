@@ -1,0 +1,47 @@
+{
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.19\textwidth}p{0.36\textwidth}p{0.08\textwidth}p{0.09\textwidth}p{0.09\textwidth}p{0.07\textwidth}p{0.08\textwidth}}
+\caption{Maiores hotspots de latencia p95.}\\
+\toprule
+Cenario & Query & Cache & p95 ms & p99 ms & Erros & Erro \% \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & Query & Cache & p95 ms & p99 ms & Erros & Erro \% \\
+\midrule
+\endhead
+scenario\_03\_query\_heavy & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & warm & 6770.565 & 7127.470 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & warm & 6608.317 & 6955.143 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & cold & 5979.857 & 6246.216 & 0 & 0.000 \\
+scenario\_01\_baseline & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & cold & 5533.101 & 5604.344 & 1 & 33.333 \\
+scenario\_01\_baseline & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & warm & 4915.269 & 4940.542 & 1 & 33.333 \\
+scenario\_01\_baseline & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & cold & 4804.615 & 4924.268 & 1 & 33.333 \\
+scenario\_02\_balanced & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & cold & 4099.165 & 4134.540 & 1 & 33.333 \\
+scenario\_01\_baseline & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & warm & 3543.012 & 3618.099 & 1 & 33.333 \\
+scenario\_01\_baseline & 03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & warm & 3185.122 & 3411.411 & 0 & 0.000 \\
+scenario\_02\_balanced & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & warm & 3155.674 & 3198.680 & 1 & 33.333 \\
+scenario\_03\_query\_heavy & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & cold & 2824.191 & 2866.361 & 0 & 0.000 \\
+scenario\_02\_balanced & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & warm & 2788.367 & 2794.212 & 1 & 33.333 \\
+scenario\_02\_balanced & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & cold & 2442.811 & 2491.372 & 1 & 33.333 \\
+scenario\_03\_query\_heavy & 03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & cold & 2243.430 & 2381.901 & 0 & 0.000 \\
+scenario\_01\_baseline & 03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & cold & 2233.918 & 2240.328 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & warm & 1942.824 & 2060.911 & 0 & 0.000 \\
+scenario\_01\_baseline & 05\_dashboard\_misto/02\_dashboard\_qualidade\_operacional & warm & 1429.890 & 1441.141 & 0 & 0.000 \\
+scenario\_02\_balanced & 03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & cold & 1355.624 & 1435.809 & 0 & 0.000 \\
+scenario\_01\_baseline & 04\_payload\_espacial/03\_preview\_hospitais\_path\_json & cold & 1118.816 & 1208.523 & 0 & 0.000 \\
+scenario\_02\_balanced & 05\_dashboard\_misto/02\_dashboard\_qualidade\_operacional & warm & 996.533 & 1029.919 & 0 & 0.000 \\
+scenario\_01\_baseline & 05\_dashboard\_misto/02\_dashboard\_qualidade\_operacional & cold & 963.543 & 993.408 & 0 & 0.000 \\
+scenario\_01\_baseline & 05\_dashboard\_misto/00\_dashboard\_defesa\_civil & warm & 914.436 & 935.723 & 1 & 33.333 \\
+scenario\_01\_baseline & 01\_latency\_simple/02\_filtro\_hospitais\_uf & cold & 901.498 & 936.888 & 1 & 33.333 \\
+scenario\_03\_query\_heavy & 02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional & cold & 892.810 & 925.400 & 0 & 0.000 \\
+scenario\_01\_baseline & 05\_dashboard\_misto/00\_dashboard\_defesa\_civil & cold & 888.505 & 918.975 & 0 & 0.000 \\
+scenario\_01\_baseline & 01\_latency\_simple/02\_filtro\_hospitais\_uf & warm & 816.438 & 854.755 & 0 & 0.000 \\
+scenario\_02\_balanced & 02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional & cold & 759.182 & 772.902 & 1 & 33.333 \\
+scenario\_02\_balanced & 05\_dashboard\_misto/00\_dashboard\_defesa\_civil & cold & 753.739 & 809.729 & 0 & 0.000 \\
+scenario\_01\_baseline & 01\_latency\_simple/01\_count\_dimensoes\_catalogo & warm & 753.642 & 787.150 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 05\_dashboard\_misto/01\_dashboard\_energia\_logistica & cold & 734.674 & 792.439 & 0 & 0.000 \\
+\bottomrule
+\end{longtable}
+}

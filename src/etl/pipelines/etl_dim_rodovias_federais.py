@@ -58,7 +58,7 @@ class RodoviasFederaisETL(BaseETL):
         return codigo
 
     def _gerar_id_trecho_unico(self, row, indice):
-        base = f"{row.get('id_trecho_rodoviario_origem', 'NA')}_{row.get('codigo_rodovia', 'NA')}_{row.get('jurisdicao', 'NA')}_{row.get('geometria_wkt', 'NA')}_{indice}"
+        base = f"{row.get('id_trecho_rodoviario_origem', 'NA')}_{row.get('codigo_rodovia', 'NA')}_{row.get('jurisdicao', 'NA')}_{row.get('path_json', 'NA')}_{indice}"
         return f"ROD_{hashlib.md5(base.encode('utf-8')).hexdigest()[:10]}"
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -94,8 +94,6 @@ class RodoviasFederaisETL(BaseETL):
 
         gdf['path_json'] = gdf.geometry.apply(geometry_para_path_json)
         
-        # Removendo payload duplicado path_json e extraindo apenas geometria WKT
-        
         centroides = gdf.geometry.centroid
         gdf['latitude'] = centroides.y.round(6)
         gdf['longitude'] = centroides.x.round(6)
@@ -109,18 +107,22 @@ class RodoviasFederaisETL(BaseETL):
         gdf['criticidade_rodovia'] = gdf.apply(lambda r: self._classificar_criticidade_rodovia(r['classe_revestimento'], r['classe_situacao_fisica'], r['classe_status_operacional']), axis=1)
 
         colunas_finais = [
-            'id_trecho_rodoviario', 'id_trecho_rodoviario_origem', 'codigo_rodovia', 'jurisdicao',
-            'revestimento', 'classe_revestimento', 'tipo_pavimento', 'situacao_fisica', 'classe_situacao_fisica',
-            'status_operacional', 'classe_status_operacional', 'criticidade_rodovia',
+            'id_trecho_rodoviario', 'codigo_rodovia', 'jurisdicao',
+            'classe_revestimento', 'tipo_pavimento', 'classe_situacao_fisica',
+            'classe_status_operacional', 'criticidade_rodovia',
             'latitude', 'longitude', 'path_json'
         ]
         
         # Limpeza final de duplicatas mantendo a unicidade da rodovia
         df_final = pd.DataFrame(gdf[colunas_finais]).drop_duplicates(
-            subset=['codigo_rodovia', 'jurisdicao', 'revestimento', 'tipo_pavimento', 'situacao_fisica', 'status_operacional', 'path_json']
+            subset=['codigo_rodovia', 'jurisdicao', 'classe_revestimento', 'tipo_pavimento', 'classe_situacao_fisica', 'classe_status_operacional', 'path_json']
         )
         return df_final
 
 def executar():
     etl = RodoviasFederaisETL()
     etl.execute()
+
+
+if __name__ == "__main__":
+    executar()

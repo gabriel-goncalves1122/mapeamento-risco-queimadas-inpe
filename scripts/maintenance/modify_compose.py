@@ -9,11 +9,17 @@ with open(filepath, 'r') as f:
 data['services']['broker']['deploy']['resources']['limits']['cpus'] = '1.0'
 data['services']['broker']['deploy']['resources']['limits']['memory'] = '1024M'
 data['services']['broker']['environment']['JAVA_OPTS'] = '-Xms256m -Xmx512m -XX:MaxDirectMemorySize=512m -Duser.timezone=America/Sao_Paulo'
+data['services']['broker']['environment']['druid_processing_buffer_sizeBytes'] = 67108864
+data['services']['broker']['environment']['druid_processing_numThreads'] = 1
+data['services']['broker']['environment']['druid_processing_numMergeBuffers'] = 1
 
 # Reduce Historical resources
 data['services']['historical']['deploy']['resources']['limits']['cpus'] = '1.0'
 data['services']['historical']['deploy']['resources']['limits']['memory'] = '1024M'
 data['services']['historical']['environment']['JAVA_OPTS'] = '-Xms256m -Xmx512m -XX:MaxDirectMemorySize=512m -Duser.timezone=America/Sao_Paulo'
+data['services']['historical']['environment']['druid_processing_buffer_sizeBytes'] = 67108864
+data['services']['historical']['environment']['druid_processing_numThreads'] = 1
+data['services']['historical']['environment']['druid_processing_numMergeBuffers'] = 1
 
 # Reduce Superset resources
 data['services']['superset']['deploy']['resources']['limits']['cpus'] = '1.0'
@@ -27,7 +33,11 @@ if 'dagster_data' not in data.get('volumes', {}):
 # Add Dagster Service
 if 'dagster' not in data['services']:
     data['services']['dagster'] = {
-        'image': 'dagster/dagster:latest',
+        'build': {
+            'context': '.',
+            'dockerfile': 'infrastructure/dagster/Dockerfile',
+        },
+        'image': 'ic-dataops-dagster:local',
         'container_name': 'dagster',
         'ports': ['3000:3000'],
         'volumes': [
@@ -41,7 +51,7 @@ if 'dagster' not in data['services']:
             'PYTHONPATH': '/opt/dagster/app'
         },
         'working_dir': '/opt/dagster/app',
-        'command': ['dagster', 'dev', '-h', '0.0.0.0', '-p', '3000', '-m', 'src.orchestration.repo'],
+        'command': ['uv', 'run', 'dagster', 'dev', '-h', '0.0.0.0', '-p', '3000', '-m', 'src.orchestration.repo'],
         'networks': ['druid-net'],
         'deploy': {
             'resources': {

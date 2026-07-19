@@ -1,0 +1,48 @@
+{
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.22\textwidth}p{0.08\textwidth}p{0.42\textwidth}p{0.10\textwidth}p{0.08\textwidth}}
+\caption{Resumo dos erros observados nos cenarios saturados.}\\
+\toprule
+Cenario & Conc. & Query & Cache & Erros \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & Conc. & Query & Cache & Erros \\
+\midrule
+\endhead
+scenario\_01\_baseline & 4 & 01\_latency\_simple/00\_count\_hospitais & cold & 1 \\
+scenario\_01\_baseline & 4 & 01\_latency\_simple/02\_filtro\_hospitais\_uf & cold & 1 \\
+scenario\_01\_baseline & 4 & 02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional & cold & 1 \\
+scenario\_01\_baseline & 4 & 02\_olap\_pesado/02\_rodovias\_status\_pavimento & warm & 1 \\
+scenario\_01\_baseline & 4 & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & cold & 1 \\
+scenario\_01\_baseline & 4 & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & warm & 1 \\
+scenario\_01\_baseline & 4 & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & cold & 1 \\
+scenario\_01\_baseline & 4 & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & warm & 1 \\
+scenario\_01\_baseline & 4 & 03\_joins\_dimensionais/02\_ti\_municipio\_principal\_join & cold & 1 \\
+scenario\_01\_baseline & 4 & 04\_payload\_espacial/00\_path\_json\_municipios & warm & 1 \\
+scenario\_01\_baseline & 4 & 04\_payload\_espacial/02\_path\_json\_rodovias & cold & 1 \\
+scenario\_01\_baseline & 4 & 04\_payload\_espacial/02\_path\_json\_rodovias & warm & 1 \\
+scenario\_01\_baseline & 4 & 05\_dashboard\_misto/00\_dashboard\_defesa\_civil & warm & 1 \\
+scenario\_01\_baseline & 4 & 05\_dashboard\_misto/01\_dashboard\_energia\_logistica & warm & 1 \\
+scenario\_02\_balanced & 4 & 01\_latency\_simple/00\_count\_hospitais & cold & 1 \\
+scenario\_02\_balanced & 4 & 01\_latency\_simple/01\_count\_dimensoes\_catalogo & cold & 1 \\
+scenario\_02\_balanced & 4 & 01\_latency\_simple/01\_count\_dimensoes\_catalogo & warm & 1 \\
+scenario\_02\_balanced & 4 & 01\_latency\_simple/02\_filtro\_hospitais\_uf & cold & 1 \\
+scenario\_02\_balanced & 4 & 02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional & cold & 1 \\
+scenario\_02\_balanced & 4 & 02\_olap\_pesado/02\_rodovias\_status\_pavimento & warm & 1 \\
+scenario\_02\_balanced & 4 & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & cold & 1 \\
+scenario\_02\_balanced & 4 & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & warm & 1 \\
+scenario\_02\_balanced & 4 & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & cold & 1 \\
+scenario\_02\_balanced & 4 & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & warm & 1 \\
+scenario\_02\_balanced & 4 & 03\_joins\_dimensionais/02\_ti\_municipio\_principal\_join & cold & 1 \\
+scenario\_02\_balanced & 4 & 03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & warm & 1 \\
+scenario\_02\_balanced & 4 & 04\_payload\_espacial/00\_path\_json\_municipios & warm & 1 \\
+scenario\_02\_balanced & 4 & 04\_payload\_espacial/02\_path\_json\_rodovias & cold & 1 \\
+scenario\_02\_balanced & 4 & 04\_payload\_espacial/02\_path\_json\_rodovias & warm & 1 \\
+scenario\_02\_balanced & 4 & 05\_dashboard\_misto/00\_dashboard\_defesa\_civil & warm & 1 \\
+scenario\_02\_balanced & 4 & 05\_dashboard\_misto/01\_dashboard\_energia\_logistica & warm & 1 \\
+\bottomrule
+\end{longtable}
+}

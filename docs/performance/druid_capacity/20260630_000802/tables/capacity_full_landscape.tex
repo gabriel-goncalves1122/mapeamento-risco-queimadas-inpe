@@ -1,0 +1,28 @@
+\begin{landscape}
+{
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.19\linewidth}p{0.05\linewidth}p{0.05\linewidth}p{0.05\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.09\linewidth}}
+\caption{Tabela completa de capacidade por cenario e concorrencia.}\\
+\toprule
+Cenario & Conc. & Req. & Erros & Erro \% & QPS & Avg & p50 & p90 & p95 & p99 & Max & Classe \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & Conc. & Req. & Erros & Erro \% & QPS & Avg & p50 & p90 & p95 & p99 & Max & Classe \\
+\midrule
+\endhead
+Cenario 1 - Baseline & 1 & 38 & 0 & 0.000 & 1.489 & 670.119 & 218.421 & 1440.231 & 2410.465 & 5372.296 & 5622.155 & ESTAVEL \\
+Cenario 1 - Baseline & 2 & 38 & 0 & 0.000 & 2.882 & 690.557 & 100.916 & 2660.413 & 3912.175 & 4717.696 & 4954.181 & ESTAVEL \\
+Cenario 1 - Baseline & 4 & 38 & 14 & 36.842 & 0.952 & 594.416 & 342.076 & 1311.030 & 2054.123 & 3167.561 & 3467.983 & SATURADO \\
+Cenario 2 - Balanced & 1 & 38 & 0 & 0.000 & 2.144 & 464.395 & 207.271 & 824.897 & 2733.528 & 3240.658 & 3258.998 & ESTAVEL \\
+Cenario 2 - Balanced & 2 & 38 & 0 & 0.000 & 4.408 & 448.986 & 91.475 & 1183.722 & 2547.336 & 3644.731 & 4143.384 & ESTAVEL \\
+Cenario 2 - Balanced & 4 & 38 & 17 & 44.737 & 1.350 & 270.140 & 104.043 & 823.726 & 1038.265 & 1372.337 & 1455.855 & SATURADO \\
+Cenario 3 - Query Heavy & 1 & 38 & 0 & 0.000 & 2.673 & 372.436 & 108.994 & 911.573 & 2049.782 & 2610.023 & 2755.383 & ESTAVEL \\
+Cenario 3 - Query Heavy & 2 & 38 & 0 & 0.000 & 5.136 & 384.763 & 90.727 & 1129.559 & 2403.284 & 2880.899 & 2983.314 & ESTAVEL \\
+Cenario 3 - Query Heavy & 4 & 38 & 0 & 0.000 & 3.770 & 908.388 & 149.237 & 2554.635 & 6422.163 & 7152.003 & 7216.696 & ESTAVEL \\
+\bottomrule
+\end{longtable}
+}
+\end{landscape}

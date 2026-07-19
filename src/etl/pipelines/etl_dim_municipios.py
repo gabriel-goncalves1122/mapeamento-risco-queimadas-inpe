@@ -96,3 +96,7 @@ class ETLDimMunicipios(BaseETL):
 def executar():
     etl = ETLDimMunicipios()
     etl.execute()
+
+
+if __name__ == "__main__":
+    executar()

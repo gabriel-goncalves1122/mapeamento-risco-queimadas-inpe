@@ -9,7 +9,7 @@ import os
 import re
 import pandas as pd
 
-from src.config.constants import DIMENSIONS_DIR, GEO_DIR
+from src.config.constants import DIMENSIONS_DIR, EPSG_METRICO, GEO_DIR
 from src.etl.utils.base import BaseETL
 from src.etl.utils.string_helpers import limpar_codigo, extrair_popup_valor, extrair_uf_nome_linha
 from src.etl.utils.df_helpers import limpar_numero
@@ -107,13 +107,13 @@ class ETLDimLinhasTransmissao(BaseETL):
 
         gdf['path_json'] = gdf.geometry.apply(geometry_para_path_json)
         
-        centroides = gdf.geometry.centroid
+        centroides = gdf.to_crs(epsg=EPSG_METRICO).geometry.centroid.to_crs(epsg=4326)
         gdf['latitude'] = centroides.y.round(6)
         gdf['longitude'] = centroides.x.round(6)
 
         colunas_finais = [
-            'id_linha_transmissao', 'nome_linha', 'nome_linha_original', 'tensao_kv',
-            'classe_tensao', 'extensao_km', 'classe_extensao', 'Shape_Length',
+            'id_linha_transmissao', 'nome_linha', 'tensao_kv',
+            'classe_tensao', 'extensao_km', 'classe_extensao',
             'estado_sigla_estimado', 'classe_criticidade_linha', 'latitude', 'longitude', 'path_json'
         ]
 
@@ -122,3 +122,7 @@ class ETLDimLinhasTransmissao(BaseETL):
 def processar_linhas_ons():
     etl = ETLDimLinhasTransmissao()
     etl.execute()
+
+
+if __name__ == "__main__":
+    processar_linhas_ons()

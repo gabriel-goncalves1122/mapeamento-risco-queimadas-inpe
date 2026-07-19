@@ -1,0 +1,82 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{pdflscape}
+\usepackage{placeins}
+\usepackage[hidelinks]{hyperref}
+\geometry{margin=2.1cm}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  showstringspaces=false,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray}
+}
+\title{Guia de métricas do benchmark Druid}
+\author{CCO DataOps}
+\date{30 de junho de 2026}
+\begin{document}
+\maketitle
+
+
+\section{Objetivo do guia}
+
+Este guia define as métricas usadas nos relatórios de capacidade. Ele existe para evitar leituras equivocadas, como comparar QPS ignorando erro ou interpretar p95 baixo em um cenário que perdeu conexões.
+
+\section{Glossário operacional}
+
+\input{../tables/metric_definitions.tex}
+
+\section{Como combinar métricas}
+
+\subsection{QPS não deve ser lido sozinho}
+
+QPS mede vazão, mas não qualidade. Se duas configurações entregam QPS parecido, a melhor é a que mantém menor erro e menor p95. Se uma configuração aumenta QPS mas passa a falhar, ela atingiu saturação operacional.
+
+\subsection{p95 e p99 explicam experiência de painel}
+
+A média pode parecer confortável quando poucas consultas são muito lentas. p95 e p99 mostram a cauda, que é o que bloqueia dashboards compostos: a tela espera o card mais lento.
+
+\subsection{Erro tem prioridade interpretativa}
+
+Quando há erro, a latência dos sucessos não representa a carga inteira. Por isso Baseline e Balanced em concorrência 4 devem ser classificados como saturados mesmo quando algumas consultas retornaram rápido.
+
+\subsection{Cold e warm start respondem perguntas diferentes}
+
+Cold-start aproxima o custo de leitura sem reaproveitamento. Warm-start aproxima repetição de painéis e filtros. Um bom perfil deve se beneficiar de warm-start, mas continuar confiável quando a consulta fria aparecer.
+
+\subsection{CPU e memória mostram o mecanismo da falha}
+
+As métricas Docker não substituem as métricas SQL; elas explicam por que a curva se comportou daquele modo. Na matriz, Broker e Historical sobem CPU no Query Heavy e deixam de apresentar reset de canal.
+
+\section{Critério de leitura adotado}
+
+\begin{enumerate}
+
+\item Verificar se loadstatus estava completo.
+
+\item Verificar taxa de erro.
+
+\item Comparar QPS apenas entre cenários sem erro equivalente.
+
+\item Comparar p95/p99 para entender cauda operacional.
+
+\item Usar Docker stats para explicar saturação.
+
+\end{enumerate}
+
+
+\end{document}

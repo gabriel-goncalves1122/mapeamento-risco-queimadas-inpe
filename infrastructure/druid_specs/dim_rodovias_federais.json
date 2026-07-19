@@ -26,40 +26,16 @@
       "dimensionsSpec": {
         "dimensions": [
           { "type": "string", "name": "id_trecho_rodoviario" },
-          { "type": "string", "name": "id_trecho_rodoviario_origem" },
-
           { "type": "string", "name": "codigo_rodovia" },
-          { "type": "string", "name": "rodovia_idx" },
-
           { "type": "string", "name": "jurisdicao" },
-          { "type": "string", "name": "jurisdicao_idx" },
-
-          { "type": "string", "name": "revestimento" },
-          { "type": "string", "name": "revestimento_idx" },
-
           { "type": "string", "name": "classe_revestimento" },
-          { "type": "string", "name": "classe_revestimento_idx" },
-
           { "type": "string", "name": "tipo_pavimento" },
-          { "type": "string", "name": "tipo_pavimento_idx" },
-
-          { "type": "string", "name": "situacao_fisica" },
-          { "type": "string", "name": "situacao_fisica_idx" },
-
           { "type": "string", "name": "classe_situacao_fisica" },
-          { "type": "string", "name": "classe_situacao_fisica_idx" },
-
-          { "type": "string", "name": "status_operacional" },
-          { "type": "string", "name": "status_operacional_idx" },
-
           { "type": "string", "name": "classe_status_operacional" },
-          { "type": "string", "name": "classe_status_operacional_idx" },
-
           { "type": "string", "name": "criticidade_rodovia" },
-          { "type": "string", "name": "criticidade_rodovia_idx" },
-
-          { "type": "string", "name": "path_json" },
-          { "type": "string", "name": "geometria_wkt" }
+          { "type": "double", "name": "latitude" },
+          { "type": "double", "name": "longitude" },
+          { "type": "string", "name": "path_json" }
         ]
       },
       "granularitySpec": {

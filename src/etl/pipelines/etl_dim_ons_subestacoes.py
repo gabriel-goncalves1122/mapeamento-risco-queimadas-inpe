@@ -7,6 +7,10 @@ Função Geral: Pipeline ETL para extração, limpeza e carga de Tabelas de Dime
 """
 import os
 import pandas as pd
+import geopandas as gpd
+
+from src.etl.utils.spatial_dimensions import carregar_municipios_geo
+from src.config.constants import NOT_INFORMED
 
 from src.config.constants import DIMENSIONS_DIR, GEO_DIR
 from src.etl.utils.base import BaseETL
@@ -53,6 +57,15 @@ class ETLDimSubestacoes(BaseETL):
         agente = limpar_codigo(extrair_popup_valor(row.get("PopupInfo", ""), "Agente"))
         return " ".join(agente.split()) if agente != "NAO INFORMADO" else "NAO INFORMADO"
 
+    def _resolver_municipio(self, gdf):
+        """Spatial Join ponto-em-polígono para descobrir o codigo_ibge do município."""
+        municipios = carregar_municipios_geo(GEO_DIR)
+        pontos = gdf.reset_index(names='_rowid')[['_rowid', 'geometry']]
+        join = gpd.sjoin(pontos, municipios, how='left', predicate='intersects')
+        join = join.drop_duplicates(subset=['_rowid']).set_index('_rowid')
+        gdf['codigo_ibge'] = join['codigo_ibge'].reindex(gdf.index).fillna(NOT_INFORMED).values
+        return gdf
+
     def transform(self, gdf):
         if 'Name' not in gdf.columns: gdf['Name'] = 'NAO INFORMADO'
         if 'PopupInfo' not in gdf.columns: gdf['PopupInfo'] = ''
@@ -74,9 +87,11 @@ class ETLDimSubestacoes(BaseETL):
 
         gdf['path_json'] = gdf.geometry.apply(geometry_para_path_json)
 
+        gdf = self._resolver_municipio(gdf)
+
         colunas_finais = [
             'id_subestacao', 'nome_subestacao', 'capacidade_mw', 'classe_capacidade',
-            'criticidade_subestacao', 'agente_responsavel',
+            'criticidade_subestacao', 'agente_responsavel', 'codigo_ibge',
             'latitude', 'longitude', 'path_json'
         ]
 
@@ -86,3 +101,7 @@ class ETLDimSubestacoes(BaseETL):
 def processar_subestacoes_ons():
     etl = ETLDimSubestacoes()
     etl.execute()
+
+
+if __name__ == "__main__":
+    processar_subestacoes_ons()

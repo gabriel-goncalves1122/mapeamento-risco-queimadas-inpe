@@ -1,0 +1,47 @@
+{
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.19\textwidth}p{0.35\textwidth}p{0.10\textwidth}p{0.09\textwidth}p{0.09\textwidth}p{0.09\textwidth}p{0.09\textwidth}}
+\caption{Maiores ganhos de warm-start por p95.}\\
+\toprule
+Cenario & Query & Ganho p95 \% & Cold p95 & Warm p95 & Erro cold \% & Erro warm \% \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & Query & Ganho p95 \% & Cold p95 & Warm p95 & Erro cold \% & Erro warm \% \\
+\midrule
+\endhead
+scenario\_03\_query\_heavy & 05\_dashboard\_misto/01\_dashboard\_energia\_logistica & 85.385 & 734.674 & 107.371 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 04\_payload\_espacial/03\_preview\_hospitais\_path\_json & 84.820 & 285.091 & 43.278 & 0.000 & 0.000 \\
+scenario\_03\_query\_heavy & 02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional & 84.492 & 892.810 & 138.455 & 0.000 & 0.000 \\
+scenario\_01\_baseline & 02\_olap\_pesado/02\_rodovias\_status\_pavimento & 83.676 & 269.093 & 43.928 & 0.000 & 33.333 \\
+scenario\_01\_baseline & 04\_payload\_espacial/03\_preview\_hospitais\_path\_json & 82.643 & 1118.816 & 194.197 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional & 76.279 & 759.182 & 180.082 & 33.333 & 0.000 \\
+scenario\_02\_balanced & 04\_payload\_espacial/00\_path\_json\_municipios & 73.515 & 445.325 & 117.945 & 0.000 & 33.333 \\
+scenario\_02\_balanced & 03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & 67.435 & 1355.624 & 441.457 & 0.000 & 33.333 \\
+scenario\_03\_query\_heavy & 04\_payload\_espacial/02\_path\_json\_rodovias & 64.082 & 152.848 & 54.900 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 05\_dashboard\_misto/01\_dashboard\_energia\_logistica & 59.722 & 190.690 & 76.807 & 0.000 & 33.333 \\
+scenario\_01\_baseline & 05\_dashboard\_misto/01\_dashboard\_energia\_logistica & 59.529 & 211.938 & 85.773 & 0.000 & 33.333 \\
+scenario\_02\_balanced & 04\_payload\_espacial/02\_path\_json\_rodovias & 51.511 & 102.799 & 49.846 & 33.333 & 33.333 \\
+scenario\_01\_baseline & 02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional & 51.415 & 716.608 & 348.165 & 33.333 & 0.000 \\
+scenario\_01\_baseline & 01\_latency\_simple/00\_count\_hospitais & 50.567 & 156.159 & 77.194 & 33.333 & 0.000 \\
+scenario\_03\_query\_heavy & 05\_dashboard\_misto/00\_dashboard\_defesa\_civil & 45.984 & 591.861 & 319.700 & 0.000 & 0.000 \\
+scenario\_01\_baseline & 04\_payload\_espacial/01\_path\_json\_terras\_indigenas & 45.759 & 359.716 & 195.113 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 01\_latency\_simple/00\_count\_hospitais & 42.609 & 21.554 & 12.370 & 33.333 & 0.000 \\
+scenario\_03\_query\_heavy & 03\_joins\_dimensionais/02\_ti\_municipio\_principal\_join & 41.964 & 194.401 & 112.822 & 0.000 & 0.000 \\
+scenario\_03\_query\_heavy & 04\_payload\_espacial/03\_preview\_hospitais\_path\_json & 37.539 & 186.696 & 116.612 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 04\_payload\_espacial/01\_path\_json\_terras\_indigenas & 30.050 & 566.565 & 396.315 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 03\_joins\_dimensionais/02\_ti\_municipio\_principal\_join & 26.424 & 276.875 & 203.714 & 33.333 & 0.000 \\
+scenario\_01\_baseline & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & 26.258 & 4804.615 & 3543.012 & 33.333 & 33.333 \\
+scenario\_03\_query\_heavy & 01\_latency\_simple/00\_count\_hospitais & 25.673 & 45.958 & 34.159 & 0.000 & 0.000 \\
+scenario\_01\_baseline & 03\_joins\_dimensionais/02\_ti\_municipio\_principal\_join & 25.292 & 671.047 & 501.329 & 33.333 & 0.000 \\
+scenario\_02\_balanced & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & 23.017 & 4099.165 & 3155.674 & 33.333 & 33.333 \\
+scenario\_01\_baseline & 04\_payload\_espacial/02\_path\_json\_rodovias & 21.741 & 91.395 & 71.525 & 33.333 & 33.333 \\
+scenario\_02\_balanced & 05\_dashboard\_misto/00\_dashboard\_defesa\_civil & 19.809 & 753.739 & 604.431 & 0.000 & 33.333 \\
+scenario\_03\_query\_heavy & 01\_latency\_simple/03\_lookup\_municipios\_mg & 17.872 & 113.738 & 93.411 & 0.000 & 0.000 \\
+scenario\_03\_query\_heavy & 03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & 13.399 & 2243.430 & 1942.824 & 0.000 & 0.000 \\
+scenario\_03\_query\_heavy & 02\_olap\_pesado/02\_rodovias\_status\_pavimento & 12.043 & 93.175 & 81.954 & 0.000 & 0.000 \\
+\bottomrule
+\end{longtable}
+}

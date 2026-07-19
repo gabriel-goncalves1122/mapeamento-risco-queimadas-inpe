@@ -26,24 +26,14 @@
       "dimensionsSpec": {
         "dimensions": [
           { "type": "string", "name": "id_sistema_isolado" },
-
           { "type": "string", "name": "nome_sistema_isolado" },
-          { "type": "string", "name": "sistema_isolado_idx" },
-
           { "type": "string", "name": "estado_sigla" },
-          { "type": "string", "name": "estado_sigla_idx" },
-
           { "type": "string", "name": "regiao_eletrica" },
-          { "type": "string", "name": "regiao_eletrica_idx" },
-
           { "type": "string", "name": "prioridade_sistema_isolado" },
-          { "type": "string", "name": "prioridade_sistema_isolado_idx" },
-
+          { "type": "string", "name": "codigo_ibge" },
           { "type": "double", "name": "latitude" },
           { "type": "double", "name": "longitude" },
-
-          { "type": "string", "name": "sistema_isolado_point" },
-          { "type": "string", "name": "geometria_wkt" }
+          { "type": "string", "name": "path_json" }
         ]
       },
       "granularitySpec": {

@@ -1,21 +1,26 @@
 # Ingestão e Processamento Contínuo (Apache Kafka e Apache Druid)
 
-A capacidade de absorver, processar e interrogar milhões de eventos geolocalizados por hora exige uma cisão conceitual rígida entre o transporte da mensagem e sua consolidação persistente.
+A capacidade de absorver, processar e interrogar milhões de eventos geolocalizados por hora exige uma cisão conceitual rígida entre o transporte ininterrupto da mensagem e sua consolidação persistente em disco.
 
-## 1. Log Estruturado e Retenção: Apache Kafka
-O **Apache Kafka** atua como uma plataforma de *Streaming* distribuída construída sob os preceitos do *Commit Log* imutável. Ele não processa os dados, mas sim os transporta em tópicos particionados com altíssimo *throughput* e baixa latência (geralmente abaixo da faixa dos milissegundos).
+## 1. Log Estruturado e Retenção Estrita: Apache Kafka
+O **Apache Kafka** orquestra o *streaming* distribuído na camada de borda baseando-se nos ditames do *Commit Log* imutável. Essencialmente, ele encapsula os eventos analíticos para desacoplar a frequência estocástica do envio e as limitações de ingestão dos barramentos persistentes, viabilizando altíssimo *throughput*.
 
-- O módulo `produtor_focos.py` adquire os pacotes orbitais.
-- O módulo `processador.py` atua como um nó *Stream Processing* intermediário. Ele intercepta a mensagem bruta, projeta métricas euclidianas complexas de proximidade e índices matemáticos de ameaça estrutural a rodovias e sistemas elétricos (vide `calculators.py`).
-- Após enriquecido, o registro final assinado sob forte tipagem Pydantic (`FocoFatoPayload`) é inserido no tópico Kafka `streaming_focos_incendio`, consumido pela datasource Druid `fato_focos_incendio`.
-- O payload da fato transporta FKs e métricas. Nomes, classes textuais e geometrias completas permanecem nas dimensões e são resolvidos por joins/lookups no consumo analítico.
+O `kafka_client.py` embute heurísticas de proteção (nível bancário) e loteamento inteligente:
+- **`allow_nan=False`**: Garante imunidade a *poison pills*. A serialização repudia variáveis corrompidas e Not-a-Number (NaN) antes que o banco final Druid sofra poluição silenciosa.
+- **`acks='all'` e `max_in_flight=1`**: Impõem sincronia replicada. Assegura a recepção da métrica entre todos os nodos subsidiários sem sacrificar a ordem temporal estrita das perturbações térmicas.
+- **Loteamento Lógico (`linger_ms` / `batch_size`)**: Para aliviar tráfego, emula o empacotamento. Focos de calor discretos são agregados por dezenas de milissegundos e transmitidos por rajadas em uma matriz `gzip`, o que converte um fluxo oneroso numa fenda transacional maciça.
 
-## 2. Engine Analítica: Apache Druid
-O **Apache Druid** é instanciado na borda consumidora. Trata-se de uma arquitetura colunar (Column-Oriented), projetada essencialmente para buscas geoespaciais em séries temporais. 
+Ademais, as instâncias produtoras baseiam-se em requisições *Fire and Forget* (chamadas assíncronas de I/O) para não bloquear o pipeline Python, capturando anomalias em instâncias `callback`.
 
-Sua arquitetura é subdividida em múltiplos processos cooperativos:
-- **MiddleManagers**: Consomem os registros diretamente das partições Kafka no modo Real-Time.
-- **Historicals**: Armazenam segmentos profundamente compactados (usando matrizes e dicionários) oriundos do MiddleManager.
-- **Broker e Router**: Aceitam e otimizam *queries* (e.g., consultas de polígonos ST_CONTAINS vindas do Superset) espalhando o custo computacional por todos os nós ativos via metodologias *Scatter-Gather*.
+## 2. Engine Analítica Temporal: Apache Druid
+O **Apache Druid** instila-se como um banco colunar focado em buscas geoespaciais e de séries temporais de baixa latência.
 
-O Apache Druid garante que varreduras massivas sob uma topologia Fato altamente densa sejam efetuadas com resposta interativa, eliminando gargalos característicos de bancos transacionais tradicionais frente a petabytes de dados de sensores.
+Sua arquitetura assíncrona divide-se em estratos lógicos:
+- **MiddleManagers**: Capturam nativamente eventos do Kafka real-time em contêineres e constroem fragmentos transicionais.
+- **Historicals**: Armazenam segmentos hiper-compactos, amparando-se em codificações por dicionário e bitmaps (*Roaring Bitmaps*).
+- **Broker**: Aplica inferência distributiva (*Scatter-Gather*). Encapsula métricas (FRP) sobrepostas a polígonos e devolve agregações sob índices com precisão centesimal.
+
+Tal arcabouço impede congestionamentos catastróficos, outorgando *dashboards* fluidos e garantindo integridade de governança sob picos sazonais extremos nas ocorrências de fogo florestal.
+
+## 3. Granularidade e Segmentação
+As dimensões estáticas usam `segmentGranularity = ALL`, pois são tabelas pequenas e substituíveis por carga batch completa. Já as fatos temporais usam `segmentGranularity = MONTH` com `maxRowsPerSegment` elevado, reduzindo a proliferação de *tiny segments* e aproximando os arquivos persistidos da faixa operacional recomendada para segmentos maiores.

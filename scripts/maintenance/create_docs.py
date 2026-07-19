@@ -55,8 +55,7 @@ Temos vários scripts em `src/etl/pipelines/`. Eles rodam apenas 1x por semana o
 Eles pegam arquivos horríveis e mal formatados do governo (APIs ONS, CNES, IBGE) e limpam.
 Usamos o `geopandas` e `shapely` para garantir que toda tabela tenha colunas padrão como:
 - `latitude` e `longitude`
-- `geometria_wkt` (para desenhar áreas no mapa)
-- `geojson_point`
+- `path_json` (para visualização no Superset/Deck.gl e reconstrução interna)
 
 Esses scripts não rodam soltos. Eles são Assets no **Dagster**!
 """
@@ -79,7 +78,7 @@ O Druid é um banco de dados analítico. Ele não serve para fazer `UPDATE` em u
         "04_ciencia_de_dados": {
             "grafos_networkx.md": """# Ciência de Redes no SIN 🕸️
 
-**Script**: `src/etl/pipelines/network_builder.py`
+**Script**: `src/science/network_builder.py`
 
 ### O que é?
 O Sistema Interligado Nacional (SIN) é uma gigantesca teia de aranha (linhas de transmissão conectando subestações).
@@ -92,7 +91,7 @@ O algoritmo calcula a "Centralidade de Intermediação" de cada Subestação. Ou
 """,
             "clusterizacao_st_dbscan.md": """# ST-DBSCAN: Fogo com Inteligência 🧠
 
-**Script**: `src/etl/pipelines/st_dbscan_clustering.py`
+**Script**: `src/science/st_dbscan_clustering.py`
 
 ### O Problema
 O satélite captura um pixel quente. No dia seguinte ele captura outro do lado. Eles não são dois incêndios independentes, é o mesmo incêndio se alastrando!

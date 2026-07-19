@@ -9,8 +9,20 @@ import os
 import pandas as pd
 import geopandas as gpd
 
-from src.config.constants import DIMENSIONS_DIR, RAW_DIR
+from src.config.constants import (
+    BRAZIL_LAT_MAX,
+    BRAZIL_LAT_MIN,
+    BRAZIL_LON_MAX,
+    BRAZIL_LON_MIN,
+    DIMENSIONS_DIR,
+    EPSG_METRICO,
+    GEO_DIR,
+    NOT_INFORMED,
+    RAW_DIR,
+)
 from src.etl.utils.base import BaseETL
+from src.etl.utils.keys import normalizar_codigo_cnes, normalizar_codigo_ibge
+from src.etl.utils.spatial_dimensions import carregar_municipios_geo, carregar_terras_indigenas_geo
 from src.utils.cleaners import limpar_texto_druid
 from src.etl.utils.geo_helpers import geometry_para_path_json
 
@@ -49,7 +61,35 @@ class ETLDimHospitais(BaseETL):
         if not (-90 <= lat <= 90): return False
         if not (-180 <= lon <= 180): return False
         if lat == 0.0 and lon == 0.0: return False
+        if not (BRAZIL_LAT_MIN <= lat <= BRAZIL_LAT_MAX): return False
+        if not (BRAZIL_LON_MIN <= lon <= BRAZIL_LON_MAX): return False
         return True
+
+    def _normalizar_par_coordenadas(self, lat, lon):
+        """
+        Corrige erros comuns do CNES: ausência de sinal no hemisfério sul/oeste
+        e pares latitude/longitude invertidos. A regra só aceita candidatos no
+        bbox Brasil para evitar inventar coordenadas fora do domínio.
+        """
+        candidatos = [
+            (lat, lon),
+            (-abs(lat) if lat is not None else lat, lon),
+            (lat, -abs(lon) if lon is not None else lon),
+            (-abs(lat) if lat is not None else lat, -abs(lon) if lon is not None else lon),
+        ]
+        if lat is not None and lon is not None:
+            candidatos.extend([
+                (lon, lat),
+                (-abs(lon), lat),
+                (lon, -abs(lat)),
+                (-abs(lon), -abs(lat)),
+            ])
+
+        for lat_cand, lon_cand in candidatos:
+            if self._coordenada_valida(lat_cand, lon_cand):
+                return pd.Series({"latitude": lat_cand, "longitude": lon_cand})
+
+        return pd.Series({"latitude": None, "longitude": None})
 
     def _classificar_categoria_unidade(self, codigo_tipo, tipo_unidade):
         codigo = self._limpar_codigo(codigo_tipo)
@@ -94,6 +134,67 @@ class ETLDimHospitais(BaseETL):
         if categoria == "ATENCAO_BASICA": return "ATENCAO_LOCAL"
         return "SUPORTE"
 
+    def _adicionar_municipio_espacial(self, gdf):
+        municipios = carregar_municipios_geo(GEO_DIR)
+        pontos = gdf.reset_index(names='_rowid')[['_rowid', 'geometry']]
+        join = gpd.sjoin(pontos, municipios, how='left', predicate='intersects')
+        join = join.drop_duplicates(subset=['_rowid']).set_index('_rowid')
+
+        codigo_espacial = join['codigo_ibge'].reindex(gdf.index).fillna(NOT_INFORMED)
+        gdf['codigo_ibge_municipio'] = codigo_espacial.values
+        gdf['match_status_municipio'] = 'OK_ESPACIAL'
+
+        sem_espacial = gdf['codigo_ibge_municipio'] == NOT_INFORMED
+        if sem_espacial.any():
+            pontos_m = gdf.loc[sem_espacial].reset_index(names='_rowid')[['_rowid', 'geometry']].to_crs(epsg=EPSG_METRICO)
+            municipios_m = municipios.to_crs(epsg=EPSG_METRICO)
+            nearest = gpd.sjoin_nearest(
+                pontos_m,
+                municipios_m[['codigo_ibge', 'geometry']],
+                how='left',
+            ).drop_duplicates(subset=['_rowid']).set_index('_rowid')
+            gdf.loc[nearest.index, 'codigo_ibge_municipio'] = nearest['codigo_ibge'].fillna(NOT_INFORMED)
+            gdf.loc[nearest.index, 'match_status_municipio'] = 'FALLBACK_MUNICIPIO_PROXIMO'
+
+        gdf.loc[
+            gdf['codigo_ibge_municipio'] == NOT_INFORMED,
+            'match_status_municipio',
+        ] = 'SEM_MUNICIPIO'
+
+        # Mantem compatibilidade com dashboards antigos que ja filtravam por codigo_ibge.
+        gdf['codigo_ibge'] = gdf['codigo_ibge_municipio']
+        return gdf
+
+    def _adicionar_terra_indigena_proxima(self, gdf):
+        terras = carregar_terras_indigenas_geo(GEO_DIR)
+        colunas_default = {
+            'codigo_ti_proxima': NOT_INFORMED,
+            'distancia_ti_km': None,
+            'dentro_terra_indigena': 0,
+        }
+        for coluna, valor in colunas_default.items():
+            gdf[coluna] = valor
+
+        if terras.empty or gdf.empty:
+            return gdf
+
+        pontos_m = gdf.reset_index(names='_rowid')[['_rowid', 'geometry']].to_crs(epsg=EPSG_METRICO)
+        terras_m = terras.to_crs(epsg=EPSG_METRICO)
+        nearest = gpd.sjoin_nearest(
+            pontos_m,
+            terras_m[['codigo_ti', 'geometry']],
+            how='left',
+            distance_col='distancia_m',
+        )
+        nearest = nearest.drop_duplicates(subset=['_rowid']).set_index('_rowid')
+
+        gdf['codigo_ti_proxima'] = nearest['codigo_ti'].reindex(gdf.index).fillna(NOT_INFORMED).values
+        distancia_m = nearest['distancia_m'].reindex(gdf.index)
+        gdf['distancia_ti_km'] = (distancia_m / 1000.0).round(3).values
+        gdf['dentro_terra_indigena'] = distancia_m.fillna(-1).eq(0).astype(int).values
+
+        return gdf
+
     def extract(self) -> gpd.GeoDataFrame:
         """
         Lê os CSVs brutos do CNES e converte em um GeoDataFrame para se encaixar 
@@ -114,6 +215,10 @@ class ETLDimHospitais(BaseETL):
         df['TP_UNIDADE'] = df['TP_UNIDADE'].apply(self._limpar_codigo)
         df['latitude'] = df['NU_LATITUDE'].apply(self._limpar_coord)
         df['longitude'] = df['NU_LONGITUDE'].apply(self._limpar_coord)
+        df[['latitude', 'longitude']] = df.apply(
+            lambda r: self._normalizar_par_coordenadas(r['latitude'], r['longitude']),
+            axis=1,
+        )
         
         df['coordenada_valida'] = df.apply(lambda r: self._coordenada_valida(r['latitude'], r['longitude']), axis=1)
         df = df[df['coordenada_valida']].copy()
@@ -143,13 +248,17 @@ class ETLDimHospitais(BaseETL):
         gdf['categoria_atendimento'] = gdf.apply(lambda r: self._classificar_atendimento(r['categoria_unidade'], r['funciona_24h']), axis=1)
 
         gdf['path_json'] = gdf.geometry.apply(geometry_para_path_json)
-        gdf['codigo_ibge'] = gdf['CO_MUNICIPIO_GESTOR']
-        gdf['codigo_cnes'] = gdf['CO_CNES']
+        gdf['codigo_ibge_cnes'] = gdf['CO_MUNICIPIO_GESTOR'].apply(normalizar_codigo_ibge)
+        gdf['codigo_cnes'] = gdf['CO_CNES'].apply(normalizar_codigo_cnes)
+
+        gdf = self._adicionar_municipio_espacial(gdf)
+        gdf = self._adicionar_terra_indigena_proxima(gdf)
 
         ordem_final = [
             'codigo_cnes', 'nome_hospital', 'tipo_unidade', 'categoria_unidade',
             'tipo_unidade_critica', 'categoria_atendimento', 'classe_capacidade_saude',
-            'funciona_24h', 'codigo_ibge', 'municipios_nome', 'estado_sigla',
+            'funciona_24h', 'codigo_ibge',
+            'codigo_ti_proxima', 'distancia_ti_km', 'dentro_terra_indigena',
             'latitude', 'longitude', 'path_json'
         ]
         
@@ -159,3 +268,7 @@ class ETLDimHospitais(BaseETL):
 def executar():
     etl = ETLDimHospitais()
     etl.execute()
+
+
+if __name__ == "__main__":
+    executar()

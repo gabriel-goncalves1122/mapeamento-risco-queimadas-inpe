@@ -41,7 +41,8 @@ class MotorEspacial:
                 'terra_indigena_prioridade': 'prioridade_funai',
                 'terra_indigena_classe_area': 'classe_area_ti',
             },
-            projetar_metrico=True
+            projetar_metrico=True,
+            tipo_geometria="polygon",
         )
 
         self.camada_municipios = SpatialLayer(
@@ -54,7 +55,8 @@ class MotorEspacial:
                 'municipio_espacial_estado': 'estado_sigla',
                 'municipio_espacial_regiao': 'regiao_brasil',
             },
-            projetar_metrico=False
+            projetar_metrico=False,
+            tipo_geometria="polygon",
         )
 
         self.camada_rodovias = SpatialLayer(
@@ -67,7 +69,8 @@ class MotorEspacial:
                 'rodovia_criticidade': 'criticidade_rodovia',
                 'rodovia_classe_revestimento': 'classe_revestimento',
             },
-            projetar_metrico=True
+            projetar_metrico=True,
+            tipo_geometria="line",
         )
 
         self.camada_linhas = SpatialLayer(
@@ -81,7 +84,8 @@ class MotorEspacial:
                 'linha_classe_tensao': 'classe_tensao',
                 'linha_criticidade': 'classe_criticidade_linha',
             },
-            projetar_metrico=True
+            projetar_metrico=True,
+            tipo_geometria="line",
         )
 
         self.camada_subestacoes = SpatialLayer(
@@ -94,7 +98,8 @@ class MotorEspacial:
                 'subestacao_capacidade_mw': 'capacidade_mw',
                 'subestacao_criticidade': 'criticidade_subestacao',
             },
-            projetar_metrico=True
+            projetar_metrico=True,
+            tipo_geometria="point",
         )
 
         self.camada_sistemas = SpatialLayer(
@@ -106,7 +111,8 @@ class MotorEspacial:
                 'sistema_isolado_nome': 'nome_sistema_isolado',
                 'sistema_isolado_prioridade': 'prioridade_sistema_isolado',
             },
-            projetar_metrico=True
+            projetar_metrico=True,
+            tipo_geometria="point",
         )
 
         self.camada_hospitais = SpatialLayer(
@@ -118,10 +124,11 @@ class MotorEspacial:
                 'hospital_nome': 'nome_hospital',
                 'hospital_categoria': 'categoria_unidade',
                 'hospital_critico': 'tipo_unidade_critica',
-                'hospital_funciona_24h': 'funciona_24h_idx',
+                'hospital_funciona_24h': 'funciona_24h',
                 'hospital_capacidade_classe': 'categoria_atendimento',
             },
-            projetar_metrico=True
+            projetar_metrico=True,
+            tipo_geometria="point",
         )
 
         self.camadas_proximidade = [

@@ -10,6 +10,8 @@ import pandas as pd
 import geopandas as gpd
 
 from src.config.constants import DIMENSIONS_DIR, GEO_DIR
+from src.etl.utils.spatial_dimensions import carregar_municipios_geo
+from src.config.constants import NOT_INFORMED
 from src.etl.utils.base import BaseETL
 from src.etl.utils.string_helpers import limpar_codigo, extrair_uf_popup
 from src.etl.utils.df_helpers import coordenada_valida
@@ -52,6 +54,15 @@ class SistemasIsoladosONSETL(BaseETL):
         if estado_sigla in {"MT", "MA", "TO"}: return "MEDIA_PRIORIDADE"
         return "NAO_INFORMADA" if estado_sigla == "NI" else "BAIXA_PRIORIDADE"
 
+    def _resolver_municipio(self, gdf):
+        """Spatial Join ponto-em-polígono para descobrir o codigo_ibge do município."""
+        municipios = carregar_municipios_geo(GEO_DIR)
+        pontos = gdf.reset_index(names='_rowid')[['_rowid', 'geometry']]
+        join = gpd.sjoin(pontos, municipios, how='left', predicate='intersects')
+        join = join.drop_duplicates(subset=['_rowid']).set_index('_rowid')
+        gdf['codigo_ibge'] = join['codigo_ibge'].reindex(gdf.index).fillna(NOT_INFORMED).values
+        return gdf
+
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         if df.empty:
             print("⚠️ GeoJSON vazio.")
@@ -79,12 +90,14 @@ class SistemasIsoladosONSETL(BaseETL):
         gdf['regiao_eletrica'] = gdf['estado_sigla'].apply(self._classificar_regiao_eletrica)
         gdf['prioridade_sistema_isolado'] = gdf['estado_sigla'].apply(self._classificar_prioridade_sistema)
 
-        # Remove redundant geojson_point/sistema_isolado_point, using only geometria_wkt
+        # path_json é o contrato único para Druid/Superset e para reconstrução espacial interna.
         gdf['path_json'] = gdf.geometry.apply(geometry_para_path_json)
+
+        gdf = self._resolver_municipio(gdf)
 
         colunas_finais = [
             'id_sistema_isolado', 'nome_sistema_isolado', 'estado_sigla',
-            'regiao_eletrica', 'prioridade_sistema_isolado',
+            'regiao_eletrica', 'prioridade_sistema_isolado', 'codigo_ibge',
             'latitude', 'longitude', 'path_json'
         ]
 
@@ -94,3 +107,7 @@ class SistemasIsoladosONSETL(BaseETL):
 def executar():
     etl = SistemasIsoladosONSETL()
     etl.execute()
+
+
+if __name__ == "__main__":
+    executar()

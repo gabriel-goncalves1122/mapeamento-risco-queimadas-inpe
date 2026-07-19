@@ -26,32 +26,20 @@
       "dimensionsSpec": {
         "dimensions": [
           { "type": "string", "name": "codigo_cnes" },
-
           { "type": "string", "name": "nome_hospital" },
-
           { "type": "string", "name": "tipo_unidade" },
-
           { "type": "string", "name": "categoria_unidade" },
-
-          { "type": "string", "name": "tipo_unidade_idx" },
-
           { "type": "string", "name": "tipo_unidade_critica" },
-
           { "type": "string", "name": "categoria_atendimento" },
-
+          { "type": "string", "name": "classe_capacidade_saude" },
           { "type": "string", "name": "funciona_24h" },
-          { "type": "string", "name": "funciona_24h_idx" },
-
           { "type": "string", "name": "codigo_ibge" },
-
-          { "type": "string", "name": "municipios_nome" },
-
-          { "type": "string", "name": "estado_sigla" },
-
+          { "type": "string", "name": "codigo_ti_proxima" },
+          { "type": "double", "name": "distancia_ti_km" },
+          { "type": "long", "name": "dentro_terra_indigena" },
           { "type": "double", "name": "latitude" },
           { "type": "double", "name": "longitude" },
-
-          { "type": "string", "name": "hospital_point" }
+          { "type": "string", "name": "path_json" }
         ]
       },
       "granularitySpec": {

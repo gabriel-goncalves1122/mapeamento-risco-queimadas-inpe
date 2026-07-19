@@ -76,14 +76,32 @@ TOPICO_KAFKA = os.getenv(
     constants.DEFAULT_KAFKA_TOPIC_FOCOS
 )
 
+TOPICO_KAFKA_EVENTOS = os.getenv(
+    'TOPICO_KAFKA_EVENTOS',
+    constants.DEFAULT_KAFKA_TOPIC_EVENTOS
+)
+
 KAFKA_CLIENT_ID = os.getenv(
     'KAFKA_CLIENT_ID',
     constants.DEFAULT_KAFKA_CLIENT_ID
 )
 
+KAFKA_CLIENT_ID_EVENTOS = os.getenv(
+    'KAFKA_CLIENT_ID_EVENTOS',
+    constants.DEFAULT_KAFKA_CLIENT_ID_EVENTOS
+)
+
 KAFKA_LINGER_MS = int(os.getenv('KAFKA_LINGER_MS', '20'))
 KAFKA_BATCH_SIZE = int(os.getenv('KAFKA_BATCH_SIZE', '65536'))
 KAFKA_COMPRESSION = os.getenv('KAFKA_COMPRESSION', 'gzip')
+
+# Parametros da eventizacao operacional curta. O Druid ingere eventos fechados,
+# entao a janela limita encadeamentos longos antes do envio ao Kafka.
+EVENTOS_EPS_KM = float(os.getenv('EVENTOS_EPS_KM', '5.0'))
+EVENTOS_EPS_DIAS = float(os.getenv('EVENTOS_EPS_DIAS', '2.0'))
+EVENTOS_MIN_SAMPLES = int(os.getenv('EVENTOS_MIN_SAMPLES', '3'))
+EVENTOS_MAX_DURATION_DAYS = float(os.getenv('EVENTOS_MAX_DURATION_DAYS', '7.0'))
+EVENTOS_AREA_BUFFER_KM = float(os.getenv('EVENTOS_AREA_BUFFER_KM', '0.5'))
 
 # ==========================================
 # 6. Apache Druid
@@ -91,6 +109,11 @@ KAFKA_COMPRESSION = os.getenv('KAFKA_COMPRESSION', 'gzip')
 DRUID_DATASOURCE_FATO = os.getenv(
     'DRUID_DATASOURCE_FATO',
     constants.DEFAULT_DRUID_DATASOURCE_FATO
+)
+
+DRUID_DATASOURCE_EVENTOS = os.getenv(
+    'DRUID_DATASOURCE_EVENTOS',
+    constants.DEFAULT_DRUID_DATASOURCE_EVENTOS
 )
 
 DRUID_SUPERVISOR_URL = os.getenv(

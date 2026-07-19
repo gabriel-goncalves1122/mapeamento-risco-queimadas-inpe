@@ -14,8 +14,9 @@ import geopandas as gpd
 from shapely.geometry import shape
 from shapely.ops import unary_union
 
-from src.config.constants import DIMENSIONS_DIR, GEO_DIR, RAW_DIR
+from src.config.constants import DIMENSIONS_DIR, EPSG_METRICO, GEO_DIR, NOT_INFORMED, RAW_DIR
 from src.etl.utils.base import BaseETL
+from src.etl.utils.spatial_dimensions import carregar_municipios_geo
 from src.utils.cleaners import limpar_texto_druid
 from src.etl.utils.geo_helpers import geometry_para_path_json
 
@@ -83,6 +84,84 @@ class ETLDimTerrasIndigenas(BaseETL):
             return None if geom.is_empty else geom
         except Exception: return None
 
+    def _calcular_municipios_interceptados(self, gdf):
+        municipios = carregar_municipios_geo(GEO_DIR).to_crs(epsg=EPSG_METRICO)
+        terras = gdf[['codigo_ti', 'geometry']].copy().to_crs(epsg=EPSG_METRICO)
+
+        resultado = pd.DataFrame({'codigo_ti': gdf['codigo_ti'].astype(str)})
+        resultado['codigos_ibge_interceptados'] = NOT_INFORMED
+        resultado['codigo_ibge_principal'] = NOT_INFORMED
+        resultado['qtd_municipios_interceptados'] = 0
+        resultado['percentual_area_interceptada'] = 0.0
+        resultado['match_status_municipios'] = 'SEM_INTERSECAO'
+
+        if terras.empty or municipios.empty:
+            return resultado
+
+        areas_ti = terras.assign(area_ti_km2=terras.geometry.area / 1_000_000)[['codigo_ti', 'area_ti_km2']]
+        inter = gpd.overlay(
+            terras[['codigo_ti', 'geometry']],
+            municipios[['codigo_ibge', 'geometry']],
+            how='intersection',
+            keep_geom_type=False,
+        )
+
+        if not inter.empty:
+            inter['area_intersecao_km2'] = (inter.geometry.area / 1_000_000).round(6)
+            inter = inter[inter['area_intersecao_km2'] > 0].copy()
+
+        if not inter.empty:
+            inter = inter.merge(areas_ti, on='codigo_ti', how='left')
+            inter['percentual_area_ti'] = (
+                (inter['area_intersecao_km2'] / inter['area_ti_km2']).fillna(0) * 100
+            ).round(6)
+            inter = inter.sort_values(['codigo_ti', 'area_intersecao_km2'], ascending=[True, False])
+
+            registros = []
+            for codigo_ti, grupo in inter.groupby('codigo_ti', sort=False):
+                codigos = list(dict.fromkeys(grupo['codigo_ibge'].astype(str).tolist()))
+                percentual = min(round(float(grupo['percentual_area_ti'].sum()), 6), 100.0)
+                registros.append({
+                    'codigo_ti': codigo_ti,
+                    'codigos_ibge_interceptados': '|'.join(codigos),
+                    'codigo_ibge_principal': codigos[0] if codigos else NOT_INFORMED,
+                    'qtd_municipios_interceptados': len(codigos),
+                    'percentual_area_interceptada': percentual,
+                    'match_status_municipios': 'OK_INTERSECAO' if percentual >= 95 else 'INTERSECAO_PARCIAL',
+                })
+
+            resultado = resultado.drop(columns=[
+                'codigos_ibge_interceptados',
+                'codigo_ibge_principal',
+                'qtd_municipios_interceptados',
+                'percentual_area_interceptada',
+                'match_status_municipios',
+            ]).merge(pd.DataFrame(registros), on='codigo_ti', how='left')
+            resultado['codigos_ibge_interceptados'] = resultado['codigos_ibge_interceptados'].fillna(NOT_INFORMED)
+            resultado['codigo_ibge_principal'] = resultado['codigo_ibge_principal'].fillna(NOT_INFORMED)
+            resultado['qtd_municipios_interceptados'] = resultado['qtd_municipios_interceptados'].fillna(0).astype(int)
+            resultado['percentual_area_interceptada'] = resultado['percentual_area_interceptada'].fillna(0.0)
+            resultado['match_status_municipios'] = resultado['match_status_municipios'].fillna('SEM_INTERSECAO')
+
+        sem_intersecao = resultado['codigo_ibge_principal'] == NOT_INFORMED
+        if sem_intersecao.any():
+            terras_sem = terras[terras['codigo_ti'].isin(resultado.loc[sem_intersecao, 'codigo_ti'])]
+            nearest = gpd.sjoin_nearest(
+                terras_sem[['codigo_ti', 'geometry']],
+                municipios[['codigo_ibge', 'geometry']],
+                how='left',
+            ).drop_duplicates(subset=['codigo_ti'])
+            mapa_fallback = nearest.set_index('codigo_ti')['codigo_ibge'].to_dict()
+            for idx, row in resultado[sem_intersecao].iterrows():
+                codigo = mapa_fallback.get(row['codigo_ti'], NOT_INFORMED)
+                if codigo != NOT_INFORMED:
+                    resultado.loc[idx, 'codigos_ibge_interceptados'] = codigo
+                    resultado.loc[idx, 'codigo_ibge_principal'] = codigo
+                    resultado.loc[idx, 'qtd_municipios_interceptados'] = 1
+                    resultado.loc[idx, 'match_status_municipios'] = 'FALLBACK_MUNICIPIO_PROXIMO'
+
+        return resultado
+
     def extract(self) -> gpd.GeoDataFrame:
         if not os.path.exists(FILE_GEOJSON): raise FileNotFoundError(f"GeoJSON não encontrado: {FILE_GEOJSON}")
         if not os.path.exists(FILE_CSV): raise FileNotFoundError(f"CSV não encontrado: {FILE_CSV}")
@@ -141,20 +220,24 @@ class ETLDimTerrasIndigenas(BaseETL):
         return gpd.GeoDataFrame(df_merged, geometry='geometry', crs="EPSG:4326")
 
     def transform(self, gdf: gpd.GeoDataFrame) -> pd.DataFrame:
-        centroides = gdf.geometry.centroid
+        centroides = gdf.to_crs(epsg=EPSG_METRICO).geometry.centroid.to_crs(epsg=4326)
         gdf['latitude'] = centroides.y.round(6)
         gdf['longitude'] = centroides.x.round(6)
         gdf['path_json'] = gdf.geometry.apply(geometry_para_path_json)
 
         gdf['classe_area_ti'] = gdf['area_hectares'].apply(self._classificar_area_ti)
         gdf['prioridade_funai'] = gdf.apply(lambda r: self._classificar_prioridade_funai(r['estagio_regularizacao'], r['em_faixa_fronteira'], r['area_hectares']), axis=1)
+        rel_municipios = self._calcular_municipios_interceptados(gdf)
+        gdf = gdf.merge(rel_municipios, on='codigo_ti', how='left')
 
         gdf = gdf.fillna("NAO INFORMADO")
 
         colunas_finais = [
-            'codigo_ti', 'nome_terra_indigena', 'etnia', 'municipios', 'estado_sigla',
+            'codigo_ti', 'nome_terra_indigena', 'etnia', 'estado_sigla',
             'area_hectares', 'classe_area_ti', 'estagio_regularizacao', 'modalidade',
             'coordenacao_regional', 'em_faixa_fronteira', 'prioridade_funai',
+            'codigos_ibge_interceptados', 'codigo_ibge_principal',
+            'qtd_municipios_interceptados', 'percentual_area_interceptada',
             'latitude', 'longitude', 'path_json'
         ]
         return pd.DataFrame(gdf[colunas_finais])
@@ -162,3 +245,7 @@ class ETLDimTerrasIndigenas(BaseETL):
 def main():
     etl = ETLDimTerrasIndigenas()
     etl.execute()
+
+
+if __name__ == "__main__":
+    main()

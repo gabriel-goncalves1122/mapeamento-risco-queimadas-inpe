@@ -1,0 +1,38 @@
+\begin{landscape}
+{
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.27\textwidth}p{0.16\textwidth}p{0.14\textwidth}p{0.21\textwidth}p{0.20\textwidth}}
+\caption{Catalogo resumido das queries executadas.}\\
+\toprule
+Query & Familia & Padrao & Datasource & Objetivo \\
+\midrule
+\endfirsthead
+\toprule
+Query & Familia & Padrao & Datasource & Objetivo \\
+\midrule
+\endhead
+01\_latency\_simple/00\_count\_hospitais & Latencia simples & count\_scan & dim\_hospitais\_cnes & medir latencia minima em uma dimensao grande \\
+01\_latency\_simple/01\_count\_dimensoes\_catalogo & Latencia simples & union\_counts & todas\_dimensoes & medir latencia de inventario com UNION ALL entre dimensoes \\
+01\_latency\_simple/02\_filtro\_hospitais\_uf & Latencia simples & filtered\_groupby & dim\_hospitais\_cnes & medir filtro seletivo em coluna de baixa cardinalidade \\
+01\_latency\_simple/03\_lookup\_municipios\_mg & Latencia simples & lookup\_filter & dim\_municipios\_coordenadas & medir consulta de lookup territorial usada como filtro de painel \\
+02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional & OLAP pesado & groupby\_distinct & dim\_hospitais\_cnes & forcar agregacao multidimensional e count distinct na maior dimensao \\
+02\_olap\_pesado/01\_terras\_indigenas\_area\_regularizacao & OLAP pesado & numeric\_aggregations & dim\_terras\_indigenas & medir agregacoes numericas em dimensao espacial com path\_json pesado \\
+02\_olap\_pesado/02\_rodovias\_status\_pavimento & OLAP pesado & categorical\_groupby & dim\_rodovias\_federais & medir agrupamento em dimensao linear com varias classificacoes \\
+02\_olap\_pesado/03\_ons\_linhas\_tensao\_extensao & OLAP pesado & numeric\_groupby & dim\_ons\_linhas\_transmissao & medir agregacoes ONS por tensao, extensao e criticidade \\
+03\_joins\_dimensionais/00\_hospitais\_municipios\_join & Joins dimensionais & left\_join\_groupby & dim\_hospitais\_cnes, dim\_municipios\_coordenadas & simular painel de defesa civil cruzando hospitais e municipios \\
+03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & Joins dimensionais & nearest\_fk\_join & dim\_hospitais\_cnes, dim\_terras\_indigenas & simular painel de saude cruzando hospitais com TI mais proxima \\
+03\_joins\_dimensionais/02\_ti\_municipio\_principal\_join & Joins dimensionais & dimension\_lookup\_join & dim\_terras\_indigenas, dim\_municipios\_coordenadas & simular filtro territorial de TIs por municipio principal \\
+03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & Joins dimensionais & multi\_join\_aggregate & dim\_municipios\_coordenadas, dim\_hospitais\_cnes, dim\_terras\_indigenas & simular dashboard combinando municipios, hospitais e TIs \\
+04\_payload\_espacial/00\_path\_json\_municipios & Payload espacial & string\_payload\_scan & dim\_municipios\_coordenadas & medir custo de ler geometrias serializadas de municipios \\
+04\_payload\_espacial/01\_path\_json\_terras\_indigenas & Payload espacial & string\_payload\_scan & dim\_terras\_indigenas & medir custo de ler geometrias serializadas de TIs \\
+04\_payload\_espacial/02\_path\_json\_rodovias & Payload espacial & string\_payload\_scan & dim\_rodovias\_federais & medir custo de ler geometrias serializadas de rodovias \\
+04\_payload\_espacial/03\_preview\_hospitais\_path\_json & Payload espacial & result\_payload & dim\_hospitais\_cnes & simular mapa de pontos retornando payload de geometria ao cliente \\
+05\_dashboard\_misto/00\_dashboard\_defesa\_civil & Dashboard misto & dashboard\_composite & dim\_municipios\_coordenadas, dim\_hospitais\_cnes, dim\_terras\_indigenas & simular painel territorial combinando municipios, hospitais e TIs \\
+05\_dashboard\_misto/01\_dashboard\_energia\_logistica & Dashboard misto & union\_aggregate & dim\_ons\_linhas\_transmissao, dim\_ons\_subestacoes, dim\_rodovias\_federais & simular comparativo operacional entre energia e logistica \\
+05\_dashboard\_misto/02\_dashboard\_qualidade\_operacional & Dashboard misto & quality\_dashboard & dim\_hospitais\_cnes, dim\_terras\_indigenas, dim\_municipios\_coordenadas & simular painel de governanca com qualidade geografica e relacionamentos \\
+\bottomrule
+\end{longtable}
+}
+\end{landscape}

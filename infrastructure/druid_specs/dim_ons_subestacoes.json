@@ -26,27 +26,15 @@
       "dimensionsSpec": {
         "dimensions": [
           { "type": "string", "name": "id_subestacao" },
-
           { "type": "string", "name": "nome_subestacao" },
-          { "type": "string", "name": "subestacao_idx" },
-
           { "type": "double", "name": "capacidade_mw" },
-          { "type": "string", "name": "capacidade_mw_idx" },
-
           { "type": "string", "name": "classe_capacidade" },
-          { "type": "string", "name": "classe_capacidade_idx" },
-
           { "type": "string", "name": "criticidade_subestacao" },
-          { "type": "string", "name": "criticidade_subestacao_idx" },
-
           { "type": "string", "name": "agente_responsavel" },
-          { "type": "string", "name": "agente_responsavel_idx" },
-
+          { "type": "string", "name": "codigo_ibge" },
           { "type": "double", "name": "latitude" },
           { "type": "double", "name": "longitude" },
-
-          { "type": "string", "name": "subestacao_point" },
-          { "type": "string", "name": "geometria_wkt" }
+          { "type": "string", "name": "path_json" }
         ]
       },
       "granularitySpec": {

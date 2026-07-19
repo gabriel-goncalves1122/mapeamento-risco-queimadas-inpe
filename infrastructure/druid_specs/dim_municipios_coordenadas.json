@@ -31,21 +31,17 @@
           { "type": "string", "name": "chave_localidade" },
 
           { "type": "string", "name": "estado_nome" },
-          { "type": "string", "name": "estado_nome_idx" },
 
           { "type": "string", "name": "estado_sigla" },
-          { "type": "string", "name": "estado_sigla_idx" },
 
           { "type": "string", "name": "regiao_brasil" },
-          { "type": "string", "name": "regiao_brasil_idx" },
 
           { "type": "string", "name": "municipios_nome" },
 
-          { "type": "double", "name": "lat_centroide" },
-          { "type": "double", "name": "lon_centroide" },
+          { "type": "double", "name": "latitude" },
+          { "type": "double", "name": "longitude" },
 
-          { "type": "string", "name": "municipio_point" },
-          { "type": "string", "name": "geometria_wkt" }
+          { "type": "string", "name": "path_json" }
         ]
       },
       "granularitySpec": {

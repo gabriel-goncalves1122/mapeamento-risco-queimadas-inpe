@@ -1,0 +1,26 @@
+{
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.28\textwidth}p{0.09\textwidth}p{0.11\textwidth}p{0.13\textwidth}p{0.10\textwidth}p{0.16\textwidth}}
+\caption{Resumo compacto para leitura no relatorio principal.}\\
+\toprule
+Cenario & Conc. & QPS & p95 ms & Erros & Classe \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & Conc. & QPS & p95 ms & Erros & Classe \\
+\midrule
+\endhead
+Cenario 1 - Baseline & 1 & 1.489 & 2410.465 & 0 & ESTAVEL \\
+Cenario 1 - Baseline & 2 & 2.882 & 3912.175 & 0 & ESTAVEL \\
+Cenario 1 - Baseline & 4 & 0.952 & 2054.123 & 14 & SATURADO \\
+Cenario 2 - Balanced & 1 & 2.144 & 2733.528 & 0 & ESTAVEL \\
+Cenario 2 - Balanced & 2 & 4.408 & 2547.336 & 0 & ESTAVEL \\
+Cenario 2 - Balanced & 4 & 1.350 & 1038.265 & 17 & SATURADO \\
+Cenario 3 - Query Heavy & 1 & 2.673 & 2049.782 & 0 & ESTAVEL \\
+Cenario 3 - Query Heavy & 2 & 5.136 & 2403.284 & 0 & ESTAVEL \\
+Cenario 3 - Query Heavy & 4 & 3.770 & 6422.163 & 0 & ESTAVEL \\
+\bottomrule
+\end{longtable}
+}

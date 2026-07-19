@@ -9,10 +9,10 @@ set -euo pipefail
 # - sobe somente os containers necessários
 # - cria tópico Kafka
 # - envia tasks batch das dimensões para o Druid
-# - cria supervisor Kafka da fato
+# - cria supervisor Kafka da fato agregada de eventos
 #
 # Não faz:
-# - não executa produtor_focos.py
+# - não executa produtor_eventos.py
 # - não sobe router, para poupar recursos
 # ==================================================
 
@@ -21,7 +21,7 @@ SPECS_DIR="$PROJECT_ROOT/infrastructure/druid_specs"
 
 KAFKA_CONTAINER="kafka"
 KAFKA_BOOTSTRAP_DOCKER="kafka:9092"
-TOPICO_KAFKA="streaming_focos_incendio"
+TOPICO_KAFKA="streaming_eventos_incendio"
 
 # No seu compose, o Coordinator também atua como Overlord.
 # Portanto a API de tasks/supervisors fica em localhost:8081.
@@ -185,13 +185,13 @@ done
 
 echo
 echo "=================================================="
-echo "8. Criando supervisor Kafka da fato"
+echo "8. Criando supervisor Kafka da fato agregada de eventos"
 echo "=================================================="
 
-FATO_SPEC="$SPECS_DIR/fato_focos_incendio.json"
+FATO_SPEC="$SPECS_DIR/fato_eventos_incendio.json"
 
 if [[ ! -f "$FATO_SPEC" ]]; then
-  echo "❌ Spec da fato não encontrado: $FATO_SPEC"
+  echo "❌ Spec da fato de eventos não encontrado: $FATO_SPEC"
   exit 1
 fi
 
@@ -200,7 +200,7 @@ RESPOSTA_SUPERVISOR=$(curl -fs -X POST \
   --data-binary @"$FATO_SPEC" \
   "$DRUID_OVERLORD_URL/druid/indexer/v1/supervisor")
 
-echo "✅ Supervisor da fato criado."
+echo "✅ Supervisor da fato agregada de eventos criado."
 echo "   Resposta: $RESPOSTA_SUPERVISOR"
 
 echo
@@ -235,5 +235,5 @@ echo "A ingestão Python NÃO foi iniciada."
 echo
 echo "Quando quiser iniciar a ingestão:"
 echo "source venv/bin/activate"
-echo "python3 src/streaming/produtor_focos.py"
+echo "UV_CACHE_DIR=/tmp/uv-cache uv run python -m src.streaming.produtor_eventos"
 echo

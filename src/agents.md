@@ -17,8 +17,10 @@ O projeto baseia-se num sistema de ingestão de dados em Streaming (Kafka -> Apa
 2. **Camada ETL / Batch (`src/etl/`)**: Processa as Dimensões estáticas (Hospitais, Rodovias, etc). Persiste em `data/processed/dimensions`.
 3. **Camada Espacial (`src/spatial/`)**: Carrega as Dimensões (GeoDataFrames) e processa os cruzamentos espaciais vetoriais (Distâncias e Interseções).
 4. **Camada de Streaming (`src/streaming/`)**: Processa Focos de Incêndio (Kafka) e gera a tabela fato `FATO_FOCOS_INCENDIO`. O payload **NÃO** deve conter strings redundantes (como nomes de municípios ou classes de vulnerabilidade), exceto FKs (identificadores) e Métricas (Distâncias Contínuas e Índices).
-5. **Camada Analítica (`src/analytics/`)**: Centraliza os testes e a geração de relatórios gráficos sobre o Apache Druid. Abstrai complexidades usando `benchmark_runner.py` e construtores baseados em `relatorio_builder.py`.
-6. **Camada de Ciência/Redes (`src/science/` - Futuro)**: Para evolução do projeto com Machine Learning e algoritmos complexos (como ST-DBSCAN).
+5. **Camada Analítica (`src/analytics/` e `scripts/sql/superset/`)**: Centraliza relatórios gráficos, SQLs setoriais e consultas de apoio sobre o Apache Druid. Benchmarks antigos ficam em `archive/legacy/analytics/`.
+6. **Camada de Ciência/Redes (`src/science/`)**: Contém os algoritmos complexos de Machine Learning (como `st_dbscan_clustering.py` para agrupar focos de incêndio no espaço-tempo) e Inteligência Analítica em Grafos (como `network_builder.py` para o Risco de Cascata no ONS).
+7. **Camada de Configuração (`src/config/`)**: Centraliza constantes globais (`constants.py`) e resolução de caminhos de dimensões (`settings.py`). Nenhum script de pipeline deve "inventar" paths; todos devem importar desta camada.
+8. **Camada de Utilidades (`src/utils/`)**: Funções de limpeza textual (`cleaners.py`) reutilizáveis por todas as camadas do sistema.
 
 ## 🛡️ Regras Globais para Agentes
 - **Sem Strings na Fato**: Nunca adicione colunas puramente textuais (`nome_X`, `classe_Y`) no payload de streaming. Isso quebra o modelo Snowflake. Use FKs para apontar para as Dimensões.

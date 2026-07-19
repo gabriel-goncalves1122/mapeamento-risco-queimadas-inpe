@@ -10,7 +10,8 @@
       },
       "inputFormat": {
         "type": "csv",
-        "findColumnsFromHeader": true
+        "findColumnsFromHeader": true,
+        "listDelimiter": "|"
       }
     },
     "tuningConfig": {
@@ -26,42 +27,27 @@
       "dimensionsSpec": {
         "dimensions": [
           { "type": "string", "name": "codigo_ti" },
-
           { "type": "string", "name": "nome_terra_indigena" },
-
           { "type": "string", "name": "etnia" },
-          { "type": "string", "name": "etnia_idx" },
-
-          { "type": "string", "name": "municipios" },
-
           { "type": "string", "name": "estado_sigla" },
-          { "type": "string", "name": "estado_sigla_idx" },
-
           { "type": "double", "name": "area_hectares" },
-
           { "type": "string", "name": "classe_area_ti" },
-          { "type": "string", "name": "classe_area_ti_idx" },
-
           { "type": "string", "name": "estagio_regularizacao" },
-          { "type": "string", "name": "estagio_regularizacao_idx" },
-
           { "type": "string", "name": "modalidade" },
-          { "type": "string", "name": "modalidade_idx" },
-
           { "type": "string", "name": "coordenacao_regional" },
-          { "type": "string", "name": "coordenacao_regional_idx" },
-
           { "type": "string", "name": "em_faixa_fronteira" },
-          { "type": "string", "name": "faixa_fronteira_idx" },
-
           { "type": "string", "name": "prioridade_funai" },
-          { "type": "string", "name": "prioridade_funai_idx" },
-
-          { "type": "double", "name": "lat_centroide" },
-          { "type": "double", "name": "lon_centroide" },
-
-          { "type": "string", "name": "terra_indigena_point" },
-          { "type": "string", "name": "geometria_wkt" }
+          {
+            "type": "string",
+            "name": "codigos_ibge_interceptados",
+            "multiValueHandling": "SORTED_SET"
+          },
+          { "type": "string", "name": "codigo_ibge_principal" },
+          { "type": "long", "name": "qtd_municipios_interceptados" },
+          { "type": "double", "name": "percentual_area_interceptada" },
+          { "type": "double", "name": "latitude" },
+          { "type": "double", "name": "longitude" },
+          { "type": "string", "name": "path_json" }
         ]
       },
       "granularitySpec": {

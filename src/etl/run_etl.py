@@ -14,6 +14,7 @@ import time
 # 0. Pathing e Configuração
 # ==========================================
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, '..', '..'))
 PIPELINES_DIR = os.path.join(CURRENT_DIR, 'pipelines')
 VALIDATORS_DIR = os.path.join(CURRENT_DIR, 'validators')
 
@@ -42,11 +43,14 @@ def rodar_script(caminho_script):
     inicio = time.time()
     
     try:
+        env = os.environ.copy()
+        env['PYTHONPATH'] = PROJECT_ROOT + os.pathsep + env.get('PYTHONPATH', '')
         resultado = subprocess.run(
             [sys.executable, caminho_script],
             check=True,
             capture_output=True,
-            text=True
+            text=True,
+            env=env
         )
         
         tempo_gasto = time.time() - inicio

@@ -1,0 +1,753 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{pdflscape}
+\usepackage{placeins}
+\usepackage[hidelinks]{hyperref}
+\geometry{margin=2.1cm}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  showstringspaces=false,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray}
+}
+\title{Catálogo explicado das queries de benchmark Druid}
+\author{CCO DataOps}
+\date{30 de junho de 2026}
+\begin{document}
+\maketitle
+
+
+\section{Como o catálogo está organizado}
+
+Cada query é documentada por família de carga. A família explica o conceito experimental; a query explica como esse conceito foi materializado em SQL. O objetivo não é só listar SQL, mas justificar por que a consulta mede uma propriedade relevante do Druid.
+
+\section{Resumo das queries}
+
+\input{../tables/query_catalog_summary.tex}
+
+\clearpage
+
+\section{Latencia simples}
+
+\textbf{Conceito base.} Consultas pequenas usadas para medir o piso de resposta do Broker e a leitura basica de segmentos.
+
+\textbf{Hipótese testada.} Se ate essas consultas oscilarem, o problema esta no cluster ou na disponibilidade dos segmentos, nao na complexidade analitica.
+
+\textbf{Por que existe.} Funciona como controle experimental para comparar as consultas mais pesadas.
+
+\textbf{Impacto esperado no Druid.} Pressiona pouco o Historical; serve para medir overhead de SQL, roteamento e filtros simples.
+
+\subsection{01\_latency\_simple/00\_count\_hospitais}
+
+\textbf{Objetivo local.} medir latencia minima em uma dimensao grande\\
+
+\textbf{Datasource(s).} dim\_hospitais\_cnes\\
+
+\textbf{Padrão de carga.} count\_scan\\
+
+\textbf{Visualização Superset simulada.} indicador\\
+
+\textbf{Motivo científico.} Funciona como controle experimental para comparar as consultas mais pesadas. Objetivo local: medir latencia minima em uma dimensao grande\\
+
+\textbf{Impacto esperado.} Pressiona pouco o Historical; serve para medir overhead de SQL, roteamento e filtros simples.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT COUNT(*) AS total_hospitais
+FROM dim_hospitais_cnes;
+
+\end{lstlisting}
+
+\subsection{01\_latency\_simple/01\_count\_dimensoes\_catalogo}
+
+\textbf{Objetivo local.} medir latencia de inventario com UNION ALL entre dimensoes\\
+
+\textbf{Datasource(s).} todas\_dimensoes\\
+
+\textbf{Padrão de carga.} union\_counts\\
+
+\textbf{Visualização Superset simulada.} tabela\\
+
+\textbf{Motivo científico.} Funciona como controle experimental para comparar as consultas mais pesadas. Objetivo local: medir latencia de inventario com UNION ALL entre dimensoes\\
+
+\textbf{Impacto esperado.} Pressiona pouco o Historical; serve para medir overhead de SQL, roteamento e filtros simples.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT 'municipios' AS datasource, COUNT(*) AS total FROM dim_municipios_coordenadas
+UNION ALL
+SELECT 'hospitais' AS datasource, COUNT(*) AS total FROM dim_hospitais_cnes
+UNION ALL
+SELECT 'terras_indigenas' AS datasource, COUNT(*) AS total FROM dim_terras_indigenas
+UNION ALL
+SELECT 'rodovias' AS datasource, COUNT(*) AS total FROM dim_rodovias_federais
+UNION ALL
+SELECT 'ons_linhas' AS datasource, COUNT(*) AS total FROM dim_ons_linhas_transmissao
+UNION ALL
+SELECT 'ons_subestacoes' AS datasource, COUNT(*) AS total FROM dim_ons_subestacoes
+UNION ALL
+SELECT 'ons_sistemas_isolados' AS datasource, COUNT(*) AS total FROM dim_ons_sistemas_isolados;
+
+\end{lstlisting}
+
+\subsection{01\_latency\_simple/02\_filtro\_hospitais\_uf}
+
+\textbf{Objetivo local.} medir filtro seletivo em coluna de baixa cardinalidade\\
+
+\textbf{Datasource(s).} dim\_hospitais\_cnes\\
+
+\textbf{Padrão de carga.} filtered\_groupby\\
+
+\textbf{Visualização Superset simulada.} barras\\
+
+\textbf{Motivo científico.} Funciona como controle experimental para comparar as consultas mais pesadas. Objetivo local: medir filtro seletivo em coluna de baixa cardinalidade\\
+
+\textbf{Impacto esperado.} Pressiona pouco o Historical; serve para medir overhead de SQL, roteamento e filtros simples.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  estado_sigla,
+  COUNT(*) AS hospitais_total,
+  SUM(CASE WHEN funciona_24h = 'SIM' THEN 1 ELSE 0 END) AS hospitais_24h
+FROM dim_hospitais_cnes
+WHERE estado_sigla IN ('MG', 'SP', 'RJ', 'PA', 'AM')
+GROUP BY estado_sigla;
+
+\end{lstlisting}
+
+\subsection{01\_latency\_simple/03\_lookup\_municipios\_mg}
+
+\textbf{Objetivo local.} medir consulta de lookup territorial usada como filtro de painel\\
+
+\textbf{Datasource(s).} dim\_municipios\_coordenadas\\
+
+\textbf{Padrão de carga.} lookup\_filter\\
+
+\textbf{Visualização Superset simulada.} tabela\\
+
+\textbf{Motivo científico.} Funciona como controle experimental para comparar as consultas mais pesadas. Objetivo local: medir consulta de lookup territorial usada como filtro de painel\\
+
+\textbf{Impacto esperado.} Pressiona pouco o Historical; serve para medir overhead de SQL, roteamento e filtros simples.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  codigo_ibge,
+  municipios_nome,
+  estado_sigla,
+  regiao_brasil
+FROM dim_municipios_coordenadas
+WHERE estado_sigla = 'MG';
+
+\end{lstlisting}
+
+\clearpage
+
+\section{OLAP pesado}
+
+\textbf{Conceito base.} Agregacoes, agrupamentos multidimensionais, soma, media e count distinct sobre dimensoes batch.
+
+\textbf{Hipótese testada.} Quanto mais cardinalidade e agregacao numerica, maior a pressao sobre processamento e merge de resultados.
+
+\textbf{Por que existe.} Representa o uso esperado de um banco OLAP em paineis de resumo e ranking.
+
+\textbf{Impacto esperado no Druid.} Exige varredura de colunas, agregacao no Historical e merge no Broker.
+
+\subsection{02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional}
+
+\textbf{Objetivo local.} forcar agregacao multidimensional e count distinct na maior dimensao\\
+
+\textbf{Datasource(s).} dim\_hospitais\_cnes\\
+
+\textbf{Padrão de carga.} groupby\_distinct\\
+
+\textbf{Visualização Superset simulada.} tabela\_barras\\
+
+\textbf{Motivo científico.} Representa o uso esperado de um banco OLAP em paineis de resumo e ranking. Objetivo local: forcar agregacao multidimensional e count distinct na maior dimensao\\
+
+\textbf{Impacto esperado.} Exige varredura de colunas, agregacao no Historical e merge no Broker.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  estado_sigla,
+  categoria_unidade,
+  classe_capacidade_saude,
+  funciona_24h,
+  COUNT(*) AS registros_total,
+  COUNT(DISTINCT codigo_cnes) AS hospitais_distintos,
+  SUM(CASE WHEN dentro_terra_indigena = 1 THEN 1 ELSE 0 END) AS dentro_ti,
+  SUM(CASE WHEN ate_15km = 1 THEN 1 ELSE 0 END) AS ate_15km_ti
+FROM dim_hospitais_cnes
+GROUP BY
+  estado_sigla,
+  categoria_unidade,
+  classe_capacidade_saude,
+  funciona_24h
+ORDER BY registros_total DESC;
+
+\end{lstlisting}
+
+\subsection{02\_olap\_pesado/01\_terras\_indigenas\_area\_regularizacao}
+
+\textbf{Objetivo local.} medir agregacoes numericas em dimensao espacial com path\_json pesado\\
+
+\textbf{Datasource(s).} dim\_terras\_indigenas\\
+
+\textbf{Padrão de carga.} numeric\_aggregations\\
+
+\textbf{Visualização Superset simulada.} barras\\
+
+\textbf{Motivo científico.} Representa o uso esperado de um banco OLAP em paineis de resumo e ranking. Objetivo local: medir agregacoes numericas em dimensao espacial com path\_json pesado\\
+
+\textbf{Impacto esperado.} Exige varredura de colunas, agregacao no Historical e merge no Broker.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  estado_sigla,
+  estagio_regularizacao,
+  prioridade_funai,
+  COUNT(*) AS terras_indigenas_total,
+  SUM(area_hectares) AS area_hectares_total,
+  AVG(qtd_municipios_interceptados) AS media_municipios_interceptados,
+  AVG(percentual_area_interceptada) AS media_percentual_interceptado
+FROM dim_terras_indigenas
+GROUP BY
+  estado_sigla,
+  estagio_regularizacao,
+  prioridade_funai
+ORDER BY area_hectares_total DESC;
+
+\end{lstlisting}
+
+\subsection{02\_olap\_pesado/02\_rodovias\_status\_pavimento}
+
+\textbf{Objetivo local.} medir agrupamento em dimensao linear com varias classificacoes\\
+
+\textbf{Datasource(s).} dim\_rodovias\_federais\\
+
+\textbf{Padrão de carga.} categorical\_groupby\\
+
+\textbf{Visualização Superset simulada.} barras\_empilhadas\\
+
+\textbf{Motivo científico.} Representa o uso esperado de um banco OLAP em paineis de resumo e ranking. Objetivo local: medir agrupamento em dimensao linear com varias classificacoes\\
+
+\textbf{Impacto esperado.} Exige varredura de colunas, agregacao no Historical e merge no Broker.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  codigo_rodovia,
+  jurisdicao,
+  classe_status_operacional,
+  classe_situacao_fisica,
+  classe_revestimento,
+  COUNT(*) AS trechos_total
+FROM dim_rodovias_federais
+GROUP BY
+  codigo_rodovia,
+  jurisdicao,
+  classe_status_operacional,
+  classe_situacao_fisica,
+  classe_revestimento
+ORDER BY trechos_total DESC;
+
+\end{lstlisting}
+
+\subsection{02\_olap\_pesado/03\_ons\_linhas\_tensao\_extensao}
+
+\textbf{Objetivo local.} medir agregacoes ONS por tensao, extensao e criticidade\\
+
+\textbf{Datasource(s).} dim\_ons\_linhas\_transmissao\\
+
+\textbf{Padrão de carga.} numeric\_groupby\\
+
+\textbf{Visualização Superset simulada.} barras\\
+
+\textbf{Motivo científico.} Representa o uso esperado de um banco OLAP em paineis de resumo e ranking. Objetivo local: medir agregacoes ONS por tensao, extensao e criticidade\\
+
+\textbf{Impacto esperado.} Exige varredura de colunas, agregacao no Historical e merge no Broker.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  estado_sigla_estimado,
+  classe_tensao,
+  classe_criticidade_linha,
+  COUNT(*) AS linhas_total,
+  SUM(extensao_km) AS extensao_km_total,
+  AVG(tensao_kv) AS tensao_kv_media,
+  MAX(tensao_kv) AS tensao_kv_maxima
+FROM dim_ons_linhas_transmissao
+GROUP BY
+  estado_sigla_estimado,
+  classe_tensao,
+  classe_criticidade_linha
+ORDER BY extensao_km_total DESC;
+
+\end{lstlisting}
+
+\clearpage
+
+\section{Joins dimensionais}
+
+\textbf{Conceito base.} Cruzamentos entre dimensoes ja enriquecidas pelo ETL para simular visoes analiticas territoriais.
+
+\textbf{Hipótese testada.} Joins com hospitais, municipios e terras indigenas devem expor gargalos de planejamento, shuffle e merge.
+
+\textbf{Por que existe.} Testa o limite pratico de usar Druid SQL para cruzamentos que o Superset pode exigir.
+
+\textbf{Impacto esperado no Druid.} Pressiona Broker e Historical ao mesmo tempo, principalmente quando a maior dimensao participa.
+
+\subsection{03\_joins\_dimensionais/00\_hospitais\_municipios\_join}
+
+\textbf{Objetivo local.} simular painel de defesa civil cruzando hospitais e municipios\\
+
+\textbf{Datasource(s).} dim\_hospitais\_cnes, dim\_municipios\_coordenadas\\
+
+\textbf{Padrão de carga.} left\_join\_groupby\\
+
+\textbf{Visualização Superset simulada.} mapa\_coropletico\\
+
+\textbf{Motivo científico.} Testa o limite pratico de usar Druid SQL para cruzamentos que o Superset pode exigir. Objetivo local: simular painel de defesa civil cruzando hospitais e municipios\\
+
+\textbf{Impacto esperado.} Pressiona Broker e Historical ao mesmo tempo, principalmente quando a maior dimensao participa.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  m.regiao_brasil,
+  m.estado_sigla,
+  m.codigo_ibge,
+  m.municipios_nome,
+  COUNT(DISTINCT h.codigo_cnes) AS hospitais_total,
+  SUM(CASE WHEN h.funciona_24h = 'SIM' THEN 1 ELSE 0 END) AS hospitais_24h,
+  SUM(CASE WHEN h.match_status_municipio <> 'OK_ESPACIAL' THEN 1 ELSE 0 END) AS hospitais_fallback
+FROM dim_municipios_coordenadas m
+LEFT JOIN dim_hospitais_cnes h
+  ON h.codigo_ibge_municipio = m.codigo_ibge
+GROUP BY
+  m.regiao_brasil,
+  m.estado_sigla,
+  m.codigo_ibge,
+  m.municipios_nome
+ORDER BY hospitais_total DESC;
+
+\end{lstlisting}
+
+\subsection{03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join}
+
+\textbf{Objetivo local.} simular painel de saude cruzando hospitais com TI mais proxima\\
+
+\textbf{Datasource(s).} dim\_hospitais\_cnes, dim\_terras\_indigenas\\
+
+\textbf{Padrão de carga.} nearest\_fk\_join\\
+
+\textbf{Visualização Superset simulada.} tabela\_mapa\\
+
+\textbf{Motivo científico.} Testa o limite pratico de usar Druid SQL para cruzamentos que o Superset pode exigir. Objetivo local: simular painel de saude cruzando hospitais com TI mais proxima\\
+
+\textbf{Impacto esperado.} Pressiona Broker e Historical ao mesmo tempo, principalmente quando a maior dimensao participa.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  t.estado_sigla,
+  t.nome_terra_indigena,
+  t.prioridade_funai,
+  t.estagio_regularizacao,
+  COUNT(DISTINCT h.codigo_cnes) AS hospitais_relacionados,
+  SUM(CASE WHEN h.dentro_terra_indigena = 1 THEN 1 ELSE 0 END) AS hospitais_dentro_ti,
+  SUM(CASE WHEN h.ate_15km = 1 THEN 1 ELSE 0 END) AS hospitais_ate_15km,
+  AVG(h.distancia_ti_km) AS distancia_media_km
+FROM dim_terras_indigenas t
+LEFT JOIN dim_hospitais_cnes h
+  ON h.codigo_ti_proxima = t.codigo_ti
+GROUP BY
+  t.estado_sigla,
+  t.nome_terra_indigena,
+  t.prioridade_funai,
+  t.estagio_regularizacao
+ORDER BY hospitais_relacionados DESC;
+
+\end{lstlisting}
+
+\subsection{03\_joins\_dimensionais/02\_ti\_municipio\_principal\_join}
+
+\textbf{Objetivo local.} simular filtro territorial de TIs por municipio principal\\
+
+\textbf{Datasource(s).} dim\_terras\_indigenas, dim\_municipios\_coordenadas\\
+
+\textbf{Padrão de carga.} dimension\_lookup\_join\\
+
+\textbf{Visualização Superset simulada.} tabela\\
+
+\textbf{Motivo científico.} Testa o limite pratico de usar Druid SQL para cruzamentos que o Superset pode exigir. Objetivo local: simular filtro territorial de TIs por municipio principal\\
+
+\textbf{Impacto esperado.} Pressiona Broker e Historical ao mesmo tempo, principalmente quando a maior dimensao participa.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  m.regiao_brasil,
+  m.estado_sigla,
+  m.municipios_nome,
+  t.prioridade_funai,
+  t.estagio_regularizacao,
+  COUNT(*) AS terras_indigenas_total,
+  SUM(t.area_hectares) AS area_hectares_total,
+  AVG(t.qtd_municipios_interceptados) AS media_municipios_interceptados
+FROM dim_terras_indigenas t
+LEFT JOIN dim_municipios_coordenadas m
+  ON t.codigo_ibge_principal = m.codigo_ibge
+GROUP BY
+  m.regiao_brasil,
+  m.estado_sigla,
+  m.municipios_nome,
+  t.prioridade_funai,
+  t.estagio_regularizacao
+ORDER BY area_hectares_total DESC;
+
+\end{lstlisting}
+
+\subsection{03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join}
+
+\textbf{Objetivo local.} simular dashboard combinando municipios, hospitais e TIs\\
+
+\textbf{Datasource(s).} dim\_municipios\_coordenadas, dim\_hospitais\_cnes, dim\_terras\_indigenas\\
+
+\textbf{Padrão de carga.} multi\_join\_aggregate\\
+
+\textbf{Visualização Superset simulada.} tabela\_mapa\\
+
+\textbf{Motivo científico.} Testa o limite pratico de usar Druid SQL para cruzamentos que o Superset pode exigir. Objetivo local: simular dashboard combinando municipios, hospitais e TIs\\
+
+\textbf{Impacto esperado.} Pressiona Broker e Historical ao mesmo tempo, principalmente quando a maior dimensao participa.
+
+\begin{lstlisting}[language=SQL]
+
+WITH hospitais_por_municipio AS (
+  SELECT
+    codigo_ibge_municipio,
+    COUNT(DISTINCT codigo_cnes) AS hospitais_total,
+    SUM(CASE WHEN ate_15km = 1 THEN 1 ELSE 0 END) AS hospitais_ate_15km_ti
+  FROM dim_hospitais_cnes
+  GROUP BY codigo_ibge_municipio
+),
+tis_por_municipio AS (
+  SELECT
+    codigo_ibge_principal,
+    COUNT(*) AS terras_indigenas_total,
+    SUM(area_hectares) AS area_ti_hectares
+  FROM dim_terras_indigenas
+  GROUP BY codigo_ibge_principal
+)
+SELECT
+  m.regiao_brasil,
+  m.estado_sigla,
+  m.codigo_ibge,
+  m.municipios_nome,
+  COALESCE(h.hospitais_total, 0) AS hospitais_total,
+  COALESCE(h.hospitais_ate_15km_ti, 0) AS hospitais_ate_15km_ti,
+  COALESCE(t.terras_indigenas_total, 0) AS terras_indigenas_total,
+  COALESCE(t.area_ti_hectares, 0) AS area_ti_hectares
+FROM dim_municipios_coordenadas m
+LEFT JOIN hospitais_por_municipio h
+  ON h.codigo_ibge_municipio = m.codigo_ibge
+LEFT JOIN tis_por_municipio t
+  ON t.codigo_ibge_principal = m.codigo_ibge;
+
+\end{lstlisting}
+
+\clearpage
+
+\section{Payload espacial}
+
+\textbf{Conceito base.} Leituras de `path\_json` e campos de geometria serializada usados por mapas no Superset.
+
+\textbf{Hipótese testada.} Mesmo sem calculo espacial nativo, retornar strings grandes aumenta bytes e latencia de resposta.
+
+\textbf{Por que existe.} Mede o custo operacional do contrato visual adotado para Druid/Superset.
+
+\textbf{Impacto esperado no Druid.} Pressiona I/O, serializacao e tamanho de resposta ao cliente.
+
+\subsection{04\_payload\_espacial/00\_path\_json\_municipios}
+
+\textbf{Objetivo local.} medir custo de ler geometrias serializadas de municipios\\
+
+\textbf{Datasource(s).} dim\_municipios\_coordenadas\\
+
+\textbf{Padrão de carga.} string\_payload\_scan\\
+
+\textbf{Visualização Superset simulada.} indicador\\
+
+\textbf{Motivo científico.} Mede o custo operacional do contrato visual adotado para Druid/Superset. Objetivo local: medir custo de ler geometrias serializadas de municipios\\
+
+\textbf{Impacto esperado.} Pressiona I/O, serializacao e tamanho de resposta ao cliente.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  COUNT(*) AS municipios_total,
+  SUM(LENGTH(path_json)) AS bytes_path_json_estimados,
+  AVG(LENGTH(path_json)) AS media_path_json,
+  MAX(LENGTH(path_json)) AS maior_path_json
+FROM dim_municipios_coordenadas;
+
+\end{lstlisting}
+
+\subsection{04\_payload\_espacial/01\_path\_json\_terras\_indigenas}
+
+\textbf{Objetivo local.} medir custo de ler geometrias serializadas de TIs\\
+
+\textbf{Datasource(s).} dim\_terras\_indigenas\\
+
+\textbf{Padrão de carga.} string\_payload\_scan\\
+
+\textbf{Visualização Superset simulada.} indicador\\
+
+\textbf{Motivo científico.} Mede o custo operacional do contrato visual adotado para Druid/Superset. Objetivo local: medir custo de ler geometrias serializadas de TIs\\
+
+\textbf{Impacto esperado.} Pressiona I/O, serializacao e tamanho de resposta ao cliente.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  COUNT(*) AS terras_indigenas_total,
+  SUM(LENGTH(path_json)) AS bytes_path_json_estimados,
+  AVG(LENGTH(path_json)) AS media_path_json,
+  MAX(LENGTH(path_json)) AS maior_path_json
+FROM dim_terras_indigenas;
+
+\end{lstlisting}
+
+\subsection{04\_payload\_espacial/02\_path\_json\_rodovias}
+
+\textbf{Objetivo local.} medir custo de ler geometrias serializadas de rodovias\\
+
+\textbf{Datasource(s).} dim\_rodovias\_federais\\
+
+\textbf{Padrão de carga.} string\_payload\_scan\\
+
+\textbf{Visualização Superset simulada.} indicador\\
+
+\textbf{Motivo científico.} Mede o custo operacional do contrato visual adotado para Druid/Superset. Objetivo local: medir custo de ler geometrias serializadas de rodovias\\
+
+\textbf{Impacto esperado.} Pressiona I/O, serializacao e tamanho de resposta ao cliente.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  COUNT(*) AS trechos_total,
+  SUM(LENGTH(path_json)) AS bytes_path_json_estimados,
+  AVG(LENGTH(path_json)) AS media_path_json,
+  MAX(LENGTH(path_json)) AS maior_path_json
+FROM dim_rodovias_federais;
+
+\end{lstlisting}
+
+\subsection{04\_payload\_espacial/03\_preview\_hospitais\_path\_json}
+
+\textbf{Objetivo local.} simular mapa de pontos retornando payload de geometria ao cliente\\
+
+\textbf{Datasource(s).} dim\_hospitais\_cnes\\
+
+\textbf{Padrão de carga.} result\_payload\\
+
+\textbf{Visualização Superset simulada.} deck\_gl\_scatterplot\\
+
+\textbf{Motivo científico.} Mede o custo operacional do contrato visual adotado para Druid/Superset. Objetivo local: simular mapa de pontos retornando payload de geometria ao cliente\\
+
+\textbf{Impacto esperado.} Pressiona I/O, serializacao e tamanho de resposta ao cliente.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  codigo_cnes,
+  nome_hospital,
+  estado_sigla,
+  codigo_ibge_municipio,
+  latitude,
+  longitude,
+  path_json
+FROM dim_hospitais_cnes
+WHERE latitude BETWEEN -35 AND 6
+  AND longitude BETWEEN -75 AND -30
+LIMIT 1000;
+
+\end{lstlisting}
+
+\clearpage
+
+\section{Dashboard misto}
+
+\textbf{Conceito base.} Consultas compostas que combinam padroes de painel real: agregacao, joins, union e regras de qualidade.
+
+\textbf{Hipótese testada.} A mistura de padroes aproxima melhor a experiencia de uso do que queries isoladas.
+
+\textbf{Por que existe.} Valida se o perfil suporta uma sessao analitica mais proxima do Superset.
+
+\textbf{Impacto esperado no Druid.} Exercita planejamento SQL, subconsultas, union, filtros e agregacoes em uma mesma carga.
+
+\subsection{05\_dashboard\_misto/00\_dashboard\_defesa\_civil}
+
+\textbf{Objetivo local.} simular painel territorial combinando municipios, hospitais e TIs\\
+
+\textbf{Datasource(s).} dim\_municipios\_coordenadas, dim\_hospitais\_cnes, dim\_terras\_indigenas\\
+
+\textbf{Padrão de carga.} dashboard\_composite\\
+
+\textbf{Visualização Superset simulada.} tabela\_mapa\\
+
+\textbf{Motivo científico.} Valida se o perfil suporta uma sessao analitica mais proxima do Superset. Objetivo local: simular painel territorial combinando municipios, hospitais e TIs\\
+
+\textbf{Impacto esperado.} Exercita planejamento SQL, subconsultas, union, filtros e agregacoes em uma mesma carga.
+
+\begin{lstlisting}[language=SQL]
+
+WITH hospitais AS (
+  SELECT
+    codigo_ibge_municipio,
+    COUNT(*) AS hospitais_total,
+    SUM(CASE WHEN funciona_24h = 'SIM' THEN 1 ELSE 0 END) AS hospitais_24h,
+    SUM(CASE WHEN ate_50km = 1 THEN 1 ELSE 0 END) AS hospitais_ate_50km_ti
+  FROM dim_hospitais_cnes
+  GROUP BY codigo_ibge_municipio
+),
+terras AS (
+  SELECT
+    codigo_ibge_principal,
+    COUNT(*) AS terras_indigenas_total,
+    SUM(area_hectares) AS area_ti_hectares
+  FROM dim_terras_indigenas
+  GROUP BY codigo_ibge_principal
+)
+SELECT
+  m.regiao_brasil,
+  m.estado_sigla,
+  COUNT(*) AS municipios_total,
+  SUM(COALESCE(h.hospitais_total, 0)) AS hospitais_total,
+  SUM(COALESCE(h.hospitais_24h, 0)) AS hospitais_24h,
+  SUM(COALESCE(h.hospitais_ate_50km_ti, 0)) AS hospitais_ate_50km_ti,
+  SUM(COALESCE(t.terras_indigenas_total, 0)) AS terras_indigenas_total,
+  SUM(COALESCE(t.area_ti_hectares, 0)) AS area_ti_hectares
+FROM dim_municipios_coordenadas m
+LEFT JOIN hospitais h
+  ON h.codigo_ibge_municipio = m.codigo_ibge
+LEFT JOIN terras t
+  ON t.codigo_ibge_principal = m.codigo_ibge
+GROUP BY
+  m.regiao_brasil,
+  m.estado_sigla
+ORDER BY hospitais_total DESC;
+
+\end{lstlisting}
+
+\subsection{05\_dashboard\_misto/01\_dashboard\_energia\_logistica}
+
+\textbf{Objetivo local.} simular comparativo operacional entre energia e logistica\\
+
+\textbf{Datasource(s).} dim\_ons\_linhas\_transmissao, dim\_ons\_subestacoes, dim\_rodovias\_federais\\
+
+\textbf{Padrão de carga.} union\_aggregate\\
+
+\textbf{Visualização Superset simulada.} tabela\_barras\\
+
+\textbf{Motivo científico.} Valida se o perfil suporta uma sessao analitica mais proxima do Superset. Objetivo local: simular comparativo operacional entre energia e logistica\\
+
+\textbf{Impacto esperado.} Exercita planejamento SQL, subconsultas, union, filtros e agregacoes em uma mesma carga.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  'linhas_transmissao' AS camada,
+  estado_sigla_estimado AS territorio,
+  classe_criticidade_linha AS classe_risco,
+  COUNT(*) AS ativos_total,
+  SUM(extensao_km) AS medida_total
+FROM dim_ons_linhas_transmissao
+GROUP BY
+  estado_sigla_estimado,
+  classe_criticidade_linha
+UNION ALL
+SELECT
+  'subestacoes' AS camada,
+  'NAO INFORMADO' AS territorio,
+  criticidade_subestacao AS classe_risco,
+  COUNT(*) AS ativos_total,
+  SUM(capacidade_mw) AS medida_total
+FROM dim_ons_subestacoes
+GROUP BY criticidade_subestacao
+UNION ALL
+SELECT
+  'rodovias' AS camada,
+  'NAO INFORMADO' AS territorio,
+  criticidade_rodovia AS classe_risco,
+  COUNT(*) AS ativos_total,
+  COUNT(*) AS medida_total
+FROM dim_rodovias_federais
+GROUP BY criticidade_rodovia;
+
+\end{lstlisting}
+
+\subsection{05\_dashboard\_misto/02\_dashboard\_qualidade\_operacional}
+
+\textbf{Objetivo local.} simular painel de governanca com qualidade geografica e relacionamentos\\
+
+\textbf{Datasource(s).} dim\_hospitais\_cnes, dim\_terras\_indigenas, dim\_municipios\_coordenadas\\
+
+\textbf{Padrão de carga.} quality\_dashboard\\
+
+\textbf{Visualização Superset simulada.} indicadores\\
+
+\textbf{Motivo científico.} Valida se o perfil suporta uma sessao analitica mais proxima do Superset. Objetivo local: simular painel de governanca com qualidade geografica e relacionamentos\\
+
+\textbf{Impacto esperado.} Exercita planejamento SQL, subconsultas, union, filtros e agregacoes em uma mesma carga.
+
+\begin{lstlisting}[language=SQL]
+
+SELECT
+  'hospitais_sem_municipio' AS regra,
+  COUNT(*) AS avaliados,
+  SUM(CASE WHEN codigo_ibge_municipio IS NULL OR codigo_ibge_municipio = 'NAO INFORMADO' THEN 1 ELSE 0 END) AS pendencias
+FROM dim_hospitais_cnes
+UNION ALL
+SELECT
+  'hospitais_fora_bbox' AS regra,
+  COUNT(*) AS avaliados,
+  SUM(CASE WHEN latitude < -35 OR latitude > 6 OR longitude < -75 OR longitude > -30 THEN 1 ELSE 0 END) AS pendencias
+FROM dim_hospitais_cnes
+UNION ALL
+SELECT
+  'terras_indigenas_sem_municipio_principal' AS regra,
+  COUNT(*) AS avaliados,
+  SUM(CASE WHEN codigo_ibge_principal IS NULL OR codigo_ibge_principal = 'NAO INFORMADO' THEN 1 ELSE 0 END) AS pendencias
+FROM dim_terras_indigenas
+UNION ALL
+SELECT
+  'municipios_sem_path_json' AS regra,
+  COUNT(*) AS avaliados,
+  SUM(CASE WHEN path_json IS NULL OR path_json = '' THEN 1 ELSE 0 END) AS pendencias
+FROM dim_municipios_coordenadas;
+
+\end{lstlisting}
+
+
+\end{document}

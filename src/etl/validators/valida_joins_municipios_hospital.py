@@ -40,7 +40,7 @@ print(f"-> Base de Municípios carregada: {total_municipios} registros.\n")
 # ==========================================
 df_validacao = pd.merge(
     df_hospitais, 
-    df_municipios[['codigo_ibge', 'geometria_wkt']], 
+    df_municipios[['codigo_ibge', 'municipios_nome', 'estado_sigla', 'path_json']], 
     on='codigo_ibge', 
     how='outer', 
     indicator=True
@@ -70,7 +70,7 @@ for index, row in top_cidades.iterrows():
 print("\n---------------------------------------------------")
 if len(hospitais_sem_mapa) > 0:
     print("Atenção! Abaixo estão exemplos de hospitais que não encontraram mapa:")
-    amostra_orfaos = hospitais_sem_mapa[['codigo_cnes', 'nome_hospital', 'codigo_ibge', 'municipios_nome']].head(5)
+    amostra_orfaos = hospitais_sem_mapa[['codigo_cnes', 'nome_hospital', 'codigo_ibge']].head(5)
     print(amostra_orfaos.to_string(index=False))
 else:
     print("Mapeamento perfeito! Nenhum hospital ficou sem polígono espacial.")

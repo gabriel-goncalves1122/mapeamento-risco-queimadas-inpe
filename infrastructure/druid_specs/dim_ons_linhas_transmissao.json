@@ -26,31 +26,16 @@
       "dimensionsSpec": {
         "dimensions": [
           { "type": "string", "name": "id_linha_transmissao" },
-
           { "type": "string", "name": "nome_linha" },
-          { "type": "string", "name": "nome_linha_original" },
-
           { "type": "double", "name": "tensao_kv" },
-          { "type": "string", "name": "tensao_kv_idx" },
-
           { "type": "string", "name": "classe_tensao" },
-          { "type": "string", "name": "classe_tensao_idx" },
-
           { "type": "double", "name": "extensao_km" },
-
           { "type": "string", "name": "classe_extensao" },
-          { "type": "string", "name": "classe_extensao_idx" },
-
-          { "type": "double", "name": "Shape_Length" },
-
           { "type": "string", "name": "estado_sigla_estimado" },
-          { "type": "string", "name": "estado_sigla_idx" },
-
           { "type": "string", "name": "classe_criticidade_linha" },
-          { "type": "string", "name": "classe_criticidade_linha_idx" },
-
-          { "type": "string", "name": "path_json" },
-          { "type": "string", "name": "geometria_wkt" }
+          { "type": "double", "name": "latitude" },
+          { "type": "double", "name": "longitude" },
+          { "type": "string", "name": "path_json" }
         ]
       },
       "granularitySpec": {

@@ -2,31 +2,31 @@
   "type": "kafka",
   "spec": {
     "ioConfig": {
-  "type": "kafka",
-  "consumerProperties": {
-    "bootstrap.servers": "kafka:9092"
-  },
-  "topic": "streaming_focos_incendio",
-  "inputFormat": {
-    "type": "json"
-  },
-  "useEarliestOffset": true,
-  "taskDuration": "PT10M",
-  "completionTimeout": "PT20M",
-  "replicas": 1,
-  "taskCount": 1
-},
-   "tuningConfig": {
-  "type": "kafka",
-  "maxRowsPerSegment": 500000,
-  "workerThreads": 1,
-  "maxRowsInMemory": 25000,
-  "maxBytesInMemory": 50000000,
-  "intermediatePersistPeriod": "PT5M",
-  "logParseExceptions": true,
-  "maxParseExceptions": 1000,
-  "maxSavedParseExceptions": 20
-},
+      "type": "kafka",
+      "consumerProperties": {
+        "bootstrap.servers": "kafka:9092"
+      },
+      "topic": "streaming_focos_incendio",
+      "inputFormat": {
+        "type": "json"
+      },
+      "useEarliestOffset": true,
+      "taskDuration": "PT1H",
+      "completionTimeout": "PT30M",
+      "replicas": 1,
+      "taskCount": 1
+    },
+    "tuningConfig": {
+      "type": "kafka",
+      "maxRowsPerSegment": 5000000,
+      "workerThreads": 1,
+      "maxRowsInMemory": 100000,
+      "maxBytesInMemory": 100000000,
+      "intermediatePersistPeriod": "PT10M",
+      "logParseExceptions": true,
+      "maxParseExceptions": 1000,
+      "maxSavedParseExceptions": 20
+    },
     "dataSchema": {
       "dataSource": "fato_focos_incendio",
       "timestampSpec": {
@@ -35,224 +35,49 @@
       },
       "dimensionsSpec": {
         "dimensions": [
-          { "type": "string", "name": "data_dia" },
-          { "type": "string", "name": "data_mes" },
-
-          { "type": "long", "name": "ano" },
-          { "type": "long", "name": "mes" },
-          { "type": "long", "name": "dia" },
-          { "type": "long", "name": "hora" },
-          { "type": "long", "name": "minuto" },
-
-          { "type": "string", "name": "ano_idx" },
-          { "type": "string", "name": "mes_idx" },
-          { "type": "string", "name": "dia_idx" },
-          { "type": "string", "name": "hora_idx" },
-
           { "type": "string", "name": "pais_origem" },
-          { "type": "string", "name": "chave_localidade" },
-          { "type": "string", "name": "estado_origem" },
-          { "type": "string", "name": "municipio_origem" },
-          { "type": "string", "name": "bioma_inpe" },
-          { "type": "string", "name": "satelite_sensor" },
-
-          { "type": "string", "name": "estado_origem_idx" },
-          { "type": "string", "name": "municipio_origem_idx" },
-          { "type": "string", "name": "bioma_inpe_idx" },
-          { "type": "string", "name": "satelite_sensor_idx" },
-
-          { "type": "string", "name": "codigo_ibge_espacial" },
-          { "type": "string", "name": "codigo_ti" },
-          { "type": "string", "name": "codigo_ti_proxima" },
-
-          { "type": "string", "name": "id_trecho_rodoviario" },
-          { "type": "string", "name": "id_linha_transmissao" },
-          { "type": "string", "name": "id_subestacao" },
-          { "type": "string", "name": "id_sistema_isolado" },
-          { "type": "string", "name": "codigo_cnes_prox" },
-
+          { "type": "string", "name": "fk_bioma" },
+          { "type": "string", "name": "fk_satelite_sensor" },
+          { "type": "string", "name": "fk_municipio" },
+          { "type": "string", "name": "fk_municipio_espacial" },
+          { "type": "string", "name": "fk_terra_indigena" },
+          { "type": "string", "name": "fk_terra_indigena_proxima" },
+          { "type": "string", "name": "fk_trecho_rodoviario" },
+          { "type": "string", "name": "fk_linha_transmissao" },
+          { "type": "string", "name": "fk_subestacao" },
+          { "type": "string", "name": "fk_sistema_isolado" },
+          { "type": "string", "name": "fk_hospital" },
           { "type": "double", "name": "latitude" },
           { "type": "double", "name": "longitude" },
           { "type": "long", "name": "coordenada_valida" },
-          { "type": "string", "name": "coordenada_valida_idx" },
           { "type": "string", "name": "foco_point" },
-
-          { "type": "double", "name": "lat_grid_02" },
-          { "type": "double", "name": "lon_grid_02" },
-          { "type": "double", "name": "lat_grid_01" },
-          { "type": "double", "name": "lon_grid_01" },
-          { "type": "double", "name": "lat_grid_001" },
-          { "type": "double", "name": "lon_grid_001" },
-
-          { "type": "string", "name": "lat_grid_02_idx" },
-          { "type": "string", "name": "lon_grid_02_idx" },
-          { "type": "string", "name": "lat_grid_01_idx" },
-          { "type": "string", "name": "lon_grid_01_idx" },
-
           { "type": "double", "name": "dias_sem_chuva" },
           { "type": "double", "name": "precipitacao_mm" },
           { "type": "double", "name": "risco_fogo_inpe" },
           { "type": "double", "name": "potencia_radiativa_fogo" },
-
-          { "type": "string", "name": "classe_frp" },
-          { "type": "string", "name": "classe_risco_inpe" },
-
           { "type": "double", "name": "indice_condicao_ambiental" },
-          { "type": "string", "name": "classe_condicao_ambiental" },
-
           { "type": "double", "name": "indice_queimada_evento" },
-          { "type": "string", "name": "classe_queimada_evento" },
-
-          { "type": "long", "name": "foco_em_terra_indigena" },
-          { "type": "string", "name": "foco_em_terra_indigena_idx" },
-
-          { "type": "long", "name": "foco_em_municipio_mapeado" },
-          { "type": "string", "name": "foco_em_municipio_mapeado_idx" },
-
-          { "type": "string", "name": "municipio_espacial_nome" },
-          { "type": "string", "name": "municipio_espacial_estado" },
-          { "type": "string", "name": "municipio_espacial_regiao" },
-
-          { "type": "string", "name": "terra_indigena_nome" },
-          { "type": "string", "name": "terra_indigena_prioridade" },
-          { "type": "string", "name": "terra_indigena_classe_area" },
-
-          { "type": "string", "name": "rodovia_codigo" },
-          { "type": "string", "name": "rodovia_criticidade" },
-          { "type": "string", "name": "rodovia_classe_revestimento" },
-
-          { "type": "string", "name": "linha_nome" },
-          { "type": "double", "name": "linha_tensao_kv" },
-          { "type": "string", "name": "linha_classe_tensao" },
-          { "type": "string", "name": "linha_criticidade" },
-
-          { "type": "string", "name": "subestacao_nome" },
-          { "type": "double", "name": "subestacao_capacidade_mw" },
-          { "type": "string", "name": "subestacao_criticidade" },
-
-          { "type": "string", "name": "sistema_isolado_nome" },
-          { "type": "string", "name": "sistema_isolado_prioridade" },
-
-          { "type": "string", "name": "hospital_nome" },
-          { "type": "string", "name": "hospital_categoria" },
-          { "type": "string", "name": "hospital_critico" },
-          { "type": "string", "name": "hospital_funciona_24h" },
-          { "type": "string", "name": "hospital_capacidade_classe" },
-
           { "type": "double", "name": "distancia_rodovia_km" },
           { "type": "double", "name": "distancia_linha_km" },
           { "type": "double", "name": "distancia_subestacao_km" },
           { "type": "double", "name": "distancia_sistema_isolado_km" },
           { "type": "double", "name": "distancia_hospital_km" },
           { "type": "double", "name": "distancia_terra_indigena_km" },
-
-          { "type": "string", "name": "faixa_distancia_rodovia" },
-          { "type": "string", "name": "faixa_distancia_linha" },
-          { "type": "string", "name": "faixa_distancia_subestacao" },
-          { "type": "string", "name": "faixa_distancia_sistema_isolado" },
-          { "type": "string", "name": "faixa_distancia_hospital" },
-          { "type": "string", "name": "faixa_distancia_terra_indigena" },
-
           { "type": "double", "name": "indice_ameaca_rodovia" },
           { "type": "double", "name": "indice_ameaca_linha" },
           { "type": "double", "name": "indice_ameaca_subestacao" },
           { "type": "double", "name": "indice_ameaca_sistema_isolado" },
           { "type": "double", "name": "indice_pressao_saude" },
           { "type": "double", "name": "indice_pressao_terra_indigena" },
-
-          { "type": "double", "name": "indice_pressao_maxima" },
-          { "type": "string", "name": "classe_pressao_maxima" },
-
-          { "type": "string", "name": "classe_indice_ameaca_rodovia" },
-          { "type": "string", "name": "classe_indice_ameaca_linha" },
-          { "type": "string", "name": "classe_indice_ameaca_subestacao" },
-          { "type": "string", "name": "classe_indice_ameaca_sistema_isolado" },
-          { "type": "string", "name": "classe_indice_pressao_saude" },
-          { "type": "string", "name": "classe_indice_pressao_terra_indigena" },
-
-          { "type": "long", "name": "rodovia_ate_1km" },
-          { "type": "long", "name": "rodovia_ate_3km" },
-          { "type": "long", "name": "rodovia_ate_7km" },
-          { "type": "long", "name": "rodovia_ate_15km" },
-          { "type": "long", "name": "rodovia_ate_50km" },
-
-          { "type": "string", "name": "rodovia_ate_1km_idx" },
-          { "type": "string", "name": "rodovia_ate_3km_idx" },
-          { "type": "string", "name": "rodovia_ate_7km_idx" },
-          { "type": "string", "name": "rodovia_ate_15km_idx" },
-          { "type": "string", "name": "rodovia_ate_50km_idx" },
-
-          { "type": "long", "name": "linha_ate_1km" },
-          { "type": "long", "name": "linha_ate_3km" },
-          { "type": "long", "name": "linha_ate_7km" },
-          { "type": "long", "name": "linha_ate_15km" },
-          { "type": "long", "name": "linha_ate_50km" },
-
-          { "type": "string", "name": "linha_ate_1km_idx" },
-          { "type": "string", "name": "linha_ate_3km_idx" },
-          { "type": "string", "name": "linha_ate_7km_idx" },
-          { "type": "string", "name": "linha_ate_15km_idx" },
-          { "type": "string", "name": "linha_ate_50km_idx" },
-
-          { "type": "long", "name": "subestacao_ate_1km" },
-          { "type": "long", "name": "subestacao_ate_3km" },
-          { "type": "long", "name": "subestacao_ate_7km" },
-          { "type": "long", "name": "subestacao_ate_15km" },
-          { "type": "long", "name": "subestacao_ate_50km" },
-
-          { "type": "string", "name": "subestacao_ate_1km_idx" },
-          { "type": "string", "name": "subestacao_ate_3km_idx" },
-          { "type": "string", "name": "subestacao_ate_7km_idx" },
-          { "type": "string", "name": "subestacao_ate_15km_idx" },
-          { "type": "string", "name": "subestacao_ate_50km_idx" },
-
-          { "type": "long", "name": "sistema_isolado_ate_1km" },
-          { "type": "long", "name": "sistema_isolado_ate_3km" },
-          { "type": "long", "name": "sistema_isolado_ate_7km" },
-          { "type": "long", "name": "sistema_isolado_ate_15km" },
-          { "type": "long", "name": "sistema_isolado_ate_50km" },
-
-          { "type": "string", "name": "sistema_isolado_ate_1km_idx" },
-          { "type": "string", "name": "sistema_isolado_ate_3km_idx" },
-          { "type": "string", "name": "sistema_isolado_ate_7km_idx" },
-          { "type": "string", "name": "sistema_isolado_ate_15km_idx" },
-          { "type": "string", "name": "sistema_isolado_ate_50km_idx" },
-
-          { "type": "long", "name": "hospital_ate_1km" },
-          { "type": "long", "name": "hospital_ate_3km" },
-          { "type": "long", "name": "hospital_ate_7km" },
-          { "type": "long", "name": "hospital_ate_15km" },
-          { "type": "long", "name": "hospital_ate_50km" },
-
-          { "type": "string", "name": "hospital_ate_1km_idx" },
-          { "type": "string", "name": "hospital_ate_3km_idx" },
-          { "type": "string", "name": "hospital_ate_7km_idx" },
-          { "type": "string", "name": "hospital_ate_15km_idx" },
-          { "type": "string", "name": "hospital_ate_50km_idx" },
-
-          { "type": "long", "name": "terra_indigena_ate_1km" },
-          { "type": "long", "name": "terra_indigena_ate_3km" },
-          { "type": "long", "name": "terra_indigena_ate_7km" },
-          { "type": "long", "name": "terra_indigena_ate_15km" },
-          { "type": "long", "name": "terra_indigena_ate_50km" },
-
-          { "type": "string", "name": "terra_indigena_ate_1km_idx" },
-          { "type": "string", "name": "terra_indigena_ate_3km_idx" },
-          { "type": "string", "name": "terra_indigena_ate_7km_idx" },
-          { "type": "string", "name": "terra_indigena_ate_15km_idx" },
-          { "type": "string", "name": "terra_indigena_ate_50km_idx" },
-
-          { "type": "string", "name": "chave_grid_mes_02" },
-          { "type": "string", "name": "chave_grid_dia_01" },
-          { "type": "string", "name": "chave_municipio_mes" }
+          { "type": "double", "name": "indice_pressao_maxima" }
         ]
       },
       "granularitySpec": {
-  "type": "uniform",
-  "segmentGranularity": "DAY",
-  "queryGranularity": "NONE",
-  "rollup": false
-}
+        "type": "uniform",
+        "segmentGranularity": "MONTH",
+        "queryGranularity": "NONE",
+        "rollup": false
+      }
     }
   }
 }
