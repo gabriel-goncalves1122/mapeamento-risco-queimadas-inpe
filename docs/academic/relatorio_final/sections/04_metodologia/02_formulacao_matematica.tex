@@ -1,0 +1,19 @@
+\subsection{Formulação Matemática de Intensidade e Severidade Ambiental}
+
+O sistema fundamenta suas análises em métricas termo-dinâmicas, estabelecendo o FRP (\textit{Fire Radiative Power}) como a variável basilar do ecossistema. Fornecido diretamente pelos fluxos de dados abertos do INPE (Instituto Nacional de Pesquisas Espaciais) e medido em Megawatts (MW) pelos sensores orbitais (AQUA, TERRA, NOAA-20), o FRP quantifica instantaneamente a radiação térmica emitida pelo processo de combustão. Em nossa taxonomia computacional, um FRP $\geq 100$ MW categoriza uma anomalia térmica \textit{Extrema}, correlacionada com a potencial formação de pirocúmulos.
+
+Para além da observação termal bruta, implementamos modelos meteorológicos para a avaliação do grau de perigo. Para isso, utilizamos como componente central a variável \textit{Risco de Fogo do INPE} (\texttt{risco\_inpe}), uma métrica probabilística (0 a 1) calculada diariamente pelo instituto que cruza umidade relativa do ar, temperatura e secura da vegetação. A partir dela, projetamos o \textbf{Índice de Condição Ambiental (ICA)} para avaliar o estágio crítico da atmosfera no momento da detecção:
+
+\begin{equation}
+\text{ICA} = \frac{risco\_inpe \times \ln(dias\_sem\_chuva + 1)}{1 + precipitacao_{mm}}
+\end{equation}
+
+A escolha do alisamento logarítmico ($\ln(x + 1)$) é uma técnica matemática fundamental nesta modelagem: ela garante que o acréscimo de dias de estiagem agrave o índice, mas de forma suavizada, impedindo que períodos de seca extrema (ex: 120 dias sem chuva) distorçam as contas e ofusquem outras variáveis. O acréscimo de $+1$ previne o erro matemático de calcular $\ln(0)$. Este índice atua como um termômetro pré-fogo, sendo amortecido no denominador por eventos de precipitação detectados, assumindo estado "Crítico" sempre que supera 1.5, limiar este definido heuristicamente durante a calibração do sistema para isolar o decil superior de perigo ambiental.
+
+Já a gravidade real de um incêndio em andamento é dada pelo \textbf{Índice de Queimada de Evento (IQE)}, o qual consolida a intensidade radiativa e o clima:
+
+\begin{equation}
+\text{IQE} = \frac{\ln(FRP + 1) \times (1 + risco\_inpe) \times (1 + \ln(dias\_sem\_chuva + 1))}{1 + precipitacao_{mm}}
+\end{equation}
+
+Novamente, o uso de $\ln(FRP+1)$ mitiga picos efêmeros extremos de radiação detectados pelos satélites (onde o FRP salta de dezenas para milhares de MW num único pixel), traduzindo o cenário em uma escala logarítmica normalizada. Eventos com IQE $\geq 20$ denotam incêndios críticos sob secas severas e prolongadas (corte estipulado empiricamente para mitigar o ruído analítico de pequenos focos rurais). Estes índices de severidade, em âmbito operacional, servem de métrica basal de filtragem para categorizar os painéis do Apache Superset: anomalias de baixo risco climático são suprimidas visualmente nas interfaces de gestão (evitando poluição analítica do mapa), enquanto os eventos de categoria extrema dominam os algoritmos de ordenação e os rankings das defesas civis.

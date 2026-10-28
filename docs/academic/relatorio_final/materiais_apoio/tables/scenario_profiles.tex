@@ -1,0 +1,20 @@
+{
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.12\textwidth}p{0.08\textwidth}p{0.08\textwidth}p{0.10\textwidth}p{0.10\textwidth}p{0.42\textwidth}}
+\caption{Perfis de capacidade aplicados ao Broker e ao Historical.}\\
+\toprule
+Cenario & CPU & GB & Threads & Merge & Trade-off \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & CPU & GB & Threads & Merge & Trade-off \\
+\midrule
+\endhead
+Baseline & 1.000 & 1.000 & 1 & 1 & Menor consumo; maior risco de saturação em joins concorrentes. \\
+Balanced & 1.500 & 1.500 & 2 & 2 & Uso diário; melhora QPS em concorrência 2, mas ainda falha em concorrência 4. \\
+Query Heavy & 2.000 & 2.000 & 3 & 3 & Maior consumo; único perfil estável na concorrência 4. \\
+\bottomrule
+\end{longtable}
+}

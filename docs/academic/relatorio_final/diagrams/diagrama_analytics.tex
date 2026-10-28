@@ -1,0 +1,89 @@
+\begin{figure}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tikzpicture}[
+        font=\sffamily\small,
+        %% -- ESTILOS DE COMPONENTES --
+        process/.style={rectangle, draw=black!60, thick, fill=white, rounded corners=4pt, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, minimum width=2.8cm, minimum height=1.3cm},
+        database/.style={cylinder, cylinder uses custom fill, cylinder body fill=white, cylinder end fill=gray!10, shape border rotate=90, draw=black!60, thick, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, aspect=0.25, align=center, inner sep=5pt, minimum width=2.8cm, minimum height=1.5cm},
+        payload/.style={ellipse, draw=black!60, thick, fill=white, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=4pt, minimum width=2.5cm, minimum height=1.1cm},
+        source/.style={tape, tape bend top=none, draw=black!60, thick, fill=white, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, minimum width=2.8cm, minimum height=1.3cm},
+        queue/.style={chamfered rectangle, chamfered rectangle corners={north east, south east}, chamfered rectangle xsep=0.4cm, draw=blue!50, thick, fill=cyan!5, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, minimum width=2.8cm, minimum height=1.3cm},
+        %% -- ESTILOS DE BACKGROUND (MEDALLION) --
+        bg_bronze/.style={rectangle, draw=orange!40!brown, thick, dashed, fill=orange!5, rounded corners=6pt, inner sep=12pt},
+        bg_silver/.style={rectangle, draw=gray!50, thick, dashed, fill=gray!8, rounded corners=6pt, inner sep=12pt},
+        bg_gold/.style={rectangle, draw=yellow!60!orange, thick, dashed, fill=yellow!10, rounded corners=6pt, inner sep=12pt},
+        %% -- ESTILOS DE ARESTAS --
+        relation/.style={-Stealth, thick, draw=gray!80},
+        dashed_rel/.style={-Stealth, thick, dashed, draw=gray!80},
+        lbl/.style={font=\sffamily\bfseries\scriptsize, text=black, fill=white, draw=gray!40, rounded corners=2pt, inner sep=3pt}
+    ]
+
+    %% ============================================================
+    %% GRADE ABSOLUTA (Fluxo Horizontal Left-to-Right)
+    %% ============================================================
+
+    % COLUNA 1: INPUT (X=0)
+    \node[queue] at (0, 3.5) (topico_focos) {\textbf{Tópico Kafka:}\\Focos};
+    \node[database] at (0, 0) (dim_silver) {\textbf{Dimensões Limpas}\\(Camada Silver)};
+    \node[queue] at (0, -3.5) (topico_eventos) {\textbf{Tópico Kafka:}\\Eventos};
+    
+    % COLUNA 2: INGESTÃO (X=6.5)
+    \node[process] at (6.5, 3.5) (mid_focos) {\textbf{Nó de Ingestão}\\(MiddleManager)};
+    \node[process] at (6.5, 0) (batch_ing) {\textbf{Ingestão Segmentada}\\(Dimensões)};
+    \node[process] at (6.5, -3.5) (mid_eventos) {\textbf{Nó de Ingestão}\\(MiddleManager)};
+    
+    % COLUNA 3: TABELAS ARMAZENADAS (X=13.0)
+    \node[database] at (13.0, 3.5) (fato_focos) {\textbf{Tabela Fato:}\\fato\_focos};
+    \node[database] at (13.0, 0) (dim_tabela) {\textbf{Tabela Dimensão}\\(Geométrica)};
+    \node[database] at (13.0, -3.5) (fato_eventos) {\textbf{Tabela Fato:}\\fato\_eventos};
+    
+    % COLUNA 4: PRESENTATION / SUPERSET (X=20.0)
+    \node[process] at (20.0, 0) (superset) {\textbf{Apache Superset}\\(Painel Visual)};
+    
+    % COLUNA 5: DASHBOARDS (X=26.0)
+    \node[process] at (26.0, 2.5) (dash_risco) {\textbf{Painel}\\de Risco};
+    \node[process] at (26.0, -2.5) (dash_terr) {\textbf{Análise}\\Territorial};
+
+    %% ============================================================
+    %% BACKGROUNDS (Medallion)
+    %% ============================================================
+    \begin{scope}[on background layer]
+        % Silver Layer Input
+        \node[bg_silver, fit={(dim_silver)}] (bg_silver_node) {};
+
+        % Analytical Storage
+        \node[bg_gold, fit={([shift={(-0.8,1.5)}]mid_focos.north west) ([shift={(0.8,-0.8)}]fato_eventos.south east)}] (bg_olap) {};
+        \node[anchor=north west, font=\sffamily\color{black}, align=left, xshift=6pt, yshift=-4pt] at (bg_olap.north west) {\textbf{Armazenamento Analítico:}\\\textbf{Apache Druid (Camada Gold)}};
+
+        % Presentation Layer
+        \node[bg_gold, fit={([shift={(-0.8,1.5)}]superset.west|-dash_risco.north) ([shift={(0.8,-0.8)}]dash_terr.south east)}] (bg_pres) {};
+        \node[anchor=north west, font=\sffamily\color{black}, align=left, xshift=6pt, yshift=-4pt] at (bg_pres.north west) {\textbf{Camada de Apresentação}\\\textbf{(Consumo)}};
+    \end{scope}
+
+    %% ============================================================
+    %% SETAS E ROTEAMENTO ORTOGONAL (.east saindo -> .west entrando)
+    %% ============================================================
+    \draw[relation] (topico_focos.east) -- (mid_focos.west);
+    \draw[relation] (dim_silver.east) -- (batch_ing.west);
+    \draw[relation] (topico_eventos.east) -- (mid_eventos.west);
+    
+    \draw[relation] (mid_focos.east) -- (fato_focos.west);
+    \draw[relation] (batch_ing.east) -- (dim_tabela.west);
+    \draw[relation] (mid_eventos.east) -- (fato_eventos.west);
+    
+    % Tabelas -> Superset (Fluxos convergindo ortogonalmente em X=16.5)
+    \draw[dashed_rel] (fato_focos.east) -- (16.5, 3.5) |- node[lbl, near start, above=2pt] {SQL} (superset.west);
+    \draw[dashed_rel] (dim_tabela.east) -- node[lbl, above=2pt] {SQL} (superset.west);
+    \draw[dashed_rel] (fato_eventos.east) -- (16.5, -3.5) |- node[lbl, near start, above=2pt] {SQL} (superset.west);
+
+    % Superset -> Dashboards (Fluxos bifurcando ortogonalmente em X=23.0)
+    \draw[relation] (superset.east) -- (23.0, 0) |- (dash_risco.west);
+    \draw[relation] (superset.east) -- (23.0, 0) |- (dash_terr.west);
+
+    \end{tikzpicture}
+    }
+    \caption{Fluxo de Armazenamento Analítico e Visualização (Fase 2).}
+    \label{fig:diagrama_analytics}
+    \fonte{Elaborada pelos autores.}
+\end{figure}

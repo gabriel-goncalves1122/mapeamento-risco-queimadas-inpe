@@ -1,0 +1,96 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{float}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{pdflscape}
+\usepackage{placeins}
+\usepackage[hidelinks]{hyperref}
+\geometry{margin=2.1cm}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  columns=fullflexible,
+  frame=single,
+  showstringspaces=false,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray}
+}
+\title{Apêndice de evidências operacionais da matriz Druid}
+\author{CCO DataOps}
+\date{30 de junho de 2026}
+\begin{document}
+\maketitle
+
+
+\section{Finalidade do apêndice}
+
+Este documento concentra as tabelas extensas. Ele serve para auditoria dos resultados sem poluir o relatório principal com tabelas largas.
+
+\section{Capacidade por cenário e concorrência}
+
+Tabela completa com média, percentis, erros, QPS e classe de estabilidade.
+
+\input{../tables/capacity_full_landscape.tex}
+
+\clearpage
+
+\section{Docker stats}
+
+Picos e médias de CPU/memória por container. Broker e Historical são os containers mais relevantes para consulta.
+
+\input{../tables/docker_peaks_full.tex}
+
+\section{Hotspots de query}
+
+Consultas ordenadas por p95. Esta tabela identifica onde investigar otimização de SQL, modelagem ou recursos.
+
+\input{../tables/query_hotspots_full.tex}
+
+\section{Ganho cold/warm}
+
+Comparação entre execução fria e aquecida por query. Ganho alto indica benefício de repetição/cache, não necessariamente estabilidade sob carga.
+
+\input{../tables/cache_gain_full.tex}
+
+\section{Erros}
+
+Resumo dos erros agregados por cenário, concorrência, query e cache.
+
+\input{../tables/errors_full.tex}
+
+\section{Segmentos e loadstatus}
+
+Segmentos e loadstatus comprovam que os datasources estavam disponíveis durante a comparação.
+
+\input{../tables/loadstatus_summary.tex}
+
+\input{../tables/segments_summary.tex}
+
+\section{Arquivos de origem}
+
+\begin{itemize}
+
+\item \texttt{capacity\_comparison.csv}: consolidado por cenário e concorrência.
+
+\item \texttt{query\_hotspots.csv}: maiores p95 por query, cache e cenário.
+
+\item \texttt{cache\_gain\_by\_query.csv}: comparação cold/warm.
+
+\item \texttt{docker\_peaks.csv}: picos e médias por container.
+
+\item \texttt{scenario\_*/raw\_requests.csv}: evidência bruta por requisição.
+
+\end{itemize}
+
+
+\end{document}

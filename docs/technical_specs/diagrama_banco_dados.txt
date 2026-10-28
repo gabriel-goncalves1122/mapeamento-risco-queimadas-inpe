@@ -1,0 +1,125 @@
+erDiagram
+    %% Tabelas de Fato
+    FATO_FOCOS_INCENDIO {
+        string foco_id PK
+        timestamp __time
+        double latitude
+        double longitude
+        double frp
+        string satelite
+        double risco_fogo
+        double dias_sem_chuva
+        string fk_municipio FK
+        string fk_hospital_proximo FK
+        string fk_terra_indigena FK
+        string fk_linha_transmissao FK
+        string fk_subestacao FK
+        string fk_sistema_isolado FK
+        string fk_rodovia FK
+    }
+
+    FATO_EVENTOS_INCENDIO {
+        string fire_event_id PK
+        timestamp __time "Início do Evento"
+        timestamp fim_evento
+        double duracao_dias
+        double area_evento_km2
+        long total_focos
+        double soma_frp
+        double indice_pressao_saude
+        double indice_ameaca_linha
+        double indice_ameaca_subestacao
+        double indice_ameaca_sistema_isolado
+        double indice_pressao_terra_indigena
+        string fk_municipio_principal FK
+        string fk_hospital FK
+        string fk_terra_indigena FK
+        string fk_terra_indigena_proxima FK
+        string fk_linha_transmissao FK
+        string fk_subestacao FK
+        string fk_sistema_isolado FK
+        string fk_rodovia FK
+    }
+
+    %% Dimensões (Lookups no Druid)
+    DIM_MUNICIPIOS {
+        string codigo_ibge PK
+        string codigo_ibge_7digitos
+        string estado_sigla
+        string estado_nome
+        string regiao_brasil
+        string municipios_nome
+        double latitude
+        double longitude
+    }
+
+    DIM_HOSPITAIS {
+        string codigo_cnes PK
+        string nome_hospital
+        string tipo_unidade
+        string categoria_unidade
+        string tipo_unidade_critica
+        string funciona_24h
+        string codigo_ibge FK
+    }
+
+    DIM_TERRAS_INDIGENAS {
+        string codigo_ti PK
+        string nome_terra_indigena
+        string etnia
+        string estado_sigla
+        double area_hectares
+        string estagio_regularizacao
+        string modalidade
+    }
+
+    DIM_LINHAS_TRANSMISSAO {
+        string id_linha_transmissao PK
+        string nome_linha
+        double tensao_kv
+        string classe_tensao
+        double extensao_km
+    }
+
+    DIM_SUBESTACOES {
+        string id_subestacao PK
+        string nome_subestacao
+        double capacidade_mw
+        string classe_capacidade
+        string criticidade_subestacao
+        string agente_responsavel
+    }
+
+    DIM_SISTEMAS_ISOLADOS {
+        string id_sistema_isolado PK
+        string nome_sistema_isolado
+        string estado_sigla
+        string regiao_eletrica
+        string prioridade_sistema_isolado
+    }
+    
+    DIM_RODOVIAS {
+        string id_trecho_rodoviario PK
+        string codigo_rodovia
+        string jurisdicao
+        string classe_revestimento
+        string tipo_pavimento
+    }
+
+    %% Relacionamentos: Foco -> Dimensões
+    FATO_FOCOS_INCENDIO }o--|| DIM_MUNICIPIOS : "fk_municipio"
+    FATO_FOCOS_INCENDIO }o--o| DIM_HOSPITAIS : "fk_hospital_proximo"
+    FATO_FOCOS_INCENDIO }o--o| DIM_TERRAS_INDIGENAS : "fk_terra_indigena"
+    FATO_FOCOS_INCENDIO }o--o| DIM_LINHAS_TRANSMISSAO : "fk_linha_transmissao"
+    FATO_FOCOS_INCENDIO }o--o| DIM_SUBESTACOES : "fk_subestacao"
+    FATO_FOCOS_INCENDIO }o--o| DIM_SISTEMAS_ISOLADOS : "fk_sistema_isolado"
+    FATO_FOCOS_INCENDIO }o--o| DIM_RODOVIAS : "fk_rodovia"
+
+    %% Relacionamentos: Evento -> Dimensões
+    FATO_EVENTOS_INCENDIO }o--|| DIM_MUNICIPIOS : "fk_municipio_principal"
+    FATO_EVENTOS_INCENDIO }o--o| DIM_HOSPITAIS : "fk_hospital"
+    FATO_EVENTOS_INCENDIO }o--o| DIM_TERRAS_INDIGENAS : "fk_terra_indigena / proxima"
+    FATO_EVENTOS_INCENDIO }o--o| DIM_LINHAS_TRANSMISSAO : "fk_linha_transmissao"
+    FATO_EVENTOS_INCENDIO }o--o| DIM_SUBESTACOES : "fk_subestacao"
+    FATO_EVENTOS_INCENDIO }o--o| DIM_SISTEMAS_ISOLADOS : "fk_sistema_isolado"
+    FATO_EVENTOS_INCENDIO }o--o| DIM_RODOVIAS : "fk_rodovia"

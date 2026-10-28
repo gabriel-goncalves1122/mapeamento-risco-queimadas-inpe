@@ -1,0 +1,47 @@
+{
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.19\textwidth}p{0.35\textwidth}p{0.10\textwidth}p{0.09\textwidth}p{0.09\textwidth}p{0.09\textwidth}p{0.09\textwidth}}
+\caption{Maiores ganhos de warm-start por p95.}\\
+\toprule
+Cenario & Query & Ganho p95 \% & Cold p95 & Warm p95 & Erro cold \% & Erro warm \% \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & Query & Ganho p95 \% & Cold p95 & Warm p95 & Erro cold \% & Erro warm \% \\
+\midrule
+\endhead
+scenario\_01\_baseline & 06\_fatos\_streaming/03\_focos\_scan\_temporal & 84.466 & 577.011 & 89.631 & 66.667 & 33.333 \\
+scenario\_02\_balanced & 06\_fatos\_streaming/03\_focos\_scan\_temporal & 47.885 & 7873.276 & 4103.139 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/01\_ds\_focos\_individuais & 38.364 & 17697.700 & 10908.163 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/03\_ds\_eventos\_indigenas & 36.705 & 28512.069 & 18046.622 & 0.000 & 0.000 \\
+scenario\_01\_baseline & 07\_virtual\_datasets/04\_ds\_eventos\_logistica & 29.276 & 3784.883 & 2676.821 & 33.333 & 33.333 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/02\_ds\_eventos\_energia & 22.851 & 22634.766 & 17462.524 & 0.000 & 0.000 \\
+scenario\_03\_query\_heavy & 07\_virtual\_datasets/01\_ds\_focos\_individuais & 20.851 & 11973.791 & 9477.158 & 0.000 & 0.000 \\
+scenario\_03\_query\_heavy & 07\_virtual\_datasets/03\_ds\_eventos\_indigenas & 19.005 & 14559.998 & 11792.843 & 0.000 & 0.000 \\
+scenario\_01\_baseline & 07\_virtual\_datasets/03\_ds\_eventos\_indigenas & 15.297 & 3856.279 & 3266.390 & 0.000 & 66.667 \\
+scenario\_03\_query\_heavy & 06\_fatos\_streaming/02\_eventos\_top\_frp\_ordenado & 13.983 & 9382.412 & 8070.467 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 06\_fatos\_streaming/00\_count\_eventos\_total & 13.414 & 2149.387 & 1861.060 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 06\_fatos\_streaming/02\_eventos\_top\_frp\_ordenado & 12.511 & 21082.435 & 18444.708 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/00\_ds\_eventos\_geral & 8.370 & 17519.424 & 16053.125 & 0.000 & 0.000 \\
+scenario\_03\_query\_heavy & 06\_fatos\_streaming/01\_eventos\_groupby\_bioma\_mes & 0.227 & 5839.760 & 5826.498 & 0.000 & 0.000 \\
+scenario\_01\_baseline & 06\_fatos\_streaming/00\_count\_eventos\_total &  &  & 652.377 & 100.000 & 0.000 \\
+scenario\_01\_baseline & 06\_fatos\_streaming/01\_eventos\_groupby\_bioma\_mes &  &  & 908.097 & 100.000 & 0.000 \\
+scenario\_03\_query\_heavy & 07\_virtual\_datasets/02\_ds\_eventos\_energia & -1.595 & 9904.648 & 10062.619 & 0.000 & 0.000 \\
+scenario\_01\_baseline & 06\_fatos\_streaming/04\_focos\_lookup\_municipio & -3.628 & 1029.111 & 1066.444 & 66.667 & 33.333 \\
+scenario\_03\_query\_heavy & 07\_virtual\_datasets/00\_ds\_eventos\_geral & -6.245 & 9569.723 & 10167.365 & 0.000 & 0.000 \\
+scenario\_01\_baseline & 06\_fatos\_streaming/02\_eventos\_top\_frp\_ordenado & -7.033 & 2080.961 & 2227.324 & 33.333 & 33.333 \\
+scenario\_02\_balanced & 06\_fatos\_streaming/01\_eventos\_groupby\_bioma\_mes & -11.796 & 8501.170 & 9504.009 & 0.000 & 0.000 \\
+scenario\_03\_query\_heavy & 07\_virtual\_datasets/04\_ds\_eventos\_logistica & -16.456 & 8211.068 & 9562.268 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 06\_fatos\_streaming/04\_focos\_lookup\_municipio & -22.372 & 15995.461 & 19573.957 & 0.000 & 0.000 \\
+scenario\_03\_query\_heavy & 06\_fatos\_streaming/04\_focos\_lookup\_municipio & -30.444 & 7433.364 & 9696.370 & 0.000 & 0.000 \\
+scenario\_01\_baseline & 07\_virtual\_datasets/00\_ds\_eventos\_geral & -48.867 & 3612.221 & 5377.394 & 33.333 & 66.667 \\
+scenario\_03\_query\_heavy & 06\_fatos\_streaming/00\_count\_eventos\_total & -61.180 & 907.657 & 1462.958 & 0.000 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/04\_ds\_eventos\_logistica & -78.882 & 12970.641 & 23202.108 & 0.000 & 0.000 \\
+scenario\_03\_query\_heavy & 06\_fatos\_streaming/03\_focos\_scan\_temporal & -81.819 & 1862.851 & 3387.014 & 0.000 & 0.000 \\
+scenario\_01\_baseline & 07\_virtual\_datasets/01\_ds\_focos\_individuais & -93.348 & 3836.554 & 7417.893 & 66.667 & 33.333 \\
+scenario\_01\_baseline & 07\_virtual\_datasets/02\_ds\_eventos\_energia & -122.875 & 2948.901 & 6572.349 & 66.667 & 66.667 \\
+\bottomrule
+\end{longtable}
+}

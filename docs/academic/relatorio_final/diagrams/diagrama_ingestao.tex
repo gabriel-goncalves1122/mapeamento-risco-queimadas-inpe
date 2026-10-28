@@ -1,0 +1,110 @@
+\begin{figure}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tikzpicture}[
+        font=\sffamily\small,
+        %% -- ESTILOS DE COMPONENTES --
+        process/.style={rectangle, draw=black!60, thick, fill=white, rounded corners=4pt, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, minimum width=2.8cm, minimum height=1.3cm},
+        database/.style={cylinder, cylinder uses custom fill, cylinder body fill=white, cylinder end fill=gray!10, shape border rotate=90, draw=black!60, thick, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, aspect=0.25, align=center, inner sep=5pt, minimum width=2.8cm, minimum height=1.5cm},
+        payload/.style={ellipse, draw=black!60, thick, fill=white, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=4pt, minimum width=2.5cm, minimum height=1.1cm},
+        source/.style={tape, tape bend top=none, draw=black!60, thick, fill=white, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, minimum width=2.8cm, minimum height=1.3cm},
+        queue/.style={chamfered rectangle, chamfered rectangle corners={north east, south east}, chamfered rectangle xsep=0.4cm, draw=blue!50, thick, fill=cyan!5, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, minimum width=2.8cm, minimum height=1.3cm},
+        %% -- ESTILOS DE BACKGROUND (MEDALLION) --
+        bg_bronze/.style={rectangle, draw=orange!40!brown, thick, dashed, fill=orange!5, rounded corners=6pt, inner sep=12pt},
+        bg_silver/.style={rectangle, draw=gray!50, thick, dashed, fill=gray!8, rounded corners=6pt, inner sep=12pt},
+        bg_gold/.style={rectangle, draw=yellow!60!orange, thick, dashed, fill=yellow!10, rounded corners=6pt, inner sep=12pt},
+        %% -- ESTILOS DE ARESTAS --
+        relation/.style={-Stealth, thick, draw=gray!70},
+        dashed_rel/.style={Stealth-Stealth, thick, dashed, draw=gray!80},
+        lbl/.style={font=\sffamily\bfseries\scriptsize, text=black, fill=white, draw=gray!40, rounded corners=2pt, inner sep=3pt}
+    ]
+
+    %% ============================================================
+    %% GRADE DE LAYOUT OTIMIZADA (Normalizada na Origem X=0)
+    %% ============================================================
+
+    % ── COLUNA 1 : RAW / BRONZE ──
+    \node[source] at (0, 0)    (api)     {\textbf{API Focos INPE}\\(CSV / API)};
+    \node[source] at (0, -4.5) (dim_raw) {\textbf{Fontes Dimensionais}\\(FUNAI, IBGE, CSVs)};
+
+    % ── COLUNA 2 : PRODUTOR KAFKA ──
+    \node[process] at (6.0, 0) (prod) {\textbf{Produtor Kafka}\\(Ingestão Python)};
+
+    % ── COLUNA 3 : FORK (Ramos) ──
+    \node[process] at (11.0, 4.5) (proc_focos) {\textbf{Processador}\\Espacial};
+    \node[queue] at (11.0, -4.5) (buffer) {\textbf{Buffer Temporário}};
+
+    % ── COLUNA 4 : PROCESSAMENTO / MOTOR (Centro) ──
+    \node[process] at (17.5, -4.5) (dbscan) {\textbf{Eventizador}\\(DBSCAN)};
+    \node[process] at (17.5, 0) (motor) {\textbf{Motor Espacial}\\(Dimensões)};
+
+    % ── COLUNA 5 : PAYLOADS ──
+    \node[payload] at (23.0, 4.5)  (pay_focos)   {\textbf{FocoFato}\\Payload};
+    \node[payload] at (23.0, -4.5) (pay_eventos) {\textbf{EventoFato}\\Payload};
+
+    % ── COLUNA 6 : TÓPICOS KAFKA (SAÍDA) ──
+    \node[queue] at (27.5, 4.5)  (topico_focos)   {\textbf{Tópico Kafka:}\\focos};
+    \node[queue] at (27.5, -4.5) (topico_eventos) {\textbf{Tópico Kafka:}\\eventos};
+
+    % ── SILVER LAYER (Faixa inferior isolada) ──
+    \node[process]  at (6.0, -11)  (silver_etl)  {\textbf{ETL Dimensões}\\(Shapely/GeoPandas)};
+    \node[database] at (14.0, -11) (silver_data) {\textbf{Dimensões Limpas}\\(Bases Geográficas)};
+
+    %% ============================================================
+    %% BOUNDING BOXES (Medallion Architecture)
+    %% ============================================================
+    \begin{scope}[on background layer]
+        % Raw / Bronze
+        \node[bg_bronze, fit={([shift={(-0.8,0.8)}]api.north west) ([shift={(0.8,-0.8)}]dim_raw.south east)}] (bg_raw) {};
+        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_raw.north west) {\textbf{Camada Bruta / Bronze}};
+
+        % Silver Layer
+        \node[bg_silver, fit={([shift={(-0.8,0.8)}]silver_etl.north west) ([shift={(1.0,-0.8)}]silver_data.south east)}] (bg_silver) {};
+        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_silver.north west) {\textbf{Camada Silver / Dados Limpos}};
+
+        % Streaming Processing Pipeline / Gold
+        \node[bg_gold, fit={([shift={(-0.8,0.8)}]prod.north west) ([shift={(0.8,0.8)}]topico_focos.north east) ([shift={(0.8,-0.8)}]topico_eventos.south east) ([shift={(-0.8,-0.8)}]buffer.south west)}] (bg_stream) {};
+        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_stream.north west) {\textbf{Pipeline de Streaming / Camada Gold}};
+    \end{scope}
+
+    %% ============================================================
+    %% SETAS (Roteamento Ortogonal)
+    %% ============================================================
+
+    % Raw -> Produtor Kafka
+    \draw[relation] (api) -- node[lbl, above=6pt] {streaming} (prod);
+
+    % Produtor -> Fork (bifurcação limpa recuada no eixo X=8.5)
+    \draw[relation] (prod.east) -- (8.5, 0) |- (proc_focos.west);
+    \draw[relation] (prod.east) -- (8.5, 0) |- (buffer.west);
+
+    % Buffer -> DBSCAN
+    \draw[relation] (buffer.east) -- node[lbl, above=6pt] {lote segmentado} (dbscan.west);
+
+    % Cruzamentos com Motor Espacial (tracejado vertical livre)
+    \draw[dashed_rel] (proc_focos.south) -- node[right, lbl] {consulta (pontos)} (motor.north);
+    \draw[dashed_rel] (dbscan.north) -- node[right, lbl] {consulta (polígonos)} (motor.south);
+
+    % Processamento -> Payloads
+    \draw[relation] (proc_focos.east) -- node[lbl, above=6pt] {valida e tipa} (pay_focos.west);
+    \draw[relation] (dbscan.east) -- node[lbl, above=6pt] {agrega e tipa} (pay_eventos.west);
+
+    % Payloads -> Tópicos
+    \draw[relation] (pay_focos) -- (topico_focos);
+    \draw[relation] (pay_eventos) -- (topico_eventos);
+
+    % Raw -> Silver: Fontes Dimensionais descem para ETL
+    \draw[relation] (dim_raw.south) |- (silver_etl.west);
+    
+    % ETL -> Dimensões Limpas
+    \draw[relation] (silver_etl) -- (silver_data);
+
+    % Silver -> Motor Espacial (sobe por corredor livre à direita em X=20.0)
+    \draw[relation] (silver_data.east) -| node[lbl, near start, right] {carga em memória} (20.0, 0) -- (motor.east);
+
+    \end{tikzpicture}
+    }
+    \caption{Fluxo de Ingestão e Processamento (Fase 1).}
+    \label{fig:diagrama_ingestao}
+    \fonte{Elaborada pelos autores.}
+\end{figure}

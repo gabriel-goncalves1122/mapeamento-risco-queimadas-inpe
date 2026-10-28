@@ -15,13 +15,12 @@ __pycache__/
 # ==========================================
 # 2. DADOS MASSIVOS E GEOGRÁFICOS (CRÍTICO)
 # ==========================================
-# Ignora todo o conteúdo das subpastas de dados
-data/geo/*
-data/processed/*
-data/raw/*
-data/results/*
+# Ignora todo o conteúdo das subpastas de dados (Medallion)
+pipelines/bronze/data/*
+pipelines/silver/data/*
+pipelines/gold/data/*
 
-# Ignora extensões de arquivos de dados pesados em qualquer lugar
+# Ignora extensões de arquivos de dados pesados e lixos em qualquer lugar
 *.csv
 *.xlsx
 *.geojson
@@ -31,6 +30,8 @@ data/results/*
 *.shx
 *.dbf
 *.prj
+*.deb
+Rplots.pdf
 
 # Arquivo de controle de estado
 checkpoint_ingestao.txt
@@ -71,16 +72,18 @@ infrastructure/superset/exports/*
 !infrastructure/superset/exports/superset_dashboards_export_20260518_231338.zip
 !infrastructure/superset/exports/superset_datasources_export_20260518_231344.yaml
 
+test_query.json
+
 # ==========================================
 # 6. EXCEÇÕES (O QUE DEVE SER VERSIONADO)
 # ==========================================
 # Mantém a estrutura de pastas de dados no Git (requer criar um arquivo .gitkeep vazio nelas)
-!data/geo/.gitkeep
-!data/processed/.gitkeep
-!data/raw/.gitkeep
-!data/results/.gitkeep
+!pipelines/bronze/data/.gitkeep
+!pipelines/silver/data/.gitkeep
+!pipelines/gold/data/.gitkeep
 
 # Força o Git a aceitar os arquivos JSON do Druid e exports atuais do Superset
-!infrastructure/druid_specs/*.json
+!infrastructure/druid/specs/*.json
 !infrastructure/superset/*.zip
 !infrastructure/superset/exports/
+

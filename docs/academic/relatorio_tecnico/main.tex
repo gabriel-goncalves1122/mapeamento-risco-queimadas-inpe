@@ -1,0 +1,59 @@
+\documentclass[12pt]{article}
+
+% Correção para erro \normalsfcodes no Overleaf / TeX Live 2025
+% \makeatletter
+% \DeclareRobustCommand{\normalsfcodes}{%
+%   \sfcode`\.=3000
+%   \sfcode`\?=3000
+%   \sfcode`\!=3000
+%   \sfcode`\:=2000
+%   \sfcode`\;=1500
+%   \sfcode`\,=1250
+% }
+% \makeatother
+
+\usepackage{sbc-template}
+\usepackage{graphicx,url}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{float}
+\usepackage[hidelinks]{hyperref}
+
+\sloppy
+
+\title{Relatório Analítico de Performance e Capacity Planning\\
+  CCO-DataOps: Escalonamento Vertical do Apache Druid}
+
+\author{Gabriel Gonçalves Sampaio\inst{1}, Barbara Pimenta Caetano\inst{1}}
+
+\address{Instituto de Engenharia de Sistemas e Tecnologia da Informação (IESTI) \\
+  Universidade Federal de Itajubá (UNIFEI)\\
+  Avenida BPS, 1303 -- 37500-903 -- Itajubá -- MG -- Brasil
+  \email{gabrielsampaio059@gmail.com, bpimentacaetano@unifei.edu.br}
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  The continuous ingestion and spatial processing of geographic data demands highly resilient infrastructure. This technical report details the capacity planning and performance evaluation of an event-driven DataOps architecture centered on Apache Druid. By subjecting the analytical engine to rigorous stress tests mimicking chaotic real-world queries—such as high-density GeoJSON geospatial joins and concurrent Table Scans—the limits of the system were established. Results demonstrated that the platform is profoundly CPU-bound, maintaining safe memory limits while processing over 3.3 million dynamic fire events in a highly compressed columnar footprint (566 MB). The findings technically substantiate the architectural decision to mitigate dimensional join bottlenecks through data denormalization upstream via Apache Spark, ensuring robust scalability for national civil defense monitoring.
+\end{abstract}
+
+\begin{resumo}
+  A ingestão contínua e o processamento espacial de dados geográficos exigem uma infraestrutura altamente resiliente. Este relatório técnico detalha o planejamento de capacidade e a avaliação de performance de uma arquitetura DataOps orientada a eventos baseada no Apache Druid. Ao submeter o motor analítico a rigorosos testes de estresse que mimetizam consultas caóticas reais — como cruzamentos geoespaciais densos (GeoJSON) e varreduras concorrentes (\textit{Table Scans}) —, estabeleceram-se os limites técnicos do sistema. Os resultados demonstraram que a plataforma é estritamente limitada por processamento (\textit{CPU-bound}), mantendo limites de memória seguros enquanto processa mais de 3,3 milhões de eventos dinâmicos de incêndio em uma pegada colunar altamente compactada (566 MB). As descobertas fundamentam tecnicamente a decisão arquitetural de mitigar gargalos de cruzamento dimensional através da desnormalização prévia dos dados via Apache Spark, garantindo a escalabilidade robusta para o monitoramento nacional da defesa civil.
+\end{resumo}
+
+% Inclusão dos Capítulos Escritos Separadamente
+\input{01_introducao.tex}
+\input{02_objetivo.tex}
+\input{03_metodologia.tex}
+\input{04_resultados.tex}
+\input{05_conclusoes_e_melhorias.tex}
+\input{06_consideracoes_finais.tex}
+
+\end{document}

@@ -1,0 +1,33 @@
+\section{Metodologia}
+
+Para prover embasamento científico à arquitetura analítica do sistema CCO-DataOps, idealizou-se um simulador de concorrência caótica em Python (\texttt{run\_druid\_benchmark.py}). O objetivo da ferramenta é replicar de forma fidedigna o tráfego gerado por múltiplos analistas consultando mapas e painéis complexos do Superset de forma simultânea e concorrente.
+
+\subsection{Desenho dos Cenários de Hardware}
+Foram configurados três perfis isolados no \textit{docker-compose} para validar a escalabilidade vertical das instâncias virtuais do Apache Druid:
+\begin{itemize}
+    \item \textbf{Cenário 01 (Baseline - 1.0 CPU):} Motor severamente restrito a apenas 1 núcleo virtual de processamento para o \textit{Broker} e 1 para o \textit{Historical}, mimetizando servidores de baixo custo.
+    \item \textbf{Cenário 02 (Balanced - 1.5 CPU):} Acréscimo moderado de 50\% na capacidade de computação, representando um servidor mediano de Cloud.
+    \item \textbf{Cenário 03 (Query Heavy - 2.0 CPU):} Foco extremo na vazão matemática e redução de filas de \textit{Threads}, dedicado a exaurir as consultas mais punitivas da rede.
+\end{itemize}
+
+\subsection{Mecânica do Estresse e Orquestração}
+O \textit{benchmark} adota um perfil de \textit{stress} rigoroso. A carga de trabalho é escalonada exponencialmente em saltos de \textbf{1, 2, 4, 8 e 16 usuários simultâneos} (\textit{threads} concorrentes). 
+Cada nível de usuários executa o pacote completo de consultas repetidas vezes ao longo de 3 rodadas contínuas. Para garantir integridade científica, a ferramenta aplica o método de \textit{Shuffle} (embaralhamento), impedindo que o banco de dados crie padrões previsíveis e mimetizando a desordem do mundo real.
+Por fim, cada consulta ataca o sistema em duas frentes de isolamento de memória:
+\begin{itemize}
+    \item \textbf{Cold Cache (Cache Frio):} Desliga temporariamente a Memória RAM dedicada e obriga o nó do Druid a varrer os dados fisicamente no disco.
+    \item \textbf{Warm Cache (Cache Quente):} Executa a consulta novamente em fração de milissegundos para certificar-se da eficiência de leitura direto da matriz de memória em rede.
+\end{itemize}
+
+\subsection{Os Sete Eixos de Consulta (Taxonomia SQL)}
+A bateria de testes não utilizou \textit{queries} genéricas. Desenvolveram-se 29 comandos SQL divididos em 7 eixos operacionais que mapeiam cada engrenagem arquitetural do banco:
+
+\begin{enumerate}
+    \item \textbf{Latência Simples (\texttt{01\_latency\_simple}):} Consultas de peso ínfimo (como um \texttt{COUNT(*)}) desenvolvidas apenas para monitorar a barreira de milissegundos do transporte da rede HTTP e das \textit{Threads} lógicas, sem afetar o disco.
+    \item \textbf{OLAP Pesado (\texttt{02\_olap\_pesado}):} Avaliação massiva da capacidade do processador. Obriga o sistema a realizar \textit{Group By} espaciais atrelados a blocos temporais (biomas consolidados por meses).
+    \item \textbf{Joins Dimensionais (\texttt{03\_joins\_dimensionais}):} O pior cenário arquitetural. Teste rigoroso das engrenagens de cruzar uma Tabela Fato gigantesca (Focos) com Tabelas Dimensionais em tempo real.
+    \item \textbf{Payload Espacial (\texttt{04\_payload\_espacial}):} Teste desenhado para medir o estrangulamento da vazão de I/O em bytes. Solicita que o Druid transporte as monstruosas \textit{strings} nativas da coluna de geometria GeoJSON de volta para o cliente.
+    \item \textbf{Dashboard Misto (\texttt{05\_dashboard\_misto}):} Mescla todas as complexidades acima, requisitando simultaneamente diferentes perfis para emular a carga da tela inicial de uma central de comando (\textit{CCO}).
+    \item \textbf{Fatos Streaming (\texttt{06\_fatos\_streaming}):} O famigerado \textit{Table Scan}. Varre do início ao fim a tabela Fato composta por $3.3$ milhões de registros em busca de agrupamentos TopN.
+    \item \textbf{Virtual Datasets (\texttt{07\_virtual\_datasets}):} O isolamento definitivo. Extraiu-se nativamente a sintaxe SQL bruta (Jinja) produzida em segundo plano pelo Apache Superset em seus mapas iterativos (com regras punitivas de \texttt{ORDER BY} e limites geográficos estritos). Essas \textit{queries} bateram direto na API nativa do Apache Druid, isentando as travas da linguagem Python da ferramenta de Front-End e provando onde realmente reside o gargalo no motor geoespacial.
+\end{enumerate}

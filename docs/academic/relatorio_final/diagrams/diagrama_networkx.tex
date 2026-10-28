@@ -1,0 +1,89 @@
+\begin{figure}[H]
+    \centering
+    \resizebox{0.9\textwidth}{!}{
+    \begin{tikzpicture}[
+        font=\sffamily,
+        process/.style={rectangle, rounded corners=4pt, draw=gray!50, thick, fill=white, font=\small\bfseries, drop shadow={opacity=0.1, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, text width=2.8cm, minimum height=1.3cm},
+        source/.style={tape, draw=gray!50, thick, fill=white, font=\small\bfseries, drop shadow={opacity=0.1, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, text width=2.8cm, minimum height=1.3cm},
+        database/.style={cylinder, shape border rotate=90, cylinder end fill=gray!10, draw=gray!50, thick, fill=white, font=\small\bfseries, drop shadow={opacity=0.1, shadow xshift=2pt, shadow yshift=-2pt}, aspect=0.25, align=center, inner sep=4pt, text width=2.8cm, minimum height=1.3cm},
+        graph_node/.style={circle, draw=gray!50, thick, fill=white, font=\small\bfseries, drop shadow={opacity=0.1, shadow xshift=2pt, shadow yshift=-2pt}, align=center, text width=2.5cm, inner sep=2pt, minimum size=3.0cm},
+        background_box/.style={rectangle, draw=gray!40, thick, dashed, fill=gray!5, rounded corners=6pt, inner sep=15pt},
+        relation/.style={-Stealth, thick, draw=gray!60},
+        label_text/.style={font=\scriptsize\ttfamily, fill=white, draw=gray!40, rounded corners=2pt, inner sep=3pt}
+    ]
+
+    % --- COLUNA 1: BRONZE ---
+    \node[source] (sub) {Subestações\\Brutas};
+    \node[source, below=1.5cm of sub] (lt) {Linhas de\\Transmissão};
+    
+    % --- COLUNA 2: TOPOLOGIA ---
+    % Centralizado verticalmente com os dois de entrada, ou descendo
+    \node[process, right=3cm of sub] (geo) {Conversão GeoPandas\\(EPSG:4326)};
+    \node[process, below=1cm of geo] (ckdtree) {cKDTree\\Spatial Index};
+    \node[process, below=1cm of ckdtree] (matriz) {Matriz de\\Adjacência};
+    \node[graph_node, below=1cm of matriz] (grafo) {Grafo NetworkX\\Direcional};
+    
+    % --- COLUNA 3: GOLD ---
+    \node[process, right=3cm of grafo] (score) {Score de Risco\\em Cascata};
+    \node[database, below=1cm of score] (dim_ons) {Dimensão\\Subestações};
+    
+    % --- LIMITES (SWIMLANES / COLUNAS) ---
+    \coordinate (top_level) at ([yshift=0.8cm]sub.north);
+    \coordinate (bottom_level) at ([yshift=-0.5cm]dim_ons.south);
+    
+    \coordinate (c1_left) at ([xshift=-0.5cm]sub.west);
+    \coordinate (c1_right) at ([xshift=0.5cm]sub.east);
+    
+    \coordinate (c2_left) at ([xshift=-0.5cm]geo.west);
+    \coordinate (c2_right) at ([xshift=0.5cm]geo.east);
+    
+    \coordinate (c3_left) at ([xshift=-0.5cm]score.west);
+    \coordinate (c3_right) at ([xshift=0.5cm]score.east);
+
+    % Travando o X na coluna e o Y no level universal
+    \coordinate (c1_tl) at (c1_left |- top_level);
+    \coordinate (c1_br) at (c1_right |- bottom_level);
+    
+    \coordinate (c2_tl) at (c2_left |- top_level);
+    \coordinate (c2_br) at (c2_right |- bottom_level);
+    
+    \coordinate (c3_tl) at (c3_left |- top_level);
+    \coordinate (c3_br) at (c3_right |- bottom_level);
+
+    % BACKGROUNDS
+    \begin{scope}[on background layer]
+        % Coluna 1
+        \node[background_box, fit=(c1_tl) (c1_br) (lt.west) (lt.east)] (bg_col1) {};
+        \node[anchor=north west, font=\bfseries\color{black}, xshift=5pt, yshift=-5pt] at (bg_col1.north west) {Extração ONS};
+        
+        % Coluna 2
+        \node[background_box, fit=(c2_tl) (c2_br) (grafo.west) (grafo.east)] (bg_col2) {};
+        \node[anchor=north west, font=\bfseries\color{black}, xshift=5pt, yshift=-5pt] at (bg_col2.north west) {Modelagem Topológica};
+        
+        % Coluna 3
+        \node[background_box, fit=(c3_tl) (c3_br) (dim_ons.west) (dim_ons.east)] (bg_col3) {};
+        \node[anchor=north west, font=\bfseries\color{black}, xshift=5pt, yshift=-5pt] at (bg_col3.north west) {Métricas de Centralidade};
+    \end{scope}
+
+    % --- ARROWS ---
+    % Col 1 -> Col 2
+    \draw[relation] (sub.east) -- (geo.west);
+    \draw[relation] (lt.east) -- (geo.south west); % Diagonal limpa
+    
+    % Dentro da Col 2
+    \draw[relation] (geo.south) -- (ckdtree.north);
+    \draw[relation] (ckdtree.south) -- node[label_text, right=2pt] {Distâncias} (matriz.north);
+    \draw[relation] (matriz.south) -- (grafo.north);
+    
+    % Col 2 -> Col 3
+    \draw[relation] (grafo.east) -- node[label_text, above=2pt] {Betweenness} (score.west);
+    
+    % Dentro da Col 3
+    \draw[relation] (score.south) -- (dim_ons.north);
+
+    \end{tikzpicture}
+    }
+    \caption{Cálculo de Centralidade de Risco via Grafos.}
+    \fonte{Elaborada pelos autores.}
+    \label{fig:diagrama_networkx}
+\end{figure}

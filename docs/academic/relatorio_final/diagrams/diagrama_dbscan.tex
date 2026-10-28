@@ -1,0 +1,116 @@
+\begin{figure}[H]
+    \centering
+    \resizebox{0.95\textwidth}{!}{
+    \begin{tikzpicture}[
+        % SHAPES RIGIDOS (SEM TEXT WIDTH)
+        database/.style={
+            cylinder, shape border rotate=90, cylinder end fill=gray!10,
+            draw=gray!50, thick, fill=white,
+            font=\small\bfseries, align=center,
+            minimum height=1.3cm, minimum width=3.8cm, aspect=0.25,
+            drop shadow={opacity=0.1, shadow xshift=2pt, shadow yshift=-2pt}
+        },
+        queue/.style={
+            chamfered rectangle,
+            draw=blue!50, thick, fill=white,
+            font=\small\bfseries, align=center,
+            minimum height=1.0cm, minimum width=3.8cm,
+            drop shadow={opacity=0.1, shadow xshift=2pt, shadow yshift=-2pt}
+        },
+        source/.style={
+            tape,
+            draw=gray!50, thick, fill=white,
+            font=\small\bfseries, align=center,
+            minimum height=1.3cm, minimum width=3.8cm,
+            drop shadow={opacity=0.1, shadow xshift=2pt, shadow yshift=-2pt}
+        },
+        process/.style={
+            rectangle, rounded corners=4pt,
+            draw=gray!50, thick, fill=white,
+            font=\small\bfseries, align=center,
+            minimum height=1.1cm, minimum width=3.8cm,
+            drop shadow={opacity=0.1, shadow xshift=2pt, shadow yshift=-2pt}
+        },
+        relation/.style={ -Stealth, thick, draw=gray!70 },
+        % BACKGROUNDS CONCEITUAIS
+        bg_prep/.style={
+            rectangle, draw=blue!40, thick, dashed, fill=blue!5,
+            inner sep=18pt, rounded corners=6pt
+        },
+        bg_ml/.style={
+            rectangle, draw=violet!40, thick, dashed, fill=violet!5,
+            inner sep=18pt, rounded corners=6pt
+        },
+        bg_geo/.style={
+            rectangle, draw=teal!40, thick, dashed, fill=teal!5,
+            inner sep=18pt, rounded corners=6pt
+        },
+        lbl/.style={
+            font=\scriptsize\ttfamily, fill=white, draw=gray!40, rounded corners=2pt, inner sep=3pt
+        }
+    ]
+
+    % GRID DE COORDENADAS FIXAS (4 COLUNAS, 3 LINHAS)
+    % X: 0, 5.5, 11.0, 16.5
+    % Y: 0, -3.5, -7.0
+
+    % --- LINHA 1 (Da esquerda para a direita) ---
+    \node[source] at (0, 0) (db_in) {CSV INPE Bruto\\(Chunks)};
+    \node[process] at (5.5, 0) (filtros) {Limpeza de Dados\\(Pandas)};
+    \node[process] at (11.0, 0) (norm) {Scaling Temporal\\(Pandas Math)};
+
+    % --- LINHA 2 (Da direita para a esquerda) ---
+    \node[process] at (11.0, -3.5) (dbscan) {Motor de Cluster\\(DBSCAN)};
+    \node[process] at (5.5, -3.5) (agrupamento) {Agrupamento Geo\\(Pandas GroupBy)};
+    \node[process] at (0, -3.5) (ruido) {Descarte Label -1\\(Ruído Térmico)};
+
+    % --- LINHA 3 (Da esquerda para a direita) ---
+    \node[process] at (0, -7.0) (geopandas) {Vetorização Geo\\(GeoPandas)};
+    \node[process] at (5.5, -7.0) (convex_hull) {Envoltória Convexa\\(Shapely)};
+    \node[process] at (11.0, -7.0) (motor) {Cruzamento Ameaças\\(Motor Espacial)};
+    \node[queue] at (16.5, -7.0) (db_out) {Tópico Eventos\\(Payload Kafka)};
+
+    % CAIXAS DE CONTEXTO (BACKGROUNDS)
+    \begin{scope}[on background layer]
+        % Box 1: Pre-processamento
+        \node[bg_prep, fit=(db_in) (norm)] (bg_prep_box) {};
+        \node[anchor=south, font=\small\bfseries\color{black}, fill=blue!5, draw=blue!40, dashed, rounded corners=2pt, inner xsep=10pt, inner ysep=4pt, yshift=-1pt] 
+            at (bg_prep_box.north) {Fase 1: Pré-processamento e Padronização};
+
+        % Box 2: Machine Learning
+        \node[bg_ml, fit=(dbscan) (ruido)] (bg_ml_box) {};
+        \node[anchor=south, font=\small\bfseries\color{black}, fill=violet!5, draw=violet!40, dashed, rounded corners=2pt, inner xsep=10pt, inner ysep=4pt, yshift=-1pt] 
+            at (bg_ml_box.north) {Fase 2: Motor Heurístico (Machine Learning)};
+
+        % Box 3: Geometrizacao e Saida
+        \node[bg_geo, fit=(geopandas) (db_out)] (bg_geo_box) {};
+        \node[anchor=south, font=\small\bfseries\color{black}, fill=teal!5, draw=teal!40, dashed, rounded corners=2pt, inner xsep=10pt, inner ysep=4pt, yshift=-1pt] 
+            at (bg_geo_box.north) {Fase 3: Geometrização, Cruzamento e Saída};
+    \end{scope}
+
+    % --- ARESTAS ORTOGONAIS (COBRA) ---
+    % L1
+    \draw[relation] (db_in.east) -- (filtros.west);
+    \draw[relation] (filtros.east) -- (norm.west);
+
+    % L1 descendo para L2
+    \draw[relation] (norm.south) -- (dbscan.north);
+
+    % L2
+    \draw[relation] (dbscan.west) -- node[lbl, align=center, fill=white, draw=gray!40, inner sep=2pt] {Eps: 5.0km \\ Janela: 2d} (agrupamento.east);
+    \draw[relation] (agrupamento.west) -- (ruido.east);
+
+    % L2 descendo para L3
+    \draw[relation] (ruido.south) -- (geopandas.north);
+
+    % L3
+    \draw[relation] (geopandas.east) -- (convex_hull.west);
+    \draw[relation] (convex_hull.east) -- (motor.west);
+    \draw[relation] (motor.east) -- (db_out.west);
+
+    \end{tikzpicture}
+    }
+    \caption{Arquitetura Espaço-Temporal do Eventizador (DBSCAN).}
+    \fonte{Elaborada pelos autores.}
+    \label{fig:diagrama_dbscan}
+\end{figure}

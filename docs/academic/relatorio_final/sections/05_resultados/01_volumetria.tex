@@ -1,0 +1,25 @@
+\subsection{Volumetria Espacial e Eficiência de Compressão}
+
+Antes de prosseguir com a análise de vazão computacional, a Tabela \ref{tab:volumetria} consolida a magnitude da infraestrutura analítica do SIRDA. Embora a camada analítica (OLAP) lide com um montante superior a 4 milhões de entidades, o peso total de armazenamento nos \textit{Historical Nodes} não ultrapassou a marca de 850 Megabytes físicos, distribuídos em 695 segmentos compactados.
+
+\begin{table}[H]
+    \centering
+    \caption{Volumetria de Entidades no Apache Druid.}
+    \label{tab:volumetria}
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{llrr}
+        \hline
+        \textbf{Entidade Lógica} & \textbf{Tipo} & \textbf{Registros Aprox.} & \textbf{Função no Esquema} \\ \hline
+        Fato Focos Incêndio & Fato & 3.335.198 & Coordenadas brutas INPE/NASA \\
+        Fato Eventos Incêndio & Fato & 147.560 & Polígonos DBSCAN \\
+        Hospitais (CNES) & Dimensão & 550.882 & Ativos de pressão humanitária \\
+        Rodovias Federais (DNIT) & Dimensão & 14.255 & Logística e evacuação \\
+        Subestações e Linhas (ONS) & Dimensão & 2.564 & Malha energética sistêmica \\
+        Municípios Brasileiros \cite{brugz_geodata_2026} & Dimensão & 5.564 & Malha geopolítica e demográfica \\
+        Terras Indígenas (FUNAI) & Dimensão & 650 & Polígonos de fronteira étnica \\ \hline
+        \textbf{Total Analítico} & -- & \textbf{4.056.673} & \textbf{Alocados em $\sim$850 MB} \\ \hline
+    \end{tabular}%
+    }
+\end{table}
+
+Essa eficiência de compactação colunar atesta na prática as escolhas arquiteturais do \textit{Esquema Constelação} atrelado ao motor Druid. Ao delegar o peso geométrico complexo integralmente às Tabelas de Dimensão e operá-las via \textit{Lookups} globais, a arquitetura isola o crescimento massivo das anomalias térmicas, viabilizando as métricas de baixíssima latência que serão discutidas nas baterias de testes subsequentes.

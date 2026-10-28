@@ -1,0 +1,47 @@
+{
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.19\textwidth}p{0.36\textwidth}p{0.08\textwidth}p{0.09\textwidth}p{0.09\textwidth}p{0.07\textwidth}p{0.08\textwidth}}
+\caption{Maiores hotspots de latencia p95.}\\
+\toprule
+Cenario & Query & Cache & p95 ms & p99 ms & Erros & Erro \% \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & Query & Cache & p95 ms & p99 ms & Erros & Erro \% \\
+\midrule
+\endhead
+scenario\_02\_balanced & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & cold & 36273.492 & 50481.370 & 0 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/03\_ds\_eventos\_indigenas & cold & 28512.069 & 41075.023 & 0 & 0.000 \\
+scenario\_02\_balanced & 05\_dashboard\_misto/00\_dashboard\_defesa\_civil & cold & 27372.469 & 39100.596 & 0 & 0.000 \\
+scenario\_02\_balanced & 05\_dashboard\_misto/01\_dashboard\_energia\_logistica & cold & 26304.886 & 38823.073 & 0 & 0.000 \\
+scenario\_02\_balanced & 01\_latency\_simple/01\_count\_dimensoes\_catalogo & cold & 26157.379 & 34807.756 & 0 & 0.000 \\
+scenario\_02\_balanced & 03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & cold & 23338.880 & 35703.274 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & cold & 23287.780 & 27212.323 & 0 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/04\_ds\_eventos\_logistica & warm & 23202.108 & 28186.225 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 05\_dashboard\_misto/00\_dashboard\_defesa\_civil & cold & 23015.870 & 23985.052 & 0 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/02\_ds\_eventos\_energia & cold & 22634.766 & 24618.096 & 0 & 0.000 \\
+scenario\_02\_balanced & 02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional & cold & 21281.021 & 24268.153 & 0 & 0.000 \\
+scenario\_02\_balanced & 06\_fatos\_streaming/02\_eventos\_top\_frp\_ordenado & cold & 21082.435 & 32634.278 & 0 & 0.000 \\
+scenario\_02\_balanced & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & cold & 21039.614 & 28079.653 & 0 & 0.000 \\
+scenario\_02\_balanced & 06\_fatos\_streaming/04\_focos\_lookup\_municipio & warm & 19573.957 & 30975.691 & 0 & 0.000 \\
+scenario\_02\_balanced & 06\_fatos\_streaming/02\_eventos\_top\_frp\_ordenado & warm & 18444.708 & 22972.457 & 0 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/03\_ds\_eventos\_indigenas & warm & 18046.622 & 21770.253 & 0 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/01\_ds\_focos\_individuais & cold & 17697.700 & 17835.166 & 0 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/00\_ds\_eventos\_geral & cold & 17519.424 & 19376.778 & 0 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/02\_ds\_eventos\_energia & warm & 17462.524 & 17566.838 & 0 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/00\_ds\_eventos\_geral & warm & 16053.125 & 16295.699 & 0 & 0.000 \\
+scenario\_02\_balanced & 06\_fatos\_streaming/04\_focos\_lookup\_municipio & cold & 15995.461 & 19654.709 & 0 & 0.000 \\
+scenario\_02\_balanced & 01\_latency\_simple/03\_lookup\_municipios\_mg & cold & 14832.951 & 29288.724 & 0 & 0.000 \\
+scenario\_02\_balanced & 05\_dashboard\_misto/02\_dashboard\_qualidade\_operacional & cold & 14758.964 & 22601.682 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 07\_virtual\_datasets/03\_ds\_eventos\_indigenas & cold & 14559.998 & 18646.187 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 05\_dashboard\_misto/01\_dashboard\_energia\_logistica & cold & 13590.337 & 20475.363 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 02\_olap\_pesado/02\_rodovias\_status\_pavimento & cold & 13377.580 & 14503.663 & 0 & 0.000 \\
+scenario\_02\_balanced & 07\_virtual\_datasets/04\_ds\_eventos\_logistica & cold & 12970.641 & 13853.640 & 0 & 0.000 \\
+scenario\_02\_balanced & 02\_olap\_pesado/01\_terras\_indigenas\_area\_regularizacao & cold & 12082.358 & 12912.197 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 07\_virtual\_datasets/01\_ds\_focos\_individuais & cold & 11973.791 & 16361.548 & 0 & 0.000 \\
+scenario\_03\_query\_heavy & 01\_latency\_simple/01\_count\_dimensoes\_catalogo & cold & 11887.960 & 15649.708 & 0 & 0.000 \\
+\bottomrule
+\end{longtable}
+}

@@ -1,0 +1,14 @@
+\subsection{Contextualização Operacional e Eficiência Visual}
+
+A materialização visual dos KPIs ocorreu no \textbf{Apache Superset}. Para mitigar estouros de memória no \textit{Broker} ao renderizar matrizes GeoJSON no motor 3D (\textit{Deck.gl}), injetou-se uma amostragem matemática no banco de dados. Como um limite simples (ex: \texttt{LIMIT 1000}) omitiria o país e aglomeraria os retornos num único estado, implementou-se uma função de \textit{hash} determinístico espacial e temporal (\texttt{sample\_bucket}) no Druid. A técnica garante que o mapa nacional espalhe estocasticamente os incidentes críticos pela tela, preservando a consciência situacional sem congestionar o navegador.
+
+Adicionalmente, visando resolução assintótica $O(1)$, substituímos \texttt{JOINs} tradicionais por \textit{Lookups} globais alocados na memória do Coordenador (cruzando rapidamente chaves de subestações e municípios). Os principais \textit{Dashboards} resultantes cobrem:
+
+\begin{itemize}
+    \item \textbf{Painel Geral (Níveis 1 e 2):} Apresenta mapeamento bruto da anomalia no país. Conta Área Queimada e evolução temporal.
+    \item \textbf{Defesa Civil e Saúde (Nível 3):} Consolida a "Pressão Máxima" e alerta sobre leitos hospitalares pressionados por fuligem e linhas de fogo diretas.
+    \item \textbf{Proteção Indígena (Nível 3):} Dedicado à sobreposição espacial dos eventos sobre polígonos legalmente restritos.
+    \item \textbf{Segurança Energética (Nível 3):} Materializa a detecção de risco sistêmico via \textit{NetworkX}. Identifica subestações de alta tensão na rota do desastre, embasando antecipações logísticas e re-despacho elétrico.
+\end{itemize}
+
+O desenvolvimento metodológico orientou-se para que as métricas processadas entregassem respostas na escala de poucos segundos, fundamentando assim a gestão de emergências críticas em tempo hábil.

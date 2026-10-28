@@ -1,0 +1,33 @@
+% ============================================================================
+% TÍTULO, AUTORES E IDENTIFICAÇÃO
+% ============================================================================
+\begin{singlespace}
+\begin{center}
+\textbf{AVALIAÇÃO DE DESEMPENHO DO APACHE DRUID: ESTRUTURAÇÃO DE EXPERIMENTOS E ANÁLISE COMPARATIVA}
+
+\vspace{0.55cm}
+Gabriel Gonçalves Sampaio\textsuperscript{1} (IC), Barbara Pimenta Caetano\textsuperscript{1} (PQ)
+
+\vspace{0.15cm}
+{\fontsize{9}{11}\selectfont\itshape
+\textsuperscript{1}Instituto de Engenharia de Sistemas e Tecnologia da Informação (IESTI) - Universidade Federal de Itajubá (UNIFEI)\\
+E-mails: gabriel@unifei.edu.br, barbara.caetano@unifei.edu.br}
+
+\end{center}
+\end{singlespace}
+
+\vspace{0.3cm}
+
+\begin{singlespace}
+\begin{center}
+\textbf{RESUMO}
+\end{center}
+O monitoramento geoespacial de desastres ambientais, especialmente o cruzamento em larga escala de incêndios florestais com infraestruturas críticas, exige arquiteturas de dados de baixa latência. Modelos tradicionais em lote (\textit{batch}) enfrentam gargalos severos ao correlacionar milhões de anomalias térmicas com fronteiras demográficas e elétricas do Brasil de forma interativa. Para avaliar uma alternativa escalável, este trabalho foca na estruturação de experimentos e na análise comparativa de desempenho do banco de dados analítico colunar Apache Druid, inserido em um fluxo \textit{DataOps} de processamento em tempo real. A metodologia envolveu a ingestão de 3,3 milhões de focos de calor históricos e sua correlação cruzada, na memória via \textit{Lookups}, com entidades como municípios, hospitais, malhas de transmissão elétrica e terras indígenas. A avaliação operacional baseou-se em testes de estresse progressivo (\textit{Query Per Second} - QPS) e no escalonamento horizontal de vCPUs e da segmentação do banco. Os resultados demonstram que estratégias compactas de alocação garantiram ganhos de vazão de até 38,8 vezes em relação a estratégias fragmentadas sob o mesmo hardware de 6 vCPUs. Adicionalmente, as avaliações de latência \textit{Percentil 95} (P95) indicaram que o sistema é capaz de resolver filtragens espaciais intensas em tempos que variam entre 2,8 a 8,2 segundos nos piores cenários de concorrência, suportando a carga sem estourar limites rígidos de RAM ($\sim$850 MB por nó na camada de cache). Conclui-se que o Apache Druid atende aos requisitos operacionais para inteligência geoespacial rápida, desde que a razão entre a taxa de requisições e a paralelização dos segmentos dos dados seja cuidadosamente calibrada.\\
+\textbf{Palavras-chave:} Apache Druid. Benchmarking. DataOps. Processamento Analítico (OLAP). Monitoramento Geoespacial.
+
+\vspace{\baselineskip}
+\noindent\textbf{Área de Conhecimento:} Ciência da Computação\\
+\textbf{Campus:} Itajubá
+\end{singlespace}
+
+\vspace{0.3cm}

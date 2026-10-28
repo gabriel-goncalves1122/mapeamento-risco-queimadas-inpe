@@ -1,0 +1,14 @@
+\section{Objetivos}
+
+\subsection{Objetivo Geral}
+Avaliar a escalabilidade vertical, a \textit{performance} de processamento analítico e o consumo de infraestrutura da arquitetura CCO-DataOps --- com ênfase no motor Apache Druid --- sob condições de tráfego intensivo, a fim de garantir a responsividade em tempo real dos painéis gerenciais e operacionais.
+
+\subsection{Objetivos Específicos}
+Para atingir o objetivo principal, foram estabelecidos os seguintes propósitos complementares para a bateria de testes de estresse:
+
+\begin{itemize}
+    \item \textbf{Mapear a Matriz de Capacidade e Saturação:} Determinar o teto máximo de concorrência suportado pelo sistema (Usuários Simultâneos e Consultas por Segundo) antes da ocorrência de degradação de tempo de resposta (\textit{Timeouts}) ou falhas, variando os recursos computacionais disponíveis (perfis de CPU).
+    \item \textbf{Mensurar a Eficiência do Mecanismo de Cache:} Quantificar o ganho real na latência proporcionado pelo \textit{Cache} de memória do Druid (\textit{Warm Cache} vs \textit{Cold Cache}), especialmente ao processar agregação massiva em \textit{Virtual Datasets}.
+    \item \textbf{Identificar Gargalos Computacionais (Query Hotspots):} Isolar e catalogar as consultas SQL de maior custo sistêmico --- tais como cruzamentos de matrizes espaciais (Joins com polígonos JSON) --- comprovando gargalos arquiteturais.
+    \item \textbf{Analisar a Pegada de Armazenamento (Storage Footprint):} Avaliar a taxa de compressão nativa de colunas e a fragmentação em disco, validando a sustentabilidade de longo prazo para a ingestão contínua de bases de Focos de Incêndio nacionais.
+\end{itemize}

@@ -1,0 +1,30 @@
+\begin{landscape}
+{
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.19\linewidth}p{0.05\linewidth}p{0.05\linewidth}p{0.05\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.06\linewidth}p{0.09\linewidth}}
+\caption{Tabela completa de capacidade por cenario e concorrencia.}\\
+\toprule
+Cenario & Conc. & Req. & Erros & Erro \% & QPS & Avg & p50 & p90 & p95 & p99 & Max & Classe \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & Conc. & Req. & Erros & Erro \% & QPS & Avg & p50 & p90 & p95 & p99 & Max & Classe \\
+\midrule
+\endhead
+Cenario 1 - Baseline & 1 & 117 & 50 & 42.735 & 0.893 & 1431.142 & 440.350 & 3854.786 & 5583.050 & 6928.632 & 7620.240 & SATURADO \\
+Cenario 2 - Balanced & 1 & 117 & 0 & 0.000 & 1.232 & 759.361 & 226.537 & 1970.409 & 2412.295 & 3215.026 & 4681.815 & ESTAVEL \\
+Cenario 2 - Balanced & 2 & 117 & 0 & 0.000 & 1.722 & 1091.964 & 278.508 & 3184.871 & 3697.038 & 4712.617 & 5574.195 & ESTAVEL \\
+Cenario 2 - Balanced & 4 & 117 & 0 & 0.000 & 1.594 & 2438.785 & 1705.378 & 5912.412 & 6936.469 & 9151.593 & 9386.948 & ESTAVEL \\
+Cenario 2 - Balanced & 8 & 117 & 0 & 0.000 & 1.655 & 4656.415 & 3954.135 & 10227.567 & 12611.241 & 19525.664 & 21572.268 & LATENCIA\_ALTA \\
+Cenario 2 - Balanced & 16 & 117 & 0 & 0.000 & 1.148 & 13041.018 & 10806.694 & 27854.077 & 35811.861 & 43866.460 & 54033.340 & SATURADO \\
+Cenario 3 - Query Heavy & 1 & 117 & 0 & 0.000 & 1.326 & 700.189 & 192.447 & 1737.572 & 2011.913 & 3219.822 & 5463.439 & ESTAVEL \\
+Cenario 3 - Query Heavy & 2 & 117 & 0 & 0.000 & 2.009 & 923.635 & 118.488 & 2710.311 & 2888.914 & 3199.723 & 3264.837 & ESTAVEL \\
+Cenario 3 - Query Heavy & 4 & 117 & 0 & 0.000 & 2.063 & 1857.615 & 752.661 & 5338.792 & 5733.354 & 5968.436 & 6274.563 & ESTAVEL \\
+Cenario 3 - Query Heavy & 8 & 117 & 0 & 0.000 & 1.991 & 3726.401 & 3427.340 & 7631.269 & 8247.749 & 9477.933 & 10989.698 & LATENCIA\_ALTA \\
+Cenario 3 - Query Heavy & 16 & 117 & 0 & 0.000 & 1.934 & 7517.170 & 7561.481 & 13979.274 & 17900.336 & 23950.438 & 28193.459 & SATURADO \\
+\bottomrule
+\end{longtable}
+}
+\end{landscape}

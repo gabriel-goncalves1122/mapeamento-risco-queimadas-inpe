@@ -1,0 +1,26 @@
+\subsection{Cenários de Hardware Restritivos}
+
+A estratégia de testes não se concentrou puramente na otimização algorítmica do código SQL ou na alteração do esquema de dados, mas sim na alocação de recursos físicos subjacentes (vCPU e Memória RAM) para os nós distribuídos do Apache Druid (\textit{Broker} e \textit{Historical}). O propósito foi descobrir o limite de capacidade analítica sustentada antes da ocorrência de falhas (\textit{Timeouts} e \textit{Out Of Memory}) ou da degradação inaceitável na latência. Todos os contêineres foram hospedados em uma mesma máquina física local, equipada com um processador Intel Core i5-1135G7 (8 \textit{threads} lógicas), 8GB de RAM e sistema operacional Ubuntu 24.04 LTS.
+
+Para tanto, foram estabelecidos três perfis distintos de capacidade isolados via conteinerização (\textit{docker-compose}):
+
+\begin{itemize}
+    \item \textbf{Cenário Baseline (1.0 vCPU e 1 GB RAM):} Motor restrito a recursos escassos, mimetizando servidores de entrada e baixo custo. Neste cenário, o motor conta apenas com uma \textit{Thread} de processamento e um \textit{Merge Buffer}, forçando um agressivo enfileiramento de requisições concorrentes.
+    \item \textbf{Cenário Balanced (1.5 vCPU e 1.5 GB RAM):} Acréscimo moderado na capacidade de computação, elevando as \textit{Threads} lógicas para duas, representando o uso diário em uma infraestrutura em nuvem mediana.
+    \item \textbf{Cenário Query Heavy (2.0 vCPU e 2.0 GB RAM):} Foco primário na vazão matemática e mitigação de filas, alocando três \textit{Threads} e três \textit{Merge Buffers}, configuração destinada a estabilizar cruzamentos espaciais massivos.
+\end{itemize}
+
+As instâncias do Apache Druid foram progressivamente redimensionadas contra limites constantes do hospedeiro. A carga escalonada (1 a 16 \textit{threads} concorrentes) mesclou cenários com e sem aquecimento da JVM (\textit{Cold} e \textit{Warm Start}). Cada bateria de estresse contínuo durou \textasciitilde{}7 minutos, replicada em 3 rodadas para garantia estatística.
+
+\subsection{Taxonomia do \textit{Workload} SQL e Justificativa de Benchmark}
+
+Na literatura de Bancos de Dados Analíticos, a aferição de desempenho tipicamente recorre a padrões sintéticos universais, como o TPC-H ou o \textit{Star Schema Benchmark} (SSB) \cite{oneil_ssb_2009}. No entanto, esses modelos focam no estresse de \textit{Joins} multi-tabelas em esquemas normalizados, falhando em emular o vetor de degradação primário deste projeto: o tráfego maciço de dicionários espaciais (matrizes GeoJSON) alocados na memória \textit{Heap} da JVM. 
+
+Portanto, rejeitaram-se as cargas sintéticas de prateleira em prol da engenharia reversa. Extraíram-se as 29 requisições SQL puras geradas nos bastidores pelo \textit{Apache Superset} durante o uso real dos painéis. Tais consultas foram submetidas ao estresse repetitivo ininterrupto, dividindo-se nos seguintes eixos analíticos:
+
+\begin{enumerate}
+    \item \textbf{Latência Simples:} Consultas restritas (como \texttt{COUNT(*)}) para isolar a barreira de tempo imposta pelo protocolo HTTP, servindo de controle para a rede.
+    \item \textbf{OLAP Pesado e Extensões Geográficas:} Avaliação da CPU via \textit{Group By} e transporte de matrizes GeoJSON densas (\textit{Payloads} de até milhares de vértices por polígono).
+    \item \textbf{Lookups em Memória:} O vetor central de estresse arquitetural. Com a semântica de \textit{Joins} dimensionais executada via \textit{Lookups} (mapas de \textit{hash} em memória para evitar \textit{shuffle} de rede), o teste força o \textit{Broker} a instanciar na RAM matrizes espaciais volumosas contendo as entidades limitantes (TIs, Municípios e Hospitais), aplicando alta pressão nos \textit{Merge Buffers}.
+    \item \textbf{Virtual Datasets Reais:} O isolamento definitivo. Extraiu-se nativamente a sintaxe SQL real produzida nos bastidores pelo \textit{Apache Superset}, injetando as requisições puras diretamente na API REST do Druid.
+\end{enumerate}

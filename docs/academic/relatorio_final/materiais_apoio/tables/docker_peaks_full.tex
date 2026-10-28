@@ -1,0 +1,35 @@
+{
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.20\textwidth}p{0.17\textwidth}p{0.10\textwidth}p{0.12\textwidth}p{0.12\textwidth}p{0.12\textwidth}p{0.12\textwidth}}
+\caption{Picos e medias observadas nos containers durante a matriz.}\\
+\toprule
+Cenario & Container & Amostras & CPU media \% & CPU max \% & Mem media \% & Mem max \% \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & Container & Amostras & CPU media \% & CPU max \% & Mem media \% & Mem max \% \\
+\midrule
+\endhead
+scenario\_01\_baseline & broker & 33 & 32.937 & 107.030 & 81.890 & 86.890 \\
+scenario\_01\_baseline & coordinator & 33 & 2.879 & 17.500 & 65.910 & 67.680 \\
+scenario\_01\_baseline & historical & 33 & 67.442 & 104.090 & 69.014 & 90.160 \\
+scenario\_01\_baseline & middlemanager & 33 & 0.379 & 0.920 & 13.679 & 14.300 \\
+scenario\_01\_baseline & postgres & 33 & 0.067 & 0.770 & 9.756 & 11.020 \\
+scenario\_01\_baseline & router & 33 & 0.435 & 0.880 & 43.880 & 44.110 \\
+scenario\_02\_balanced & broker & 101 & 71.707 & 148.210 & 78.785 & 85.270 \\
+scenario\_02\_balanced & coordinator & 101 & 2.048 & 15.810 & 53.477 & 66.330 \\
+scenario\_02\_balanced & historical & 101 & 123.360 & 157.320 & 77.381 & 83.980 \\
+scenario\_02\_balanced & middlemanager & 101 & 0.356 & 0.950 & 5.620 & 13.210 \\
+scenario\_02\_balanced & postgres & 101 & 0.275 & 2.290 & 6.030 & 9.500 \\
+scenario\_02\_balanced & router & 101 & 0.490 & 6.600 & 19.430 & 43.800 \\
+scenario\_03\_query\_heavy & broker & 79 & 105.155 & 205.660 & 73.193 & 77.640 \\
+scenario\_03\_query\_heavy & coordinator & 79 & 1.986 & 9.100 & 46.600 & 47.720 \\
+scenario\_03\_query\_heavy & historical & 79 & 172.798 & 215.230 & 85.460 & 89.930 \\
+scenario\_03\_query\_heavy & middlemanager & 79 & 0.304 & 0.620 & 3.506 & 3.790 \\
+scenario\_03\_query\_heavy & postgres & 79 & 0.197 & 2.200 & 5.864 & 6.070 \\
+scenario\_03\_query\_heavy & router & 79 & 0.377 & 1.810 & 12.905 & 14.080 \\
+\bottomrule
+\end{longtable}
+}

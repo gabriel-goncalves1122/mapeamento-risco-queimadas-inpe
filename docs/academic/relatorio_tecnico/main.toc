@@ -1,0 +1,19 @@
+\babel@toc {portuguese}{}\relax 
+\contentsline {section}{\numberline {1}Introdução}{3}{section.1}%
+\contentsline {section}{\numberline {2}Objetivos}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Objetivo Geral}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Objetivos Específicos}{3}{subsection.2.2}%
+\contentsline {section}{\numberline {3}Metodologia}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Desenho dos Cenários de Hardware}{4}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Mecânica do Estresse e Orquestração}{4}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Os Sete Eixos de Consulta (Taxonomia SQL)}{5}{subsection.3.3}%
+\contentsline {section}{\numberline {4}Resultados e Discussões}{5}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Matriz de Capacidade e Saturação (CPU-Bound)}{5}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Eficiência de Cache Frio vs Quente (\textit {Warm vs Cold})}{7}{subsection.4.2}%
+\contentsline {subsection}{\numberline {4.3}Consumo Físico de Contêineres (O Mito da RAM)}{7}{subsection.4.3}%
+\contentsline {subsection}{\numberline {4.4}Hotspots: Os Vilões Dimensionais}{8}{subsection.4.4}%
+\contentsline {subsection}{\numberline {4.5}Sustentabilidade em Disco (\textit {Storage Footprint})}{8}{subsection.4.5}%
+\contentsline {section}{\numberline {5}Diagnóstico Arquitetural e Plano de Ação}{9}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Onde o Sistema Trava? (Diagnóstico Final)}{9}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Plano de Ação: O que pode ser aprimorado?}{9}{subsection.5.2}%
+\contentsline {section}{\numberline {6}Considerações Finais}{10}{section.6}%

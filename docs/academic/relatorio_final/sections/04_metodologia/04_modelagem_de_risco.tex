@@ -1,0 +1,26 @@
+\subsection{Modelagem de Ameaças e Risco}
+
+\subsubsection{Modelos Físicos de Pressão Humanitária e Territorial}
+
+Todo impacto civil medido pelo SIRDA fundamenta-se num decaimento métrico, onde a ameaça de um incêndio é inversamente proporcional à distância do ativo. A formulação matricial de cálculo adota o formato:
+\begin{equation}
+\label{eq:pressao_civil}
+\text{Índice de Pressão} = \frac{FRP \times (1 + risco\_inpe)}{\max(distancia_{km}, 0.1)}
+\end{equation}
+
+Na \textbf{Pressão na Saúde}, o sistema cruza os polígonos de fogo com os ativos do CNES. Pontos com funcionamento "24h" e categoria "urgência/emergência" são isolados como Unidades Críticas, cujo colapso geraria sobrecarga sistêmica no SUS. Atingindo o índice de pressão 100 (limite heurístico de priorização visual), o cenário da instalação torna-se "Crítico".
+
+O \textbf{Índice de Pressão Territorial} aplica a Equação \ref{eq:pressao_civil} à base de Terras Indígenas (FUNAI). A ameaça territorial é subdividida via intersecções \textit{shapely} como: DENTRO (distância euclidiana zero, configurando invasão de chamas) ou ENTORNO (distância maior que zero, mas sujeita aos efeitos radiais da fumaça).
+
+\subsubsection{Modelagem Topológica e Risco em Cascata (NetworkX)}
+
+No cume analítico (Nível 3), a segurança energética é avaliada em duas frentes complementares: o impacto termal direto e a topologia da rede. A vulnerabilidade térmica de uma instalação elétrica expande o Índice de Pressão civil (Equação \ref{eq:pressao_civil}), ponderando-o pela magnitude estrutural do alvo. A formulação matemática da ameaça imediata sobre uma subestação isolada consolida-se por:
+\begin{equation}
+\text{Ameaça}_{\text{Subestação}} = \text{Índice de Pressão} \times \ln(capacidade_{MW} + 1)
+\end{equation}
+
+Para além do impacto isolado, o sistema avança para simular a propagação do risco sistêmico modelando as Subestações e Linhas de Transmissão do ONS (Operador Nacional do Sistema Elétrico) como um grafo direcional via \textit{NetworkX}. O pré-processamento espacial das geometrias EPSG:4326 recorre a um \textit{Spatial Index} otimizado (\textit{cKDTree}) para extrair uma matriz de adjacência georreferenciada baseada na proximidade dos terminais lógicos da malha elétrica, método reconhecido para a avaliação de vulnerabilidade em topologias elétricas.
+
+A partir do grafo gerado, calcula-se a métrica de \textit{Betweenness Centrality} (Centralidade de Intermediação), quantificando estruturalmente a suscetibilidade de uma subestação induzir blecautes caso seja atingida. Pontuações extremas são normalizadas entre 0-100, em que subestações avaliadas com escore $\geq 80$ (ponto de corte empírico projetado para o topo da distribuição de vulnerabilidade) indicam nós críticos com risco de efeito cascata Severo/Extremo. Caso essas artérias centrais colapsem sob a ameaça física do fogo, a destruição causará interrupções macro-regionais ou bloqueios completos de escoamento elétrico (Figura \ref{fig:diagrama_networkx}).
+
+\input{diagrams/diagrama_networkx.tex}

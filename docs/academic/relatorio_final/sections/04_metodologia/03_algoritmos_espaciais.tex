@@ -1,0 +1,12 @@
+\subsection{Agrupamento Espaço-Temporal (DBSCAN Reescalonado)}
+
+O processo de detecção de eventos críticos ocorre no Nível 2 de Consciência Situacional, onde focos de calor isolados são agrupados em clusters geográficos contínuos. Para tal, foi implementado o algoritmo DBSCAN clássico com o eixo temporal reescalonado, parametrizado com suporte da biblioteca \textit{scikit-learn}. Em vez de utilizar o modelo ST-DBSCAN puro (que exige distâncias com limites duplos e independentes), o tempo foi normalizado e injetado diretamente como um terceiro eixo espacial virtual. 
+
+Para equalizar grandezas espaciais e temporais, o algoritmo converte distâncias temporais em distâncias métricas "virtuais" sob a regra:
+\begin{equation}
+t_{km} = t_{dias} \times \frac{eps_{km}}{\max(eps_{dias}, 0.001)}
+\end{equation}
+
+O modelo operou com raio espacial ($eps_{km}$) de 5.0 km, tolerância temporal ($eps_{dias}$) de 2.0 dias e densidade mínima de 3 focos. Após projeção para o Sistema Policônico Nacional (EPSG:5880), os agrupamentos são delimitados via envoltória convexa (\textit{Convex Hull}) no GeoPandas (Figura \ref{fig:diagrama_dbscan}). O \textit{cluster} resultante é classificado como \textit{Megadesastre} caso aglutine mais de 5.000 focos ou 500 km² de área num recorte de sete dias.
+
+\input{diagrams/diagrama_dbscan.tex}

@@ -1,0 +1,71 @@
+\begin{figure}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tikzpicture}[
+        font=\sffamily\small,
+        %% -- ESTILOS --
+        asset/.style={rectangle, draw=black!60, thick, fill=white, rounded corners=4pt, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, minimum width=3.5cm, minimum height=1.0cm},
+        relation/.style={-Stealth, thick, draw=gray!80},
+        %% -- GRUPOS --
+        bg_infra/.style={rectangle, draw=cyan!60!blue, thick, dashed, fill=cyan!5, rounded corners=6pt, inner sep=12pt},
+        bg_science/.style={rectangle, draw=purple!60!blue, thick, dashed, fill=purple!5, rounded corners=6pt, inner sep=12pt},
+        bg_dim/.style={rectangle, draw=gray!50, thick, dashed, fill=gray!8, rounded corners=6pt, inner sep=12pt},
+        lbl/.style={font=\sffamily\bfseries\scriptsize, text=black, fill=white, draw=gray!40, rounded corners=2pt, inner sep=2pt}
+    ]
+
+    % ==========================================
+    % INFRA_ONS
+    % ==========================================
+    \node[asset] at (0, 0) (aneel) {\textbf{aneel\_ons\_data}\\(Python)};
+    
+    \node[asset] at (6.5, 2.0) (dim_lt) {\textbf{dim\_linhas\_transmissao}\\(Python)};
+    \node[asset] at (6.5, 0) (dim_sub) {\textbf{dim\_subestacoes}\\(Python)};
+    \node[asset] at (6.5, -2.0) (dim_sis) {\textbf{dim\_sistemas\_isolados}\\(Python)};
+
+    % ==========================================
+    % SCIENCE_MODELS
+    % ==========================================
+    \node[asset] at (13.5, 1.0) (network) {\textbf{network\_centrality\_model}\\(NetworkX)};
+    \node[asset] at (13.5, -2.0) (dbscan) {\textbf{st\_dbscan\_fire\_events}\\(Scikit-Learn)};
+
+    % ==========================================
+    % DIMENSIONS (Static)
+    % ==========================================
+    \node[asset] at (0, -5.5) (dim_mun) {\textbf{dim\_municipios}\\(Python)};
+    \node[asset] at (4.5, -5.5) (dim_hosp) {\textbf{dim\_hospitais}\\(Python)};
+    \node[asset] at (9.0, -5.5) (dim_ti) {\textbf{dim\_terras\_indigenas}\\(Python)};
+    \node[asset] at (13.5, -5.5) (dim_rod) {\textbf{dim\_rodovias\_federais}\\(Python)};
+
+    % ==========================================
+    % BACKGROUNDS
+    % ==========================================
+    \begin{scope}[on background layer]
+        % Infra
+        \node[bg_infra, fit={([shift={(-0.5,1.0)}]aneel.west|-dim_lt.north) ([shift={(0.5,-0.5)}]dim_lt.east|-dim_sis.south)}] (bg_infra_node) {};
+        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_infra_node.north west) {\textbf{Group: infra\_ons}};
+
+        % Science
+        \node[bg_science, fit={([shift={(-0.5,1.0)}]network.north west) ([shift={(0.5,-0.5)}]dbscan.south east)}] (bg_science_node) {};
+        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_science_node.north west) {\textbf{Group: science\_models}};
+
+        % Dimensions
+        \node[bg_dim, fit={([shift={(-0.5,1.0)}]dim_mun.north west) ([shift={(0.5,-0.5)}]dim_rod.south east)}] (bg_dim_node) {};
+        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_dim_node.north west) {\textbf{Group: dimensions}};
+    \end{scope}
+
+    % ==========================================
+    % SETAS DE LINHAGEM (DEPENDÊNCIAS)
+    % ==========================================
+    \draw[relation] (aneel.east) to[out=0, in=180] (dim_lt.west);
+    \draw[relation] (aneel.east) to[out=0, in=180] (dim_sub.west);
+    \draw[relation] (aneel.east) to[out=0, in=180] (dim_sis.west);
+
+    \draw[relation] (dim_lt.east) to[out=0, in=180] (network.west);
+    \draw[relation] (dim_sub.east) to[out=0, in=180] (network.west);
+
+    \end{tikzpicture}
+    }
+    \caption{Grafo de Dependência Declarativa (Software-Defined Assets).}
+    \label{fig:diagrama_dagster}
+    \fonte{Elaborada pelos autores.}
+\end{figure}

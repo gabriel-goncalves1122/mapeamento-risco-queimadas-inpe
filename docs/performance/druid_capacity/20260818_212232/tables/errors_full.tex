@@ -1,0 +1,48 @@
+{
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.22\textwidth}p{0.08\textwidth}p{0.42\textwidth}p{0.10\textwidth}p{0.08\textwidth}}
+\caption{Resumo dos erros observados nos cenarios saturados.}\\
+\toprule
+Cenario & Conc. & Query & Cache & Erros \\
+\midrule
+\endfirsthead
+\toprule
+Cenario & Conc. & Query & Cache & Erros \\
+\midrule
+\endhead
+scenario\_01\_baseline & 1 & 01\_latency\_simple/01\_count\_dimensoes\_catalogo & cold & 1 \\
+scenario\_01\_baseline & 1 & 01\_latency\_simple/02\_filtro\_hospitais\_uf & cold & 2 \\
+scenario\_01\_baseline & 1 & 02\_olap\_pesado/00\_hospitais\_groupby\_multidimensional & cold & 1 \\
+scenario\_01\_baseline & 1 & 02\_olap\_pesado/02\_rodovias\_status\_pavimento & cold & 1 \\
+scenario\_01\_baseline & 1 & 02\_olap\_pesado/03\_ons\_linhas\_tensao\_extensao & cold & 2 \\
+scenario\_01\_baseline & 1 & 03\_joins\_dimensionais/00\_hospitais\_municipios\_join & cold & 2 \\
+scenario\_01\_baseline & 1 & 03\_joins\_dimensionais/01\_hospitais\_terras\_indigenas\_join & cold & 2 \\
+scenario\_01\_baseline & 1 & 03\_joins\_dimensionais/02\_ti\_municipio\_principal\_join & cold & 2 \\
+scenario\_01\_baseline & 1 & 03\_joins\_dimensionais/03\_municipio\_saude\_ti\_join & cold & 2 \\
+scenario\_01\_baseline & 1 & 04\_payload\_espacial/00\_path\_json\_municipios & cold & 1 \\
+scenario\_01\_baseline & 1 & 04\_payload\_espacial/01\_path\_json\_terras\_indigenas & cold & 2 \\
+scenario\_01\_baseline & 1 & 04\_payload\_espacial/03\_preview\_hospitais\_path\_json & cold & 1 \\
+scenario\_01\_baseline & 1 & 05\_dashboard\_misto/00\_dashboard\_defesa\_civil & cold & 2 \\
+scenario\_01\_baseline & 1 & 05\_dashboard\_misto/02\_dashboard\_qualidade\_operacional & cold & 1 \\
+scenario\_01\_baseline & 1 & 06\_fatos\_streaming/00\_count\_eventos\_total & cold & 3 \\
+scenario\_01\_baseline & 1 & 06\_fatos\_streaming/01\_eventos\_groupby\_bioma\_mes & cold & 3 \\
+scenario\_01\_baseline & 1 & 06\_fatos\_streaming/02\_eventos\_top\_frp\_ordenado & cold & 1 \\
+scenario\_01\_baseline & 1 & 06\_fatos\_streaming/02\_eventos\_top\_frp\_ordenado & warm & 1 \\
+scenario\_01\_baseline & 1 & 06\_fatos\_streaming/03\_focos\_scan\_temporal & cold & 2 \\
+scenario\_01\_baseline & 1 & 06\_fatos\_streaming/03\_focos\_scan\_temporal & warm & 1 \\
+scenario\_01\_baseline & 1 & 06\_fatos\_streaming/04\_focos\_lookup\_municipio & cold & 2 \\
+scenario\_01\_baseline & 1 & 06\_fatos\_streaming/04\_focos\_lookup\_municipio & warm & 1 \\
+scenario\_01\_baseline & 1 & 07\_virtual\_datasets/00\_ds\_eventos\_geral & cold & 1 \\
+scenario\_01\_baseline & 1 & 07\_virtual\_datasets/00\_ds\_eventos\_geral & warm & 2 \\
+scenario\_01\_baseline & 1 & 07\_virtual\_datasets/01\_ds\_focos\_individuais & cold & 2 \\
+scenario\_01\_baseline & 1 & 07\_virtual\_datasets/01\_ds\_focos\_individuais & warm & 1 \\
+scenario\_01\_baseline & 1 & 07\_virtual\_datasets/02\_ds\_eventos\_energia & cold & 2 \\
+scenario\_01\_baseline & 1 & 07\_virtual\_datasets/02\_ds\_eventos\_energia & warm & 2 \\
+scenario\_01\_baseline & 1 & 07\_virtual\_datasets/03\_ds\_eventos\_indigenas & warm & 2 \\
+scenario\_01\_baseline & 1 & 07\_virtual\_datasets/04\_ds\_eventos\_logistica & cold & 1 \\
+scenario\_01\_baseline & 1 & 07\_virtual\_datasets/04\_ds\_eventos\_logistica & warm & 1 \\
+\bottomrule
+\end{longtable}
+}

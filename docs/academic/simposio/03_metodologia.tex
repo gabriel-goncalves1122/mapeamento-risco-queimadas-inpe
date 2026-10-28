@@ -1,0 +1,9 @@
+\section*{Metodologia}
+
+O desenvolvimento do sistema de monitoramento espacial e analítico divide-se estruturalmente em três etapas automatizadas: ingestão e saneamento dos dados brutos, transformação espacial em memória e indexação analítica contínua.
+
+Na primeira etapa, rotinas executam a extração iterativa das coordenadas de anomalias térmicas (EPSG:4326) do Programa Queimadas (INPE, 2026) em escala nacional. Esses dados brutos passam por limpeza e validação de esquemas para descartar registros nulos, duplicados ou fora do território brasileiro, preparando a massa histórica para contextualização.
+
+A segunda etapa aplica inteligência geoespacial aos dados por meio da reprojeção para o sistema métrico e de indexação espacial rápida (R-Tree e KDTree). Com isso, calculam-se as distâncias exatas entre os focos e infraestruturas vitais, como hospitais (DATASUS, 2026), rodovias federais (BRASIL, 2026) e ativos de transmissão de energia (ANEEL, 2026), além de verificar a sobreposição direta sobre biomas (BRUGZ, 2026), municípios e terras indígenas (FUNAI, 2026). Para a avaliação tática e validação interativa dos cruzamentos, adota-se o estado de Minas Gerais como recorte geográfico do estudo de caso.
+
+Por fim, os dados processados e estruturados em um esquema constelação são paralelizados pelo Apache Kafka, absorvendo altos picos de volumetria para estabilidade operacional. O Kafka abastece o Apache Druid, banco de dados OLAP que indexa as tabelas fato e viabiliza consultas analíticas de baixa latência para alimentar painéis de tomada de decisão da Defesa Civil.

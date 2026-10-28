@@ -1,0 +1,32 @@
+\section{Diagnóstico Arquitetural e Plano de Ação}
+
+A exaustiva bateria de testes de estresse não apenas validou a robustez atual do sistema CCO-DataOps, como também elucidou precisamente onde e como ocorrem as fraturas de tempo de resposta. A capacidade de prever falhas possibilita traçar um plano de mitigação focado em decisões de infraestrutura e re-arquitetura lógica de dados.
+
+\subsection{Onde o Sistema Trava? (Diagnóstico Final)}
+Ficou inequivocamente comprovado que o engarrafamento de latência e de usabilidade aos analistas reside \textbf{quase inteiramente na exaustão das vCPUs do Apache Druid}. 
+
+O Apache Superset atua como mero visualizador web. Quando dezenas de usuários clicam simultaneamente em painéis mistos de visualização (como os elaborados mapas térmicos de Focos de Incêndio justapostos a cruzamentos logísticos e indígenas), a requisição atinge a API do Druid. O Druid, por sua vez, colapsa seu motor de cálculos ao ser obrigado a aplicar ordenações complexas (\textit{TopN}) e cruzamentos dimensionais espaciais (\textit{Joins}) atrelados a monstruosas cordas de vértices poligonais em formato GeoJSON. Sendo a infraestrutura totalmente de perfil \textit{CPU-Bound}, o gargalo não provém de trocas de disco ou estouro de memória RAM, mas da fila de cálculos de rede do processador central tentando finalizar o cruzamento poligonal a tempo.
+
+\subsection{Plano de Ação: O que pode ser aprimorado?}
+
+A partir das evidências registradas em laboratório, delinearam-se três frentes de aprimoramentos para absorver um aumento exponencial na base de usuários de uma Central de Operações de Comando:
+
+\begin{enumerate}
+    \item \textbf{Recalibração Tática de Hardware (Verticalização Específica):}
+    \begin{itemize}
+        \item Uma vez extinto o "Mito da RAM" no Druid --- cuja utilização manteve-se constantemente reclusa aos limites médios de $75\%$ --- o capital de orçamentação \textit{Cloud} (seja em AWS EC2 ou Azure) deve ser exclusivamente vertido para a locação de mais processadores (vCPUs) direcionados às máquinas que operam os papéis de \textit{Broker} e \textit{Historical}. Evita-se, assim, desperdício financeiro alocando Memória estática que não impulsiona cruzamentos em tempo real.
+    \end{itemize}
+
+    \item \textbf{Achatamento Espacial e Desnormalização (Refatoração de ETL):}
+    \begin{itemize}
+        \item Os \textit{Joins} espaciais (especialmente a junção Fatos $\leftrightarrow$ Terras Indígenas) provaram-se o calcanhar de Aquiles computacional, atingindo inaceitáveis dezenas de segundos na resolução analítica.
+        \item Como o Apache Druid prospera com estruturas planas (\textit{Flat Tables}), a solução arquitetural perene é migrar a responsabilidade deste cruzamento pesado para a etapa anterior da malha de dados. Utilizar o \textit{Apache Spark} (no \textit{Pipeline} ETL) para pré-calcular e engolir em definitivo o código IBGE, Siglas, Nomes e Etnologias para dentro da própria \texttt{fato\_focos\_incendio} (Desnormalização Absoluta), liquidando permanentemente o custo do \textit{Join} dinâmico espacial do painel interativo.
+    \end{itemize}
+
+    \item \textbf{Reestruturação Limitada dos Virtual Datasets:}
+    \begin{itemize}
+        \item O Custo de Operações dos Mapas no Superset ainda é fortemente amarrado aos limites de ordenação via código Jinja. Uma readequação materializando \textit{views} agregadas e compactadas diretamente dentro do armazenamento colunar (\textit{Rollup} avançado nas métricas geográficas) eliminaria as complexas lógicas de \texttt{GROUP BY} empurradas em tempo de visualização via API.
+    \end{itemize}
+\end{enumerate}
+
+Em conclusão, a infraestrutura analítica do CCO-DataOps operou excepcionalmente bem até seu iminente \textit{trade-off}. As melhorias catalogadas não atestam falhas, mas norteiam a fase final de maturidade de Produto de Dados rumo ao escalonamento ilimitado.

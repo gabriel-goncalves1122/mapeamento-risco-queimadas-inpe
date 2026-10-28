@@ -1,0 +1,28 @@
+{
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{longtable}{p{0.14\textwidth}p{0.28\textwidth}p{0.28\textwidth}p{0.22\textwidth}}
+\caption{Glossario de metricas usadas na matriz.}\\
+\toprule
+Metrica & Definicao & Como ler & Cuidado \\
+\midrule
+\endfirsthead
+\toprule
+Metrica & Definicao & Como ler & Cuidado \\
+\midrule
+\endhead
+QPS & Consultas finalizadas por segundo dentro do bloco medido. & Maior QPS indica maior vazao, mas so e ganho real se erro e p95 continuarem aceitaveis. & QPS pode parecer bom quando muitas consultas falham rapidamente. \\
+p50 & Mediana da latencia: metade das requisicoes foi mais rapida que esse valor. & Mostra a experiencia tipica de consulta. & Nao revela cauda longa nem saturacao. \\
+p95 & Latencia abaixo da qual 95\% das requisicoes ficaram. & E a principal metrica de estabilidade percebida em dashboards. & Deve ser lida junto com taxa de erro. \\
+p99 & Latencia de cauda extrema: 99\% das requisicoes ficaram abaixo dela. & Indica o custo dos piores casos ainda bem-sucedidos. & Com poucas amostras, oscila bastante; ainda assim revela risco operacional. \\
+Taxa de erro & Percentual de requisicoes que terminaram com excecao, timeout ou erro HTTP. & Qualquer valor acima de zero em benchmark pequeno merece investigacao. & Nao compare latencia entre cenarios ignorando erros. \\
+Saturacao & Classificacao derivada de erro ou estouro dos limites configurados no runner. & Marca quando o cenario deixou de sustentar a carga de forma confiavel. & Uma rodada saturada nao deve ser vendida como ganho de performance. \\
+Cold-start & Execucao com cache de consulta desabilitado para aproximar leitura fria. & Mostra o custo de buscar e processar dados sem reaproveitamento. & Nao representa exatamente reinicio fisico de containers. \\
+Warm-start & Execucao com cache habilitado e populado para medir reaproveitamento. & Mostra ganho quando dashboards repetem padroes de consulta. & Cache nao corrige falta de CPU/memoria sob alta concorrencia. \\
+CPU Docker & Percentual de CPU usado pelo container durante a matriz. & Picos acima de 100\% indicam uso de mais de um core logico. & Compare com limites de CPU do perfil, nao com a maquina inteira apenas. \\
+Memoria Docker & Percentual de memoria usada dentro do limite do container. & Queda percentual pode ocorrer porque o limite aumentou, nao porque a carga diminuiu. & Leia junto com CPU e erros do Historical. \\
+Loadstatus & Percentual de segmentos carregados e disponiveis no Druid. & 100\% indica que os dados estavam disponiveis para consulta. & Loadstatus bom nao garante performance; apenas disponibilidade. \\
+\bottomrule
+\end{longtable}
+}

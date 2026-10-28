@@ -1,0 +1,135 @@
+\begin{figure}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tikzpicture}[
+        table/.style={
+            rectangle split,
+            rectangle split parts=2,
+            draw=black!70,
+            thick,
+            font=\small,
+            align=left,
+            rounded corners=3pt,
+            rectangle split part fill={gray!15, white}
+        },
+        fato/.style={
+            table,
+            font=\small\bfseries
+        },
+        dimensao/.style={
+            table,
+            font=\footnotesize
+        },
+        relation/.style={
+            -latex,
+            very thick,
+            draw=black!50
+        },
+        background_box/.style={
+            rectangle, draw=gray!40, thick, dashed, fill=gray!3, rounded corners=6pt, inner sep=15pt
+        },
+        label_text/.style={font=\scriptsize\sffamily\bfseries, fill=gray!5, draw=gray!40, rounded corners=2pt, inner sep=3pt}
+    ]
+
+    % --- FATOS (EM CIMA) ---
+    \node[fato] (fato_focos) {
+        FATO\_FOCOS\_INCENDIO
+        \nodepart{two}
+        \normalfont
+        PK: foco\_id \\
+        \textit{timestamp} \\
+        M: satelite \\
+        M: latitude, longitude \\
+        M: frp (Potência Radiativa) \\
+        M: risco\_ons\_calc
+    };
+
+    \node[fato, right=3cm of fato_focos] (fato_eventos) {
+        FATO\_EVENTOS\_INCENDIO
+        \nodepart{two}
+        \normalfont
+        PK: evento\_id \\
+        \textit{timestamp\_inicio} \\
+        \textit{timestamp\_fim} \\
+        M: densidade \\
+        M: risco\_cascata\_global \\
+        M: area\_estimada\_km2
+    };
+
+    % --- DIMENSOES (EM BAIXO) ---
+    % Linha 1 de Dimensões (4 tabelas)
+    \node[dimensao, below left=3cm and -1.5cm of fato_focos] (dim_mun) {
+        \textbf{DIM\_MUNICIPIOS}
+        \nodepart{two}
+        PK: codigo\_ibge \\
+        estado\_sigla \\
+        municipios\_nome
+    };
+
+    \node[dimensao, right=0.6cm of dim_mun] (dim_ti) {
+        \textbf{DIM\_TERRAS\_INDIGENAS}
+        \nodepart{two}
+        PK: codigo\_ti \\
+        nome\_terra\_indigena \\
+        area\_hectares
+    };
+
+    \node[dimensao, right=0.6cm of dim_ti] (dim_hosp) {
+        \textbf{DIM\_HOSPITAIS}
+        \nodepart{two}
+        PK: codigo\_cnes \\
+        nome\_hospital \\
+        tipo\_unidade
+    };
+
+    \node[dimensao, right=0.6cm of dim_hosp] (dim_rod) {
+        \textbf{DIM\_RODOVIAS}
+        \nodepart{two}
+        PK: id\_trecho\_rodoviario \\
+        codigo\_rodovia \\
+        jurisdicao
+    };
+
+    % Linha 2 de Dimensões (3 tabelas centralizadas)
+    \node[dimensao, below=1.5cm of dim_ti, xshift=-1cm] (dim_lt) {
+        \textbf{DIM\_LINHAS\_TRANSMISSAO}
+        \nodepart{two}
+        PK: id\_linha\_transmissao \\
+        nome\_linha \\
+        tensao\_kv
+    };
+
+    \node[dimensao, right=0.6cm of dim_lt] (dim_sub) {
+        \textbf{DIM\_SUBESTACOES}
+        \nodepart{two}
+        PK: id\_subestacao \\
+        nome\_subestacao \\
+        capacidade\_mw
+    };
+    
+    \node[dimensao, right=0.6cm of dim_sub] (dim_sis) {
+        \textbf{DIM\_SISTEMAS\_ISOLADOS}
+        \nodepart{two}
+        PK: id\_sistema\_isolado \\
+        nome\_sistema\_isolado \\
+        prioridade
+    };
+
+    % --- GRUPO BACKGROUND (DIMENSÕES COMPARTILHADAS) ---
+    \begin{scope}[on background layer]
+        \coordinate (bg_top) at ([yshift=0.8cm]dim_mun.north);
+        \node[background_box, fit=(bg_top) (dim_mun) (dim_ti) (dim_hosp) (dim_rod) (dim_lt) (dim_sub) (dim_sis)] (bg_dimensoes) {};
+        \node[anchor=north west, font=\bfseries\color{black!70}, xshift=5pt, yshift=-5pt] at (bg_dimensoes.north west) {Dimensões Compartilhadas (Esquema Constelação)};
+    \end{scope}
+
+    % --- RELACIONAMENTOS (Setas Reduzidas) ---
+    % Apenas 2 setas direcionadas ao Container de Dimensões
+    \draw[relation] (fato_focos.south) -- node[label_text, right=3pt] {Foreign Keys} (bg_dimensoes.north -| fato_focos.south);
+    \draw[relation] (fato_eventos.south) -- node[label_text, left=3pt] {Foreign Keys} (bg_dimensoes.north -| fato_eventos.south);
+
+    \end{tikzpicture}
+    }
+    \caption{Modelo Entidade-Relacionamento (Constelação).}
+    \fonte{Elaborada pelos autores.}
+    \label{fig:diagrama_er}
+\end{figure}

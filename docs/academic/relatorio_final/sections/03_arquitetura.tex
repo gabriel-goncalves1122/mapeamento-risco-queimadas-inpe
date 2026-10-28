@@ -1,0 +1,86 @@
+\section{Arquitetura e Especificações Técnicas}
+
+A concepção do SIRDA (Sistema de Inteligência e Resposta a Desastres Ambientais) afasta-se do uso exclusivo de bancos de dados relacionais clássicos, adotando um ecossistema distribuído de \textit{Big Data} construído inteiramente sobre ferramentas de código aberto (\textit{open-source}). Esta escolha técnica provê escalabilidade ao acesso analítico e garante a capacidade de processar volumes massivos de anomalias térmicas, cruzando essas informações com geometrias complexas de infraestrutura em uma janela de tempo crítica. A arquitetura foi estruturada em torno das seguintes tecnologias:
+
+\begin{itemize}
+    \item \textbf{Apache Kafka:} Atua como o sistema nervoso central de mensageria, absorvendo picos severos de dados durante períodos críticos de queimadas, promovendo o desacoplamento entre a extração dos dados e a ingestão no banco analítico.
+    \item \textbf{Apache Druid:} O motor OLAP (\textit{Online Analytical Processing}) escolhido pela sua capacidade nativa de ingerir fluxos de dados diretamente do Kafka (\textit{Streaming Ingestion}) e fornecer respostas analíticas em escala de baixa latência (poucos segundos).
+    \item \textbf{PostgreSQL:} Empregado como o banco relacional de suporte, atuando estritamente como \textit{Metadata Store} para o Druid e para o sistema de visualização gráfica.
+    \item \textbf{Dagster:} Orquestrador central que rege o paradigma DataOps do projeto. Ele garante a execução limpa, tipada e rastreável dos processos de enriquecimento espacial e publicação de mensagens no Kafka.
+    \item \textbf{Apache Superset:} Camada visual que materializa o Nível 3 da Consciência Situacional, entregando painéis gerenciais e topológicos aos tomadores de decisão.
+\end{itemize}
+
+Para assegurar a reprodutibilidade e a portabilidade do sistema, a infraestrutura foi inteiramente conteinerizada via Docker. A topologia orquestrada no \textit{docker-compose} reflete fielmente um ambiente de produção resiliente. Destaca-se que o banco de dados analítico Apache Druid não foi instanciado como um serviço monolítico, mas sim desmembrado em seus microsserviços fundamentais: \textit{Coordinator}, \textit{Broker}, \textit{Historical}, \textit{MiddleManager} e \textit{Router}. Essa granularidade permite que a gestão de metadados, o roteamento de consultas e o processamento de dados ocorram em instâncias independentes, mitigando gargalos e falhas em cascata.
+
+Além da separação lógica, a implantação local adota restrições físicas de hardware para mimetizar limitações produtivas reais. Foram aplicados limites explícitos de uso de processamento e memória RAM para cada serviço (\textit{deploy resources limits}) na configuração dos contêineres. Paralelamente, os parâmetros da Máquina Virtual Java (JVM) de cada componente do Druid foram estritamente ajustados, por meio das variáveis \textit{JAVA\_OPTS}, definindo precisamente os tamanhos do \textit{heap} (\textit{-Xms} e \textit{-Xmx}) e da memória direta (\textit{MaxDirectMemorySize}). Esses controles evitam o esgotamento prematuro de recursos da máquina hospedeira (\textit{Out of Memory}), assegurando a estabilidade ininterrupta do \textit{pipeline} de resposta a desastres, conforme sumarizado na Tabela \ref{tab:recursos_docker}.
+
+\begin{table}[H]
+    \centering
+    \caption{Alocação de Recursos e Parâmetros JVM (Docker).}
+    \vspace{0.2cm}
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        \textbf{Serviço} & \textbf{vCPUs} & \textbf{RAM Total} & \textbf{JVM Heap} (\textit{Min/Max}) & \textbf{JVM Direct Mem.} \\
+        \hline
+        Zookeeper & 0.25 & 256M & 128M / 128M & - \\
+        Apache Kafka & 0.75 & 512M & 256M / 256M & - \\
+        PostgreSQL & 0.50 & 256M & - & - \\
+        Druid Coordinator & 0.50 & 384M & 128M / 256M & - \\
+        Druid Broker & 1.0 & 768M & 256M / 512M & 512M \\
+        Druid Historical & 1.0 & 768M & 256M / 512M & 512M \\
+        Druid MiddleManager & 1.0 & 1024M & 128M / 128M\textsuperscript{*} & 128M\textsuperscript{*} \\
+        Druid Router & 0.25 & 384M & 128M / 128M & - \\
+        Apache Superset & 1.0 & 768M & - & - \\
+        Dagster & 0.75 & 256M & - & - \\
+        \hline
+    \end{tabular}%
+    }
+    
+    \vspace{0.1cm}
+    \raggedright
+    \footnotesize{\textsuperscript{*} O \textit{MiddleManager} também aloca instâncias filhas (\textit{Peon Workers}) com Heap de 512M / 512M.}
+    
+    \fonte{Elaborada pelos autores.}
+    \label{tab:recursos_docker}
+\end{table}
+
+Os valores estipulados na Tabela \ref{tab:recursos_docker} representam a configuração \textbf{Baseline} estática da arquitetura. Conforme detalhado nos resultados, durante a bateria de estresse de vazão analítica, essas cotas de processamento para os nós \textit{Broker} e \textit{Historical} foram sistematicamente escalonadas até 2.0 vCPUs para mapear os ganhos de eficiência do sistema sob pressão.
+
+A assimetria observada reflete diretamente o perfil analítico de cada nó. O \textit{MiddleManager} aloca a maior cota absoluta de RAM por orquestrar o \textit{streaming} volátil e o agrupamento inicial de dados antes da indexação em disco. Em contrapartida, instâncias focadas em pesquisa complexa (\textit{Broker} e \textit{Historical}) maximizam a alocação de vCPU e Memória Direta, preservando o \textit{Heap} padrão da JVM para evitar pausas prolongadas de \textit{Garbage Collection} durante os cruzamentos espaciais. Os nós de gestão (\textit{Coordinator} e \textit{Router}) operam com capacidade reduzida, pois não realizam operações matemáticas diretas.
+
+\subsection{Modelagem Analítica: Esquema Constelação}
+
+Para suprir os requisitos analíticos de baixa latência do Apache Druid, a modelagem de dados afasta-se da normalização tradicional e adota um \textit{Esquema Constelação} altamente desnormalizado. Neste modelo, as anomalias térmicas brutas e os agrupamentos de desastres formam as duas Tabelas Fato centrais, cercadas por Dimensões de busca contendo as chaves geográficas e infraestruturais pré-computadas, otimizando as agregações interativas na interface visual (Figura \ref{fig:diagrama_er}).
+
+\input{diagrams/diagram_er.tex}
+
+\subsection{Orquestração Orientada a Dados (Dagster)}
+
+Para orquestrar o cruzamento das malhas elétricas e inferências de ciência de redes, o projeto adota uma abordagem estritamente focada em dados por meio da abstração de \textit{Software-Defined Assets} (SDA) do Apache Dagster. Diferentemente de orquestradores tradicionais focados em fluxos de tarefas genéricas, o modelo implementado estabelece um grafo declarativo de linhagem explícita (\textit{Lineage}). 
+
+Como ilustrado na Figura \ref{fig:diagrama_dagster}, a arquitetura não utiliza agendamentos temporais órfãos. A extração da infraestrutura linear (\texttt{aneel\_ons\_data}) figura como a raiz do grupo \texttt{infra\_ons}. Essa malha base torna-se pré-requisito funcional absoluto (\texttt{deps=[...]}) para a segmentação subsequente das tabelas de Subestações e Linhas de Transmissão. Somente após a materialização bem-sucedida dessas dependências físicas é que o Dagster autoriza a execução dos algoritmos analíticos pesados do grupo \texttt{science\_models}, como o cálculo topológico \texttt{network\_centrality\_model}. 
+
+Isso garante idempotência e tipagem granular: falhas em rotinas de extração bloqueiam instantaneamente a propagação de anomalias para os motores de agregação espacial (NetworkX e Scikit-Learn), blindando a modelagem arquitetural contra estados incompletos.
+
+\input{diagrams/diagrama_dagster.tex}
+
+
+
+\subsection{Data Flow End-to-End (Streaming e OLAP)}
+
+A Figura \ref{fig:diagrama_ingestao} ilustra a primeira fase do fluxo contínuo de processamento da arquitetura \textit{Medallion}. A extração inicia-se a partir das coordenadas brutas de satélites e das fontes dimensionais. Em vez de persistir o dado bruto inicialmente em disco, a principal premissa arquitetural adotada foi a paralelização em nível de mensageria através do Produtor Kafka, permitindo o enriquecimento em tempo real.
+
+Esse fluxo contínuo (\textit{Streaming Dual-Branch}) bifurca as informações imediatamente: o \textit{Ramo dos Focos} analisa os registros pontuais de forma quase instantânea, enquanto o \textit{Ramo dos Eventos} acumula janelas temporais para a agregação poligonal no \textit{DBSCAN}. Ambas as esteiras invocam o \textit{Motor Espacial} simultaneamente e empacotam seus resultados sob contratos rigidamente tipados (\texttt{FocoFatoPayload} e \texttt{EventoFatoPayload}).
+
+\input{diagrams/diagrama_ingestao.tex}
+
+Uma vez inseridos nos tópicos de saída, os dados roteados dão início à segunda fase operacional, cujo consumo analítico é detalhado na Figura \ref{fig:diagrama_analytics}. As mensagens em \textit{streaming} são ingeridas de forma segmentada pelos nós do Apache Druid, consolidando as Tabelas Fato \texttt{fato\_focos} e \texttt{fato\_eventos}. Isso viabiliza pesquisas em frações de segundo e sustenta as renderizações da camada de apresentação, servida através de painéis interativos no Apache Superset.
+
+\input{diagrams/diagrama_analytics.tex}
+
+\subsection{Estratégia de Processamento Espacial Híbrido (Python e Druid)}
+
+Embora o Apache Druid possua capacidades nativas de indexação e filtragem espacial, a execução de junções espaciais densas (\textit{Point-in-Polygon joins}) entre milhões de anomalias térmicas e geometrias poligonais complexas, como os limites irregulares de Terras Indígenas ou municípios continentais, representa uma carga computacional intensa. Delegar essa operação de interseção ao motor OLAP durante a ingestão ou consulta degradaria significativamente a vazão (\textit{throughput}) e a latência analítica.
+
+Para mitigar esse gargalo, a arquitetura adota um processamento espacial híbrido, deslocando o enriquecimento geográfico para as camadas prévias de orquestração. O cruzamento é executado em memória através da biblioteca GeoPandas (Python), que tira proveito de estruturas de indexação em árvore (\textit{R-Tree}). Esse método particiona o espaço topológico, reduzindo a complexidade temporal da busca espacial de $O(N)$ para $O(\log N)$. Como resultado, os pacotes (\textit{payloads}) transmitidos via Kafka chegam ao Apache Druid em formato tabular desnormalizado e já enriquecidos com suas chaves infraestruturais, permitindo que o banco atue exclusivamente na agregação analítica de hipervelocidade.

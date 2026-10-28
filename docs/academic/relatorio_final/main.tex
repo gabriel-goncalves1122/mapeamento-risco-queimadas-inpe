@@ -1,0 +1,70 @@
+% ============================================================================
+% RELATÓRIO FINAL DE INICIAÇÃO CIENTÍFICA DA UNIFEI (SIRDA)
+% ============================================================================
+
+\documentclass[12pt,a4paper]{article}
+
+% --- Pacotes mínimos e amplamente disponíveis ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{mathptmx}
+\usepackage{geometry}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{setspace}
+\usepackage{amsmath}
+\usepackage{caption}
+\usepackage{url}
+\usepackage{titlesec}
+\usepackage{indentfirst}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes.multipart, arrows.meta, calc, fit, backgrounds, shapes.geometric, shadows, shapes.symbols, shapes.misc}
+% --- Página A4 e margens ---
+\geometry{
+  top=2.5cm,
+  bottom=2.5cm,
+  left=3.0cm,
+  right=3.0cm
+}
+
+% --- Parágrafos e espaçamento geral ---
+\setlength{\parindent}{1.25cm}
+\setlength{\parskip}{0pt}
+\setlength{\emergencystretch}{2em}
+\onehalfspacing
+
+% --- Legendas ---
+\captionsetup{
+  font=footnotesize,
+  labelfont=bf,
+  justification=centering,
+  singlelinecheck=false
+}
+
+\newcommand{\fonte}[1]{\vspace{2pt} \begin{center} \footnotesize Fonte: #1 \end{center}}
+\titleformat{\section}{\normalfont\fontsize{12}{15}\bfseries\uppercase}{\thesection}{1em}{}
+\titlespacing*{\section}{0pt}{0.55cm}{0.3cm}
+
+\begin{document}
+
+% Inclusão do Cabeçalho e Resumo
+\input{sections/resumo.tex}
+
+\newpage
+% Inclusão dos Capítulos
+\input{sections/01_introducao.tex}
+\input{sections/02_referencial_teorico.tex}
+\input{sections/03_arquitetura.tex}
+\input{sections/04_metodologia.tex}
+\input{sections/05_resultados.tex}
+\input{sections/06_conclusoes.tex}
+\input{sections/07_agradecimentos_assinaturas.tex}
+
+\newpage
+\bibliographystyle{plain}
+\bibliography{referencias}
+
+\end{document}

@@ -1,0 +1,7 @@
+\section*{Referencial Teórico}
+
+O conceito de "consciência situacional" consiste na capacidade de integrar dados operacionais fragmentados em uma visão unificada e em tempo real da realidade, o que é vital para o combate de incidentes (ENDSLEY, 1995). Para implementar essa visão no trato de volumes massivos de dados espaciais, a literatura adota as práticas de \textit{DataOps} (Data Operations). 
+
+A abordagem \textit{DataOps} visa automatizar e orquestrar o ciclo de vida dos dados (ERETH, 2018), reduzindo o tempo de ciclo analítico e garantindo alta disponibilidade e qualidade da informação. Em contextos de monitoramento ambiental de incêndios, arquiteturas tradicionais monolíticas falham em oferecer respostas de baixa latência devido à complexidade computacional do cruzamento geoespacial. Portanto, faz-se necessário o uso de motores analíticos em memória e ferramentas de mensageria assíncrona, viabilizando a análise geoespacial contínua de anomalias térmicas e permitindo a atuação proativa da Defesa Civil.
+
+Para ancorar a aquisição de anomalias térmicas, utilizam-se metodologias consolidadas de sensoriamento remoto via satélite, fundamentais para a detecção confiável de focos de calor ativos (GIGLIO; SCHROEDER; JUSTICE, 2016). No que tange à orquestração e análise desses eventos em larga escala, a adoção de bancos analíticos (OLAP) orientados a \textit{streaming}, como o Apache Druid, demonstra extrema eficiência arquitetural ao isolar armazenamento e consulta para suportar baixas latências em cruzamentos complexos (YANG et al., 2014).
