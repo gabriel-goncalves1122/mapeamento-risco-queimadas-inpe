@@ -16,7 +16,6 @@ TOPICOS=(
 SERVICOS=(
   zookeeper-kafka
   kafka
-  zookeeper
   postgres
   coordinator
   middlemanager

@@ -3,7 +3,7 @@ Configuração compartilhada para relatórios de benchmark por cenário.
 """
 from dataclasses import dataclass
 
-from src.analytics.relatorio_builder import RelatorioBuilder
+from legacy.analytics.relatorio_builder import RelatorioBuilder
 
 
 @dataclass(frozen=True)

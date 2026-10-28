@@ -75,26 +75,8 @@ services:
       resources:
         limits:
           cpus: '0.50'
-          memory: 384M
-  zookeeper:
-    container_name: zookeeper
-    image: zookeeper:3.5.10
-    ports:
-    - 2181:2181
-    volumes:
-    - zookeeper_data:/data
-    - zookeeper_log:/datalog
-    environment:
-      ZOO_MY_ID: 1
-      JVMFLAGS: -Xms128m -Xmx128m
-      TZ: America/Sao_Paulo
-    networks:
-    - druid-net
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 384M
+          memory: 256M
+
   coordinator:
     image: apache/druid:34.0.0
     container_name: coordinator
@@ -102,9 +84,10 @@ services:
     volumes:
     - druid_shared:/opt/shared
     - coordinator_var:/opt/druid/var
-    - ./data:/opt/data
+    - ./pipelines/silver/data:/opt/pipelines/silver/data
+    - ./pipelines/gold/data:/opt/pipelines/gold/data
     depends_on:
-    - zookeeper
+    - zookeeper-kafka
     - postgres
     ports:
     - 8081:8081
@@ -113,7 +96,7 @@ services:
     env_file:
     - .env
     environment:
-      JAVA_OPTS: -Xms256m -Xmx256m -Duser.timezone=America/Sao_Paulo
+      JAVA_OPTS: -Xms128m -Xmx256m -Duser.timezone=America/Sao_Paulo
       TZ: America/Sao_Paulo
     networks:
     - druid-net
@@ -121,7 +104,7 @@ services:
       resources:
         limits:
           cpus: '0.50'
-          memory: 512M
+          memory: 384M
   broker:
     image: apache/druid:34.0.0
     container_name: broker
@@ -129,9 +112,10 @@ services:
     volumes:
     - broker_var:/opt/druid/var
     - druid_shared:/opt/shared
-    - ./data:/opt/data
+    - ./pipelines/silver/data:/opt/pipelines/silver/data
+    - ./pipelines/gold/data:/opt/pipelines/gold/data
     depends_on:
-    - zookeeper
+    - zookeeper-kafka
     - postgres
     - coordinator
     ports:
@@ -143,6 +127,7 @@ services:
     environment:
       JAVA_OPTS: -Xms${DRUID_BROKER_XMS:-256m} -Xmx${DRUID_BROKER_XMX:-512m}
         -XX:MaxDirectMemorySize=${DRUID_BROKER_DIRECT:-512m} -Duser.timezone=America/Sao_Paulo
+        -Ddruid.lookup.enableLookupSyncOnStartup=true
       druid_processing_buffer_sizeBytes: ${DRUID_BROKER_BUFFER_BYTES:-67108864}
       druid_processing_numThreads: ${DRUID_BROKER_PROCESSING_THREADS:-1}
       druid_processing_numMergeBuffers: ${DRUID_BROKER_MERGE_BUFFERS:-1}
@@ -153,12 +138,12 @@ services:
     networks:
     - druid-net
     cpus: ${DRUID_BROKER_CPUS:-1.0}
-    mem_limit: ${DRUID_BROKER_MEMORY:-1024M}
+    mem_limit: ${DRUID_BROKER_MEMORY:-768M}
     deploy:
       resources:
         limits:
           cpus: ${DRUID_BROKER_CPUS:-1.0}
-          memory: ${DRUID_BROKER_MEMORY:-1024M}
+          memory: ${DRUID_BROKER_MEMORY:-768M}
   historical:
     image: apache/druid:34.0.0
     container_name: historical
@@ -166,9 +151,10 @@ services:
     volumes:
     - druid_shared:/opt/shared
     - historical_var:/opt/druid/var
-    - ./data:/opt/data
+    - ./pipelines/silver/data:/opt/pipelines/silver/data
+    - ./pipelines/gold/data:/opt/pipelines/gold/data
     depends_on:
-    - zookeeper
+    - zookeeper-kafka
     - postgres
     - coordinator
     ports:
@@ -181,6 +167,7 @@ services:
       JAVA_OPTS: -Xms${DRUID_HISTORICAL_XMS:-256m} -Xmx${DRUID_HISTORICAL_XMX:-512m}
         -XX:MaxDirectMemorySize=${DRUID_HISTORICAL_DIRECT:-512m}
         -Duser.timezone=America/Sao_Paulo
+        -Ddruid.lookup.enableLookupSyncOnStartup=true
       druid_processing_buffer_sizeBytes: ${DRUID_HISTORICAL_BUFFER_BYTES:-67108864}
       druid_processing_numThreads: ${DRUID_HISTORICAL_PROCESSING_THREADS:-1}
       druid_processing_numMergeBuffers: ${DRUID_HISTORICAL_MERGE_BUFFERS:-1}
@@ -189,12 +176,12 @@ services:
     networks:
     - druid-net
     cpus: ${DRUID_HISTORICAL_CPUS:-1.0}
-    mem_limit: ${DRUID_HISTORICAL_MEMORY:-1024M}
+    mem_limit: ${DRUID_HISTORICAL_MEMORY:-768M}
     deploy:
       resources:
         limits:
           cpus: ${DRUID_HISTORICAL_CPUS:-1.0}
-          memory: ${DRUID_HISTORICAL_MEMORY:-1024M}
+          memory: ${DRUID_HISTORICAL_MEMORY:-768M}
   middlemanager:
     image: apache/druid:34.0.0
     container_name: middlemanager
@@ -202,9 +189,10 @@ services:
     volumes:
     - druid_shared:/opt/shared
     - middle_var:/opt/druid/var
-    - ./data:/opt/data
+    - ./pipelines/silver/data:/opt/pipelines/silver/data
+    - ./pipelines/gold/data:/opt/pipelines/gold/data
     depends_on:
-    - zookeeper
+    - zookeeper-kafka
     - postgres
     - coordinator
     ports:
@@ -215,10 +203,9 @@ services:
     env_file:
     - .env
     environment:
-      JAVA_OPTS: -Xms256m -Xmx384m -Duser.timezone=America/Sao_Paulo
-      druid_worker_capacity: 1
-      druid_indexer_runner_javaOpts: -Xms384m -Xmx512m -XX:MaxDirectMemorySize=256m
-        -Duser.timezone=America/Sao_Paulo
+      JAVA_OPTS: -Xms128m -Xmx128m -Duser.timezone=America/Sao_Paulo
+      druid_worker_capacity: 2
+      druid_indexer_runner_javaOpts: -Xms512m -Xmx512m -XX:MaxDirectMemorySize=128m -Duser.timezone=America/Sao_Paulo
       druid_indexer_fork_property_druid_processing_numThreads: 1
       druid_indexer_fork_property_druid_processing_numMergeBuffers: 1
       druid_indexer_fork_property_druid_processing_buffer_sizeBytes: 33554432
@@ -228,7 +215,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.75'
+          cpus: '1.0'
           memory: 1024M
   router:
     image: apache/druid:34.0.0
@@ -237,9 +224,10 @@ services:
     volumes:
     - router_var:/opt/druid/var
     - druid_shared:/opt/shared
-    - ./data:/opt/data
+    - ./pipelines/silver/data:/opt/pipelines/silver/data
+    - ./pipelines/gold/data:/opt/pipelines/gold/data
     depends_on:
-    - zookeeper
+    - zookeeper-kafka
     - postgres
     - coordinator
     - broker
@@ -282,7 +270,7 @@ services:
       resources:
         limits:
           cpus: '1.0'
-          memory: 1024M
+          memory: 768M
   dagster:
     build:
       context: .
@@ -292,9 +280,11 @@ services:
     ports:
     - 3000:3000
     volumes:
-    - ./src:/opt/dagster/app/src
+    - ./pipelines:/opt/dagster/app/pipelines
+    - ./config:/opt/dagster/app/config
     - dagster_data:/opt/dagster/dagster_home
-    - ./data:/opt/dagster/app/data
+    - ./pipelines/silver/data:/opt/dagster/app/pipelines/silver/data
+    - ./pipelines/gold/data:/opt/dagster/app/pipelines/gold/data
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
       TZ: America/Sao_Paulo
@@ -310,11 +300,11 @@ services:
     - -p
     - '3000'
     - -m
-    - src.orchestration.repo
+    - pipelines.orchestration.repo
     networks:
     - druid-net
     deploy:
       resources:
         limits:
           cpus: '0.75'
-          memory: 512M
+          memory: 256M

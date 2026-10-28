@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_SQL_DIR = PROJECT_ROOT / "scripts" / "sql" / "performance"
+DEFAULT_SQL_DIR = PROJECT_ROOT / "infrastructure" / "superset" / "queries" / "performance"
 DEFAULT_MATRIX_ROOT = PROJECT_ROOT / "data" / "results" / "performance" / "druid_capacity"
 DEFAULT_MATRIX_DIR = DEFAULT_MATRIX_ROOT / "20260630_000802"
 DEFAULT_DOCS_ROOT = PROJECT_ROOT / "docs" / "performance" / "druid_capacity"

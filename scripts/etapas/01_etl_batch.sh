@@ -8,11 +8,11 @@ echo "=================================================="
 echo "📦 Etapa 1: ETL Batch — Gerando Dimensões"
 echo "=================================================="
 
-uv run python -m src.etl.run_etl
+uv run python pipelines/silver/src/etl_dimensions/run_etl.py
 
 echo
 echo "🔎 Verificando CSVs gerados..."
-DIMS_DIR="$PROJECT_ROOT/data/processed/dimensions"
+DIMS_DIR="$PROJECT_ROOT/pipelines/silver/data/dimensions"
 EXPECTED_FILES=(
   "dim_municipios_coordenadas.csv"
   "dim_hospitais_cnes.csv"

@@ -17,7 +17,7 @@ set -euo pipefail
 # ==================================================
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SPECS_DIR="$PROJECT_ROOT/infrastructure/druid_specs"
+SPECS_DIR="$PROJECT_ROOT/infrastructure/druid/specs"
 
 KAFKA_CONTAINER="kafka"
 KAFKA_BOOTSTRAP_DOCKER="kafka:9092"
@@ -235,5 +235,5 @@ echo "A ingestão Python NÃO foi iniciada."
 echo
 echo "Quando quiser iniciar a ingestão:"
 echo "source venv/bin/activate"
-echo "UV_CACHE_DIR=/tmp/uv-cache uv run python -m src.streaming.produtor_eventos"
+echo "UV_CACHE_DIR=/tmp/uv-cache uv run python -m pipelines.gold.src.streaming.produtor_eventos"
 echo

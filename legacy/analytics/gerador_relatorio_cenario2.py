@@ -5,7 +5,7 @@ MÓDULO: gerador_relatorio_cenario2.py
 Função Geral: Abstrai e executa testes analíticos ou geração de relatórios de benchmark do Druid.
 =========================================================
 """
-from src.analytics.scenario_reports import ScenarioReportConfig, gerar_relatorio_cenario
+from legacy.analytics.scenario_reports import ScenarioReportConfig, gerar_relatorio_cenario
 
 texto_latex = r"""\documentclass[12pt, a4paper]{article}
 

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PROFILE_DIR="$PROJECT_ROOT/infrastructure/druid_profiles"
+PROFILE_DIR="$PROJECT_ROOT/infrastructure/druid/profiles"
 RUN_ID="${RUN_ID:-$(date +%Y%m%d_%H%M%S)}"
 OUT_ROOT="$PROJECT_ROOT/data/results/performance/druid_capacity/$RUN_ID"
 BENCH_PROFILE="${BENCH_PROFILE:-baseline}"
@@ -57,6 +57,8 @@ apply_profile() {
   docker compose --env-file "$profile_file" up -d --force-recreate broker historical
   wait_broker
   wait_loadstatus
+  echo "Aguardando 15s para sincronizacao do schema e lookups no Broker..."
+  sleep 15
 }
 
 restore_balanced() {
@@ -75,7 +77,7 @@ for scenario in "${SCENARIOS[@]}"; do
   apply_profile "$scenario"
   echo "Rodando benchmark para $scenario"
   DRUID_CAPACITY_SCENARIO="$scenario" UV_CACHE_DIR=/tmp/uv-cache \
-    uv run python scripts/performance/run_druid_benchmark.py \
+    uv run python scripts/performance/benchmark_runner/main.py \
       --profile "$BENCH_PROFILE" \
       --capacity-scenario "$scenario" \
       --broker-url "$BROKER_SQL_URL" \
@@ -91,4 +93,10 @@ UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/performance/compare_capacity_re
 trap - EXIT
 restore_balanced
 
-echo "Matriz concluida em: $OUT_ROOT"
+echo ""
+echo "============================================================"
+echo "🎯 MATRIZ DE BENCHMARKS CONCLUIDA"
+echo "============================================================"
+cat "$OUT_ROOT/capacity_comparison.md"
+echo "============================================================"
+echo "📂 Arquivos CSV completos e detalhados gravados em: $OUT_ROOT"

@@ -1,25 +1,31 @@
 from pathlib import Path
 
-from scripts.performance.run_druid_benchmark import (
-    FORBIDDEN_REFERENCES,
-    DOCKER_FIELDS,
+from scripts.performance.benchmark_runner.main import (
     RAW_FIELDS,
-    calcular_ganho_cache,
-    carregar_queries,
-    coletar_docker_stats,
-    percentile,
+    DOCKER_FIELDS,
     salvar_resultados,
+)
+from scripts.performance.benchmark_runner.executor import (
+    FORBIDDEN_REFERENCES,
+    carregar_queries,
     split_sql,
     strip_comments,
-    summarizar_registros,
     validar_statement,
 )
+from scripts.performance.benchmark_runner.stats import (
+    calcular_ganho_cache,
+    percentile,
+    summarizar_registros,
+)
+from scripts.performance.benchmark_runner.docker_sampler import (
+    coletar_docker_stats,
+)
 from scripts.performance.compare_capacity_results import consolidate
-from src.config.constants import PROJECT_ROOT
+from config.constants import PROJECT_ROOT
 
 
-SQL_DIR = PROJECT_ROOT / "scripts" / "sql" / "performance"
-PROFILE_DIR = PROJECT_ROOT / "infrastructure" / "druid_profiles"
+SQL_DIR = PROJECT_ROOT / "infrastructure" / "superset" / "queries" / "performance"
+PROFILE_DIR = PROJECT_ROOT / "infrastructure" / "druid" / "profiles"
 REQUIRED_METADATA = (
     "-- categoria:",
     "-- objetivo:",
@@ -75,7 +81,7 @@ def test_carregar_queries_monta_ids_por_cenario():
 
     assert queries
     assert all("/" in query.query_id for query in queries)
-    assert {"01_latency_simple", "05_dashboard_misto"}.issubset({query.scenario for query in queries})
+    assert {"01_latency_simple", "05_dashboard_misto", "06_fatos_streaming", "07_virtual_datasets"}.issubset({query.scenario for query in queries})
 
 
 def test_validar_statement_rejeita_comando_mutante_e_datasource_fora_do_escopo(tmp_path: Path):
@@ -83,8 +89,6 @@ def test_validar_statement_rejeita_comando_mutante_e_datasource_fora_do_escopo(t
 
     for statement in (
         "DELETE FROM dim_hospitais_cnes",
-        "SELECT COUNT(*) FROM fato_focos_incendio",
-        "SELECT COUNT(*) FROM fogo_eventos_stdbscan",
         "SELECT COUNT(*) FROM dim_rel_hospital_municipio",
         "SELECT COUNT(*) FROM queimadas_focos_calor",
     ):
@@ -226,7 +230,7 @@ def test_coletar_docker_stats_parseia_saida(monkeypatch):
     def fake_run(*args, **kwargs):
         return FakeResult()
 
-    monkeypatch.setattr("scripts.performance.run_druid_benchmark.subprocess.run", fake_run)
+    monkeypatch.setattr("scripts.performance.benchmark_runner.docker_sampler.subprocess.run", fake_run)
 
     [row] = coletar_docker_stats(["broker"], concurrency=4)
 

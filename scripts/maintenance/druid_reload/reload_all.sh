@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SPECS_DIR="$PROJECT_ROOT/infrastructure/druid_specs"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+SPECS_DIR="$PROJECT_ROOT/infrastructure/druid/specs"
 
 DRUID_OVERLORD_URL="${DRUID_OVERLORD_URL:-http://localhost:8081}"
 DRUID_COORDINATOR_URL="${DRUID_COORDINATOR_URL:-http://localhost:8081}"
-DRUID_BROKER_SQL_URL="${DRUID_BROKER_SQL_URL:-http://localhost:8082/druid/v2/sql}"
+DRUID_BROKER_SQL_URL="${DRUID_BROKER_SQL_URL:-http://localhost:8082/druid/../../..l}"
 
 RUN_ETL=0
 WITH_STREAMING=0
@@ -107,7 +107,7 @@ json_field() {
 
 task_status() {
   local task_id="$1"
-  curl -fsS "$DRUID_OVERLORD_URL/druid/indexer/v1/task/$task_id/status" |
+  curl -fsS "$DRUID_OVERLORD_URL/druid/indexer/../../..sk/$task_id/status" |
     python3 -c "import json,sys; print(json.load(sys.stdin)['status']['status'])"
 }
 
@@ -129,7 +129,7 @@ wait_task() {
 submit_task_file() {
   local spec_path="$1"
   local resposta
-  resposta="$(curl -fsS -X POST -H "Content-Type: application/json" --data-binary @"$spec_path" "$DRUID_OVERLORD_URL/druid/indexer/v1/task")"
+  resposta="$(curl -fsS -X POST -H "Content-Type: application/json" --data-binary @"$spec_path" "$DRUID_OVERLORD_URL/druid/indexer/../../..sk")"
   echo "$resposta"
   echo "$resposta" | json_field task
 }
@@ -137,7 +137,7 @@ submit_task_file() {
 submit_task_json() {
   local payload="$1"
   local resposta
-  resposta="$(curl_json POST "$DRUID_OVERLORD_URL/druid/indexer/v1/task" "$payload")"
+  resposta="$(curl_json POST "$DRUID_OVERLORD_URL/druid/indexer/../../..sk" "$payload")"
   echo "$resposta"
   echo "$resposta" | json_field task
 }
@@ -170,7 +170,7 @@ healthcheck() {
 
 run_etl() {
   if [[ "$RUN_ETL" -eq 1 ]]; then
-    run env UV_CACHE_DIR=/tmp/uv-cache uv run python -m src.etl.run_etl
+    run env UV_CACHE_DIR=/tmp/uv-cache uv run python -m pipelines.silver.src.etl_dimensions.run_etl
   fi
 }
 
@@ -196,22 +196,22 @@ terminar_supervisor() {
   local supervisor="$1"
   echo "Terminando supervisor Kafka, se existir: $supervisor"
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "+ curl -X POST $DRUID_OVERLORD_URL/druid/indexer/v1/supervisor/$supervisor/terminate"
+    echo "+ curl -X POST $DRUID_OVERLORD_URL/druid/indexer/../../..pervisor/$supervisor/terminate"
     return
   fi
-  curl -fsS -X POST "$DRUID_OVERLORD_URL/druid/indexer/v1/supervisor/$supervisor/terminate" >/dev/null 2>&1 || true
+  curl -fsS -X POST "$DRUID_OVERLORD_URL/druid/indexer/../../..pervisor/$supervisor/terminate" >/dev/null 2>&1 || true
 }
 
 remover_datasource() {
   local datasource="$1"
   echo "Removendo datasource: $datasource"
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "+ curl -X DELETE $DRUID_COORDINATOR_URL/druid/coordinator/v1/datasources/$datasource"
+    echo "+ curl -X DELETE $DRUID_COORDINATOR_URL/druid/coordinator/../../..tasources/$datasource"
     echo "+ submit kill task for $datasource"
     return
   fi
 
-  curl -fsS -X DELETE "$DRUID_COORDINATOR_URL/druid/coordinator/v1/datasources/$datasource" >/dev/null 2>&1 || true
+  curl -fsS -X DELETE "$DRUID_COORDINATOR_URL/druid/coordinator/../../..tasources/$datasource" >/dev/null 2>&1 || true
 
   local payload
   payload="{\"type\":\"kill\",\"dataSource\":\"$datasource\",\"interval\":\"1900-01-01/3000-01-01\"}"
@@ -235,7 +235,7 @@ ingestir_batch() {
     local spec_path="$SPECS_DIR/$spec_name"
     echo "Enviando spec batch: $spec_name"
     if [[ "$DRY_RUN" -eq 1 ]]; then
-      echo "+ curl -X POST --data-binary @$spec_path $DRUID_OVERLORD_URL/druid/indexer/v1/task"
+      echo "+ curl -X POST --data-binary @$spec_path $DRUID_OVERLORD_URL/druid/indexer/../../..sk"
       continue
     fi
     local task_id
@@ -251,7 +251,7 @@ recriar_streaming() {
   fi
   local spec_path="$SPECS_DIR/fato_focos_incendio.json"
   echo "Recriando supervisor Kafka legado de focos isolados."
-  run curl -fsS -X POST -H "Content-Type: application/json" --data-binary @"$spec_path" "$DRUID_OVERLORD_URL/druid/indexer/v1/supervisor"
+  run curl -fsS -X POST -H "Content-Type: application/json" --data-binary @"$spec_path" "$DRUID_OVERLORD_URL/druid/indexer/../../..pervisor"
 }
 
 criar_topico_eventos() {
@@ -279,12 +279,12 @@ recriar_eventos() {
   fi
   local spec_path="$SPECS_DIR/fato_eventos_incendio.json"
   echo "Recriando supervisor Kafka da fato agregada de eventos."
-  run curl -fsS -X POST -H "Content-Type: application/json" --data-binary @"$spec_path" "$DRUID_OVERLORD_URL/druid/indexer/v1/supervisor"
+  run curl -fsS -X POST -H "Content-Type: application/json" --data-binary @"$spec_path" "$DRUID_OVERLORD_URL/druid/indexer/../../..pervisor"
 }
 
 conferir() {
   echo "Loadstatus:"
-  run curl -fsS "$DRUID_COORDINATOR_URL/druid/coordinator/v1/loadstatus"
+  run curl -fsS "$DRUID_COORDINATOR_URL/druid/coordinator/../../..adstatus"
   echo
   for datasource in "${BATCH_DATASOURCES[@]}"; do
     echo "COUNT $datasource"

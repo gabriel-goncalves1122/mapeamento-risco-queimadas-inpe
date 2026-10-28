@@ -2,8 +2,12 @@
 
 !pyproject.toml
 !uv.lock
-!src/
-!src/**
+!pipelines/
+!pipelines/**
+!config/
+!config/**
+!scripts/
+!scripts/**
 !infrastructure/
 !infrastructure/dagster/
 !infrastructure/dagster/Dockerfile

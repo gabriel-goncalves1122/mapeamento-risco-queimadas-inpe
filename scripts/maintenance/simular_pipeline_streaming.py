@@ -1,14 +1,14 @@
 import os
 import pandas as pd
 import json
-from src.config.constants import RAW_DIR
-from src.spatial.motor_espacial import MotorEspacial
-from src.streaming.processador import ProcessadorFocos
+from config.constants import INPE_DIR
+from pipelines.silver.src.spatial.motor_espacial import MotorEspacial
+from pipelines.silver.src.streaming_processing.processador import ProcessadorFocos
 
 # ==========================================
 # 1. Configurações
 # ==========================================
-ARQUIVO_BRUTO = os.path.join(str(RAW_DIR), 'focos_incendio_brutos.csv')
+ARQUIVO_BRUTO = os.path.join(str(INPE_DIR), 'focos_incendio_brutos.csv')
 QTD_LINHAS_TESTE = 5  # Quantidade de linhas para simular o streaming
 
 def executar_teste():

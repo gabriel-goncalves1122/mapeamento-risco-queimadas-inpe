@@ -19,10 +19,10 @@ PROJECT_ROOT_PATH = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT_PATH) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT_PATH))
 
-from src.config.constants import PROJECT_ROOT
+from config.constants import PROJECT_ROOT
 
 
-DEFAULT_SQL_DIR = PROJECT_ROOT / "scripts" / "sql" / "superset"
+DEFAULT_SQL_DIR = PROJECT_ROOT / "infrastructure" / "superset" / "queries"
 DEFAULT_OUT_DIR = PROJECT_ROOT / "data" / "results" / "superset_sectors"
 DEFAULT_BROKER_URL = "http://localhost:8082/druid/v2/sql"
 FORBIDDEN_REFERENCES = (
@@ -177,7 +177,12 @@ def descobrir_sqls(sql_dir):
     return [
         path
         for path in sorted(sql_dir.rglob("*.sql"))
-        if "agents.md" not in path.parts
+        if "agents.md" not in path.parts 
+        and path.parent != sql_dir 
+        and path.parent.name[0].isdigit()
+        and "performance" not in path.parts
+        and "stakeholders" not in path.parts
+        and "validation" not in path.parts
     ]
 
 

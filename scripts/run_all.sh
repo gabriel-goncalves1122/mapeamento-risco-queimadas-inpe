@@ -11,19 +11,23 @@ SKIP_DOCKER=0
 SKIP_SCIENCE=0
 RESET=0
 
+VISUAL=0
+
 for arg in "$@"; do
   case "$arg" in
     --skip-etl)     SKIP_ETL=1 ;;
     --skip-docker)  SKIP_DOCKER=1 ;;
     --skip-science) SKIP_SCIENCE=1 ;;
     --reset)        RESET=1 ;;
+    --visual)       VISUAL=1 ;;
     --help)
-      echo "Uso: scripts/run_all.sh [--skip-etl] [--skip-docker] [--skip-science] [--reset]"
+      echo "Uso: scripts/run_all.sh [--skip-etl] [--skip-docker] [--skip-science] [--reset] [--visual]"
       echo
       echo "  --skip-etl      Pula a Etapa 1 (ETL Batch) se CSVs já existem"
       echo "  --skip-docker   Pula a Etapa 3 (Docker/Kafka) se containers já estão rodando"
       echo "  --skip-science  Pula a Etapa 2 (Modelos Científicos)"
       echo "  --reset         Faz docker compose down -v antes de tudo (modo nuclear)"
+      echo "  --visual        Abre terminais paralelos em pop-up para monitorar Docker e Kafka"
       exit 0
       ;;
     *)
@@ -65,6 +69,12 @@ echo
 # ─────── Etapa 3: Docker + Kafka ───────
 if [[ $SKIP_DOCKER -eq 0 ]]; then
   bash "$ETAPAS_DIR/03_docker_e_kafka.sh"
+  
+  if [[ $VISUAL -eq 1 ]]; then
+    echo "🖥️  [MONITOR] Abrindo terminal com 'docker stats'..."
+    gnome-terminal --title="[Monitor] Docker Stats" -- bash -c "docker stats"
+    sleep 2
+  fi
 else
   echo "⏭️  Etapa 3 (Docker/Kafka) pulada via --skip-docker"
 fi
@@ -73,6 +83,14 @@ echo
 # ─────── Etapa 4: Druid Dimensões ───────
 if [[ $SKIP_DOCKER -eq 0 ]]; then
   bash "$ETAPAS_DIR/04_druid_dimensoes.sh"
+  
+  if [[ $VISUAL -eq 1 ]]; then
+    echo "🖥️  [MONITOR] Abrindo terminal consumidor Kafka..."
+    gnome-terminal --title="[Monitor] Kafka Consumer" -- bash -c "echo 'Escutando tópico streaming_eventos_incendio...'; docker exec -it kafka kafka-console-consumer --bootstrap-server localhost:9092 --topic streaming_eventos_incendio; read -p 'Pressione ENTER para fechar a janela...'"
+    sleep 2
+    echo "🔥 O produtor rodará nesta janela principal. Pressione Ctrl+C para encerrar."
+    echo
+  fi
 else
   echo "⏭️  Etapa 4 (Druid Dimensões) pulada (Docker não está ativo)"
 fi

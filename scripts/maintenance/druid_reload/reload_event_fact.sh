@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-SPECS_DIR="$PROJECT_ROOT/infrastructure/druid_specs"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+SPECS_DIR="$PROJECT_ROOT/infrastructure/druid/specs"
 RESULTS_ROOT="$PROJECT_ROOT/data/results/ingestion/fato_eventos"
 
 DRUID_OVERLORD_URL="${DRUID_OVERLORD_URL:-http://localhost:8081}"
 DRUID_COORDINATOR_URL="${DRUID_COORDINATOR_URL:-http://localhost:8081}"
-DRUID_BROKER_SQL_URL="${DRUID_BROKER_SQL_URL:-http://localhost:8082/druid/v2/sql}"
+DRUID_BROKER_SQL_URL="${DRUID_BROKER_SQL_URL:-http://localhost:8082/druid/../../..l}"
 
 KAFKA_CONTAINER="${KAFKA_CONTAINER:-kafka}"
 KAFKA_BOOTSTRAP_DOCKER="${KAFKA_BOOTSTRAP_DOCKER:-kafka:9092}"
@@ -92,12 +92,12 @@ sql_query() {
 
 task_status() {
   local task_id="$1"
-  curl -fsS "$DRUID_OVERLORD_URL/druid/indexer/v1/task/$task_id/status" |
+  curl -fsS "$DRUID_OVERLORD_URL/druid/indexer/../../..sk/$task_id/status" |
     python3 -c "import json,sys; print(json.load(sys.stdin)['status']['status'])"
 }
 
 running_task_ids_for_datasource() {
-  curl -fsS "$DRUID_OVERLORD_URL/druid/indexer/v1/runningTasks" |
+  curl -fsS "$DRUID_OVERLORD_URL/druid/indexer/../../..nningTasks" |
     python3 -c "import json,sys; ds=sys.argv[1]; print('\n'.join(str(t.get('id')) for t in json.load(sys.stdin) if t.get('dataSource') == ds and str(t.get('type')) == 'index_kafka' and t.get('id')))" "$DATASOURCE"
 }
 
@@ -141,23 +141,23 @@ healthcheck() {
 terminate_supervisor() {
   echo "Terminando supervisor, se existir: $SUPERVISOR_ID"
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "+ curl -X POST $DRUID_OVERLORD_URL/druid/indexer/v1/supervisor/$SUPERVISOR_ID/terminate"
+    echo "+ curl -X POST $DRUID_OVERLORD_URL/druid/indexer/../../..pervisor/$SUPERVISOR_ID/terminate"
     return
   fi
-  curl -fsS -X POST "$DRUID_OVERLORD_URL/druid/indexer/v1/supervisor/$SUPERVISOR_ID/terminate" >/dev/null 2>&1 || true
+  curl -fsS -X POST "$DRUID_OVERLORD_URL/druid/indexer/../../..pervisor/$SUPERVISOR_ID/terminate" >/dev/null 2>&1 || true
   sleep 5
 }
 
 reset_supervisor_offsets() {
   echo "Resetando metadados/offsets do supervisor, se existir: $SUPERVISOR_ID"
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "+ curl -X POST $DRUID_OVERLORD_URL/druid/indexer/v1/supervisor/$SUPERVISOR_ID/reset"
+    echo "+ curl -X POST $DRUID_OVERLORD_URL/druid/indexer/../../..pervisor/$SUPERVISOR_ID/reset"
     return
   fi
 
   # O Druid persiste offsets do supervisor no metadata store. Em replay limpo,
   # esse reset evita que um topico Kafka recriado em offset zero seja ignorado.
-  curl -fsS -X POST "$DRUID_OVERLORD_URL/druid/indexer/v1/supervisor/$SUPERVISOR_ID/reset" >/dev/null 2>&1 || true
+  curl -fsS -X POST "$DRUID_OVERLORD_URL/druid/indexer/../../..pervisor/$SUPERVISOR_ID/reset" >/dev/null 2>&1 || true
   sleep 5
 }
 
@@ -178,7 +178,7 @@ shutdown_running_tasks() {
   while IFS= read -r task_id; do
     [[ -z "$task_id" ]] && continue
     echo "Solicitando shutdown da task ativa: $task_id"
-    curl -fsS -X POST "$DRUID_OVERLORD_URL/druid/indexer/v1/task/$task_id/shutdown" >/dev/null 2>&1 || true
+    curl -fsS -X POST "$DRUID_OVERLORD_URL/druid/indexer/../../..sk/$task_id/shutdown" >/dev/null 2>&1 || true
   done <<< "$task_ids"
 
   for _ in {1..30}; do
@@ -229,15 +229,15 @@ reset_topic() {
 kill_datasource() {
   echo "Removendo datasource da fato: $DATASOURCE"
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "+ curl -X DELETE $DRUID_COORDINATOR_URL/druid/coordinator/v1/datasources/$DATASOURCE"
+    echo "+ curl -X DELETE $DRUID_COORDINATOR_URL/druid/coordinator/../../..tasources/$DATASOURCE"
     echo "+ submit kill task for $DATASOURCE"
     return
   fi
 
-  curl -fsS -X DELETE "$DRUID_COORDINATOR_URL/druid/coordinator/v1/datasources/$DATASOURCE" >/dev/null 2>&1 || true
+  curl -fsS -X DELETE "$DRUID_COORDINATOR_URL/druid/coordinator/../../..tasources/$DATASOURCE" >/dev/null 2>&1 || true
   local payload="{\"type\":\"kill\",\"dataSource\":\"$DATASOURCE\",\"interval\":\"1900-01-01/3000-01-01\"}"
   local resposta
-  resposta="$(curl -fsS -X POST -H "Content-Type: application/json" --data-binary "$payload" "$DRUID_OVERLORD_URL/druid/indexer/v1/task")"
+  resposta="$(curl -fsS -X POST -H "Content-Type: application/json" --data-binary "$payload" "$DRUID_OVERLORD_URL/druid/indexer/../../..sk")"
   local task_id
   task_id="$(echo "$resposta" | json_field task)"
   if [[ -n "$task_id" ]]; then
@@ -249,7 +249,7 @@ create_supervisor() {
   echo "Criando supervisor Kafka da fato: $SUPERVISOR_ID"
   run curl -fsS -X POST -H "Content-Type: application/json" \
     --data-binary @"$SPEC_PATH" \
-    "$DRUID_OVERLORD_URL/druid/indexer/v1/supervisor"
+    "$DRUID_OVERLORD_URL/druid/indexer/../../..pervisor"
   echo
 }
 
@@ -259,7 +259,7 @@ collect_state() {
     return
   fi
   mkdir -p "$OUT_DIR"
-  curl -fsS "$DRUID_OVERLORD_URL/druid/indexer/v1/supervisor/$SUPERVISOR_ID/status" \
+  curl -fsS "$DRUID_OVERLORD_URL/druid/indexer/../../..pervisor/$SUPERVISOR_ID/status" \
     > "$OUT_DIR/${prefix}_supervisor_status.json" || true
   docker exec "$KAFKA_CONTAINER" kafka-run-class kafka.tools.GetOffsetShell \
     --broker-list "$KAFKA_BOOTSTRAP_DOCKER" \
@@ -275,7 +275,7 @@ run_producer() {
     return
   fi
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    echo "+ uv run python -m src.streaming.produtor_eventos --progress-jsonl ... --progress-csv ..."
+    echo "+ uv run python -m pipelines.gold.src.streaming.produtor_eventos --progress-jsonl ... --progress-csv ..."
     return
   fi
 
@@ -287,7 +287,7 @@ run_producer() {
     EVENTOS_MAX_DURATION_DAYS="$EVENTOS_MAX_DURATION_DAYS" \
     KAFKA_BROKER="$KAFKA_BOOTSTRAP_HOST" \
     TOPICO_KAFKA_EVENTOS="$TOPIC" \
-    uv run python -m src.streaming.produtor_eventos \
+    uv run python -m pipelines.gold.src.streaming.produtor_eventos \
       --progress-jsonl "$OUT_DIR/progress.jsonl" \
       --progress-csv "$OUT_DIR/progress.csv" \
       2>&1 | tee "$OUT_DIR/produtor_eventos.log"

@@ -7,7 +7,7 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 if CURRENT_DIR not in sys.path:
     sys.path.insert(0, CURRENT_DIR)
 
-from src.streaming.domain.models import FocoFatoPayload
+from config.domain.models import FocoFatoPayload
 
 def test_payload():
     print("🚀 Simulando geração de payload Snowflake FATO para o Kafka...\n")
