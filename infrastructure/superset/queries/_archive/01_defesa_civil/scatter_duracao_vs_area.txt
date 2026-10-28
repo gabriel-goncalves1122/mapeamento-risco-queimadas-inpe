@@ -1,0 +1,24 @@
+-- ============================================================
+-- CHART: Scatterplot (Bubble Chart)
+-- EIXO X: duracao_dias
+-- EIXO Y: area_evento_km2
+-- TAMANHO BOLHA: total_focos
+-- COR: fk_bioma
+-- OBJETIVO: Identificar anomalias — eventos gigantes e duradouros
+-- DASHBOARD: Defesa Civil & Ministério da Saúde
+-- ============================================================
+SELECT
+  fire_event_id,
+  ROUND(duracao_dias, 1) AS duracao_dias,
+  ROUND(area_evento_km2, 2) AS area_km2,
+  total_focos,
+  ROUND(soma_frp, 2) AS soma_frp,
+  fk_bioma AS bioma,
+  LOOKUP(fk_municipio_principal, 'municipios_nome') AS municipio,
+  LOOKUP(fk_municipio_principal, 'municipios_uf') AS uf
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND duracao_dias > 0
+  AND area_evento_km2 > 0
+ORDER BY total_focos DESC
+LIMIT 200

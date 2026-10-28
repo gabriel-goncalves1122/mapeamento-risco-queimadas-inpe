@@ -1,0 +1,19 @@
+-- ============================================================
+-- CHART: Line Chart (Série Temporal)
+-- EIXO X: Dia
+-- EIXO Y: pressao_diaria (SUM de indice_pressao_terra_indigena)
+-- OBJETIVO: Evolução diária da pressão sobre Terras Indígenas
+-- DASHBOARD: FUNAI & ONGs Indígenas
+-- ============================================================
+SELECT
+  TIME_FLOOR(__time, 'P1D') AS dia,
+  COUNT(*) AS eventos_proximos_ti,
+  SUM(total_focos) AS total_focos,
+  ROUND(SUM(indice_pressao_terra_indigena), 2) AS pressao_diaria,
+  ROUND(AVG(distancia_terra_indigena_km), 2) AS distancia_media_km
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND fk_terra_indigena_proxima IS NOT NULL
+  AND fk_terra_indigena_proxima != 'NAO_INFORMADO'
+GROUP BY 1
+ORDER BY 1

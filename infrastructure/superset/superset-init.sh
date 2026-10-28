@@ -18,6 +18,21 @@ echo "🔌 4/5: Conectando automaticamente ao Apache Druid..."
 # Injeta a URI do Druid direto no banco do Superset
 superset set_database_uri -d "Apache Druid Lakehouse" -u "druid://router:8888/druid/v2/sql/"
 
+echo "🔧 Configurando permissões do banco (allow_cvas = True)..."
+python -c "
+import sqlite3
+import os
+db_path = os.environ.get('SUPERSET_HOME', '/app/superset_home') + '/superset.db'
+try:
+    conn = sqlite3.connect(db_path)
+    conn.execute(\"UPDATE dbs SET allow_cvas = 1, expose_in_sqllab = 1, allow_ctas = 1 WHERE database_name = 'Apache Druid Lakehouse'\")
+    conn.commit()
+    conn.close()
+    print('✅ CVAS habilitado com sucesso.')
+except Exception as e:
+    print(f'Aviso: não foi possível atualizar CVAS via sqlite3: {e}')
+"
+
 echo "🚀 5/5: Iniciando o servidor web do Superset..."
 gunicorn \
     -w 2 \

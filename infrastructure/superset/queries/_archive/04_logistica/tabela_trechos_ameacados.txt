@@ -1,0 +1,24 @@
+-- ============================================================
+-- CHART: Table (Tabela Detalhada)
+-- OBJETIVO: Trechos rodoviários ameaçados com distância e criticidade
+-- COLUNAS: trecho, rodovia, criticidade, focos, distância, ameaça
+-- DASHBOARD: Logística & Rodovias
+-- ============================================================
+SELECT
+  __time AS momento_evento,
+  fire_event_id,
+  fk_trecho_rodoviario AS id_trecho,
+  LOOKUP(fk_trecho_rodoviario, 'rodovia_codigo') AS codigo_rodovia,
+  LOOKUP(fk_trecho_rodoviario, 'rodovia_criticidade') AS criticidade,
+  total_focos,
+  ROUND(distancia_rodovia_km, 2) AS distancia_km,
+  ROUND(indice_ameaca_rodovia, 2) AS ameaca,
+  LOOKUP(fk_municipio_principal, 'municipios_nome') AS municipio,
+  LOOKUP(fk_municipio_principal, 'municipios_uf') AS uf
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_ameaca_rodovia > 0
+  AND fk_trecho_rodoviario IS NOT NULL
+  AND fk_trecho_rodoviario != 'NAO_INFORMADO'
+ORDER BY indice_ameaca_rodovia DESC
+LIMIT 50

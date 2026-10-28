@@ -1,0 +1,10 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Área total afetada por eventos de incêndio em km²
+-- MÉTRICA: SUM(area_evento_km2)
+-- DASHBOARD: Painel Geral (Visão Executiva)
+-- ============================================================
+SELECT
+  ROUND(SUM(area_evento_km2), 2) AS area_total_queimada_km2
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY

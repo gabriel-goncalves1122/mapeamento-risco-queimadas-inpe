@@ -1,0 +1,117 @@
+{
+  "type": "kafka",
+  "spec": {
+    "ioConfig": {
+      "type": "kafka",
+      "consumerProperties": {
+        "bootstrap.servers": "kafka:9092"
+      },
+      "topic": "streaming_eventos_incendio",
+      "inputFormat": {
+        "type": "json"
+      },
+      "useEarliestOffset": true,
+      "taskDuration": "PT15M",
+      "completionTimeout": "PT20M",
+      "replicas": 1,
+      "taskCount": 1
+    },
+    "tuningConfig": {
+      "type": "kafka",
+      "maxRowsPerSegment": 5000000,
+      "workerThreads": 1,
+      "maxRowsInMemory": 30000,
+      "maxBytesInMemory": 30000000,
+      "intermediatePersistPeriod": "PT5M",
+      "logParseExceptions": true,
+      "maxParseExceptions": 1000,
+      "maxSavedParseExceptions": 20
+    },
+    "dataSchema": {
+      "dataSource": "fato_eventos_incendio",
+      "timestampSpec": {
+        "column": "data_inicio",
+        "format": "yyyy-MM-dd HH:mm:ss"
+      },
+      "transformSpec": {
+        "transforms": [
+          {
+            "type": "expression",
+            "name": "sample_bucket",
+            "expression": "abs(timestamp_extract(__time,'EPOCH') * 31 + cast(latitude_centroide * 1000, 'LONG') * 17 + cast(longitude_centroide * 1000, 'LONG') * 13) % 100"
+          }
+        ]
+      },
+      "dimensionsSpec": {
+        "dimensions": [
+          { "type": "double", "name": "max_frp" },
+          { "type": "long", "name": "total_focos" },
+          { "type": "double", "name": "area_evento_km2" },
+          { "type": "string", "name": "fire_event_id" },
+          { "type": "string", "name": "data_fim" },
+          { "type": "string", "name": "pais_origem" },
+          { "type": "string", "name": "fk_bioma" },
+          { "type": "string", "name": "fk_satelite_sensor" },
+          { "type": "string", "name": "fk_municipio_principal" },
+          {
+            "type": "string",
+            "name": "codigos_ibge_interceptados",
+            "multiValueHandling": "SORTED_SET"
+          },
+          { "type": "long", "name": "qtd_municipios_interceptados" },
+          { "type": "string", "name": "fk_terra_indigena" },
+          {
+            "type": "string",
+            "name": "codigos_ti_interceptadas",
+            "multiValueHandling": "SORTED_SET"
+          },
+          { "type": "long", "name": "qtd_terras_indigenas_interceptadas" },
+          { "type": "string", "name": "fk_terra_indigena_proxima" },
+          { "type": "string", "name": "fk_trecho_rodoviario" },
+          { "type": "string", "name": "fk_linha_transmissao" },
+          { "type": "string", "name": "fk_subestacao" },
+          { "type": "string", "name": "fk_sistema_isolado" },
+          { "type": "string", "name": "fk_hospital" },
+          { "type": "double", "name": "latitude_centroide" },
+          { "type": "double", "name": "longitude_centroide" },
+          { "type": "string", "name": "path_json" },
+          { "type": "double", "name": "duracao_horas" },
+          { "type": "double", "name": "duracao_dias" },
+          { "type": "double", "name": "soma_frp" },
+          { "type": "double", "name": "media_frp" },
+          { "type": "double", "name": "media_risco_fogo" },
+          { "type": "double", "name": "max_risco_fogo" },
+          { "type": "double", "name": "media_dias_sem_chuva" },
+          { "type": "double", "name": "media_precipitacao_mm" },
+          { "type": "double", "name": "indice_condicao_ambiental_medio" },
+          { "type": "double", "name": "indice_queimada_evento_medio" },
+          { "type": "double", "name": "indice_queimada_evento_max" },
+          { "type": "double", "name": "distancia_rodovia_km" },
+          { "type": "double", "name": "distancia_linha_km" },
+          { "type": "double", "name": "distancia_subestacao_km" },
+          { "type": "double", "name": "distancia_sistema_isolado_km" },
+          { "type": "double", "name": "distancia_hospital_km" },
+          { "type": "double", "name": "distancia_terra_indigena_km" },
+          { "type": "double", "name": "indice_ameaca_rodovia" },
+          { "type": "double", "name": "indice_ameaca_linha" },
+          { "type": "double", "name": "indice_ameaca_subestacao" },
+          { "type": "double", "name": "indice_ameaca_sistema_isolado" },
+          { "type": "double", "name": "indice_pressao_saude" },
+          { "type": "double", "name": "indice_pressao_terra_indigena" },
+          { "type": "double", "name": "indice_pressao_maxima" },
+          { "type": "double", "name": "param_eps_km" },
+          { "type": "double", "name": "param_eps_dias" },
+          { "type": "long", "name": "param_min_samples" },
+          { "type": "double", "name": "param_max_duration_days" },
+          { "type": "long", "name": "sample_bucket" }
+        ]
+      },
+      "granularitySpec": {
+        "type": "uniform",
+        "segmentGranularity": "DAY",
+        "queryGranularity": "NONE",
+        "rollup": false
+      }
+    }
+  }
+}

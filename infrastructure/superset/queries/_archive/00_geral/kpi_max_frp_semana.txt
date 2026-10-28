@@ -1,0 +1,10 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Maior potência radiativa (FRP) detectada — severidade máxima
+-- MÉTRICA: MAX(max_frp) — indica fogo de copa (destrutivo)
+-- DASHBOARD: Painel Geral (Visão Executiva)
+-- ============================================================
+SELECT
+  ROUND(MAX(max_frp), 2) AS maior_frp_semana
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY

@@ -1,0 +1,22 @@
+-- ============================================================
+-- CHART: Table (Tabela Detalhada)
+-- OBJETIVO: Lista detalhada de fogo DENTRO de Terras Indígenas
+-- COLUNAS: TI, etnia, UF, focos, área, FRP
+-- DASHBOARD: FUNAI & ONGs Indígenas
+-- ============================================================
+SELECT
+  __time AS momento_evento,
+  fire_event_id,
+  LOOKUP(fk_terra_indigena, 'ti_nome') AS terra_indigena,
+  LOOKUP(fk_terra_indigena, 'ti_etnia') AS etnia,
+  LOOKUP(fk_terra_indigena, 'ti_uf') AS uf,
+  total_focos,
+  ROUND(area_evento_km2, 2) AS area_km2,
+  ROUND(soma_frp, 2) AS soma_frp,
+  ROUND(duracao_dias, 1) AS duracao_dias
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND fk_terra_indigena IS NOT NULL
+  AND fk_terra_indigena != 'NAO_INFORMADO'
+ORDER BY total_focos DESC
+LIMIT 50

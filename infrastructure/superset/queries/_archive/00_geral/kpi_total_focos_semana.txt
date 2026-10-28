@@ -1,0 +1,10 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Soma total de focos de calor detectados na última semana
+-- MÉTRICA: SUM(total_focos) da fato de eventos
+-- DASHBOARD: Painel Geral (Visão Executiva)
+-- ============================================================
+SELECT
+  SUM(total_focos) AS total_focos_semana
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY

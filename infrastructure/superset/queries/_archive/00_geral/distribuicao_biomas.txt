@@ -1,0 +1,18 @@
+-- ============================================================
+-- CHART: Pie / Donut Chart
+-- DIMENSÃO: fk_bioma (Amazônia, Cerrado, Mata Atlântica, etc.)
+-- MÉTRICA: COUNT de eventos
+-- OBJETIVO: Distribuição dos eventos por bioma brasileiro
+-- DASHBOARD: Painel Geral (Visão Executiva)
+-- ============================================================
+SELECT
+  fk_bioma AS bioma,
+  COUNT(*) AS total_eventos,
+  SUM(total_focos) AS total_focos,
+  ROUND(SUM(area_evento_km2), 2) AS area_total_km2
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND fk_bioma IS NOT NULL
+  AND fk_bioma != 'NAO_INFORMADO'
+GROUP BY 1
+ORDER BY total_eventos DESC

@@ -1,0 +1,19 @@
+-- ============================================================
+-- CHART: Line Chart (Série Temporal)
+-- EIXO X: Dia
+-- EIXO Y: indice_ameaca_media (AVG de indice_ameaca_linha)
+-- OBJETIVO: Evolução diária da ameaça média sobre Linhas de Transmissão
+-- DASHBOARD: ONS (Segurança Energética)
+-- ============================================================
+SELECT
+  TIME_FLOOR(__time, 'P1D') AS dia,
+  COUNT(*) AS eventos_proximos_lt,
+  SUM(total_focos) AS total_focos,
+  ROUND(AVG(indice_ameaca_linha), 4) AS ameaca_media_linha,
+  ROUND(MAX(indice_ameaca_linha), 4) AS ameaca_max_linha,
+  ROUND(AVG(indice_ameaca_subestacao), 4) AS ameaca_media_subestacao
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND (indice_ameaca_linha > 0 OR indice_ameaca_subestacao > 0)
+GROUP BY 1
+ORDER BY 1

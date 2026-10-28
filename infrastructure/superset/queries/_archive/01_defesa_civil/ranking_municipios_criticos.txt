@@ -1,0 +1,21 @@
+-- ============================================================
+-- CHART: Bar Chart Horizontal
+-- EIXO Y: nome_municipio (UF)
+-- EIXO X: pressao_acumulada
+-- OBJETIVO: Top 20 municípios com maior pressão acumulada de incêndio
+-- DASHBOARD: Defesa Civil & Ministério da Saúde
+-- ============================================================
+SELECT
+  LOOKUP(fk_municipio_principal, 'municipios_uf') AS uf,
+  LOOKUP(fk_municipio_principal, 'municipios_nome') AS municipio,
+  LOOKUP(fk_municipio_principal, 'municipios_regiao') AS regiao,
+  COUNT(*) AS total_eventos,
+  SUM(total_focos) AS total_focos,
+  ROUND(SUM(indice_pressao_maxima), 2) AS pressao_acumulada
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND fk_municipio_principal IS NOT NULL
+  AND fk_municipio_principal != 'NAO_INFORMADO'
+GROUP BY 1, 2, 3
+ORDER BY pressao_acumulada DESC
+LIMIT 20

@@ -1,0 +1,49 @@
+{
+  "type": "index_parallel",
+  "spec": {
+    "ioConfig": {
+      "type": "index_parallel",
+      "inputSource": {
+        "type": "local",
+        "baseDir": "/opt/pipelines/silver/data/dimensions",
+        "filter": "dim_ons_linhas_transmissao.csv"
+      },
+      "inputFormat": {
+        "type": "csv",
+        "findColumnsFromHeader": true
+      }
+    },
+    "tuningConfig": {
+      "type": "index_parallel",
+      "maxRowsPerSegment": 5000000
+    },
+    "dataSchema": {
+      "dataSource": "dim_ons_linhas_transmissao",
+      "timestampSpec": {
+        "column": "!!!_no_magic_time_column_!!!",
+        "missingValue": "2025-01-01T00:00:00.000Z"
+      },
+      "dimensionsSpec": {
+        "dimensions": [
+          { "type": "string", "name": "id_linha_transmissao" },
+          { "type": "string", "name": "nome_linha" },
+          { "type": "double", "name": "tensao_kv" },
+          { "type": "string", "name": "classe_tensao" },
+          { "type": "double", "name": "extensao_km" },
+          { "type": "string", "name": "classe_extensao" },
+          { "type": "string", "name": "estado_sigla_estimado" },
+          { "type": "string", "name": "classe_criticidade_linha" },
+          { "type": "double", "name": "latitude" },
+          { "type": "double", "name": "longitude" },
+          { "type": "string", "name": "path_json" }
+        ]
+      },
+      "granularitySpec": {
+        "type": "uniform",
+        "segmentGranularity": "ALL",
+        "queryGranularity": "NONE",
+        "rollup": false
+      }
+    }
+  }
+}

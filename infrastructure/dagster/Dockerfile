@@ -10,9 +10,10 @@ WORKDIR /opt/dagster/app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
 
-COPY src ./src
+COPY pipelines ./pipelines
+COPY config ./config
 RUN mkdir -p /opt/dagster/dagster_home
 
 EXPOSE 3000
 
-CMD ["uv", "run", "dagster", "dev", "-h", "0.0.0.0", "-p", "3000", "-m", "src.orchestration.repo"]
+CMD ["uv", "run", "dagster", "dev", "-h", "0.0.0.0", "-p", "3000", "-m", "pipelines.orchestration.repo"]

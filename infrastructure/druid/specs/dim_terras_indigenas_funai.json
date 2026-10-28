@@ -1,0 +1,61 @@
+{
+  "type": "index_parallel",
+  "spec": {
+    "ioConfig": {
+      "type": "index_parallel",
+      "inputSource": {
+        "type": "local",
+        "baseDir": "/opt/pipelines/silver/data/dimensions",
+        "filter": "dim_terras_indigenas.csv"
+      },
+      "inputFormat": {
+        "type": "csv",
+        "findColumnsFromHeader": true,
+        "listDelimiter": "|"
+      }
+    },
+    "tuningConfig": {
+      "type": "index_parallel",
+      "maxRowsPerSegment": 5000000
+    },
+    "dataSchema": {
+      "dataSource": "dim_terras_indigenas",
+      "timestampSpec": {
+        "column": "!!!_no_magic_time_column_!!!",
+        "missingValue": "2025-01-01T00:00:00.000Z"
+      },
+      "dimensionsSpec": {
+        "dimensions": [
+          { "type": "string", "name": "codigo_ti" },
+          { "type": "string", "name": "nome_terra_indigena" },
+          { "type": "string", "name": "etnia" },
+          { "type": "string", "name": "estado_sigla" },
+          { "type": "double", "name": "area_hectares" },
+          { "type": "string", "name": "classe_area_ti" },
+          { "type": "string", "name": "estagio_regularizacao" },
+          { "type": "string", "name": "modalidade" },
+          { "type": "string", "name": "coordenacao_regional" },
+          { "type": "string", "name": "em_faixa_fronteira" },
+          { "type": "string", "name": "prioridade_funai" },
+          {
+            "type": "string",
+            "name": "codigos_ibge_interceptados",
+            "multiValueHandling": "SORTED_SET"
+          },
+          { "type": "string", "name": "codigo_ibge_principal" },
+          { "type": "long", "name": "qtd_municipios_interceptados" },
+          { "type": "double", "name": "percentual_area_interceptada" },
+          { "type": "double", "name": "latitude" },
+          { "type": "double", "name": "longitude" },
+          { "type": "string", "name": "path_json" }
+        ]
+      },
+      "granularitySpec": {
+        "type": "uniform",
+        "segmentGranularity": "ALL",
+        "queryGranularity": "NONE",
+        "rollup": false
+      }
+    }
+  }
+}

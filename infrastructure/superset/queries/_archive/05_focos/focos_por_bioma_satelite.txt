@@ -1,0 +1,19 @@
+-- ============================================================
+-- CHART: Grouped Bar Chart
+-- EIXO X: fk_bioma
+-- EIXO Y: total_focos (agrupado por satélite/sensor)
+-- OBJETIVO: Focos por bioma e sensor para análise de cobertura
+-- DASHBOARD: Focos Individuais (Granularidade Fina)
+-- ============================================================
+SELECT
+  fk_bioma AS bioma,
+  fk_satelite_sensor AS satelite,
+  COUNT(*) AS total_focos,
+  ROUND(AVG(potencia_radiativa_fogo), 2) AS frp_media,
+  ROUND(AVG(risco_fogo_inpe), 2) AS risco_medio
+FROM fato_focos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND fk_bioma IS NOT NULL
+  AND fk_bioma != 'NAO_INFORMADO'
+GROUP BY 1, 2
+ORDER BY total_focos DESC

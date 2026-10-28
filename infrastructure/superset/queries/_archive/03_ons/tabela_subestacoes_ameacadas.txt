@@ -1,0 +1,23 @@
+-- ============================================================
+-- CHART: Table (Tabela Detalhada)
+-- OBJETIVO: Subestações ameaçadas com dados de centralidade (Network Science)
+-- COLUNAS: nome, capacidade, betweenness, risco_cascata, focos, ameaça
+-- DASHBOARD: ONS (Segurança Energética)
+-- ============================================================
+SELECT
+  __time AS momento_evento,
+  fire_event_id,
+  LOOKUP(fk_subestacao, 'subestacao_nome') AS nome_subestacao,
+  CAST(LOOKUP(fk_subestacao, 'subestacao_capacidade') AS FLOAT) AS capacidade_mw,
+  CAST(LOOKUP(fk_subestacao, 'subestacao_betweenness') AS FLOAT) AS betweenness,
+  LOOKUP(fk_subestacao, 'subestacao_risco_cascata') AS risco_cascata,
+  total_focos,
+  ROUND(distancia_subestacao_km, 2) AS distancia_km,
+  ROUND(indice_ameaca_subestacao, 2) AS ameaca
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_ameaca_subestacao > 0
+  AND fk_subestacao IS NOT NULL
+  AND fk_subestacao != 'NAO_INFORMADO'
+ORDER BY indice_ameaca_subestacao DESC
+LIMIT 50

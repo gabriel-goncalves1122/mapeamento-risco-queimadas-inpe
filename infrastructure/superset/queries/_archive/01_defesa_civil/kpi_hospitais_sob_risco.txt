@@ -1,0 +1,13 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Quantos hospitais distintos estão sob pressão de incêndio
+-- MÉTRICA: COUNT DISTINCT de fk_hospital onde indice_pressao_saude > 0
+-- DASHBOARD: Defesa Civil & Ministério da Saúde
+-- ============================================================
+SELECT
+  COUNT(DISTINCT fk_hospital) AS hospitais_sob_risco
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_pressao_saude > 0
+  AND fk_hospital IS NOT NULL
+  AND fk_hospital != 'NAO_INFORMADO'

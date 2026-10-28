@@ -21,6 +21,9 @@ RUN /app/.venv/bin/python -m pip install --no-cache-dir "pydruid[sqlalchemy]==0.
 # Copia o script de inicialização para dentro do container com o usuário correto.
 COPY --chown=superset:superset superset-init.sh /app/superset-init.sh
 
+# Copia o arquivo de configurações (habilitar Jinja templates)
+COPY --chown=superset:superset superset_config.py /app/pythonpath/superset_config.py
+
 # Permite que o script seja executado na inicialização do container.
 RUN chmod +x /app/superset-init.sh
 

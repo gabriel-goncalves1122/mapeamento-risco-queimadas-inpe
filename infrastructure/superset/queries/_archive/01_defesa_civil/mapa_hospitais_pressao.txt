@@ -1,0 +1,26 @@
+-- ============================================================
+-- CHART: Deck.gl Scatterplot (Mapa Geoespacial)
+-- LATITUDE: latitude_centroide
+-- LONGITUDE: longitude_centroide
+-- RAIO: proporcional a indice_pressao_saude
+-- COR: tipo_unidade do hospital
+-- OBJETIVO: Mapa dos eventos que ameaçam hospitais
+-- DASHBOARD: Defesa Civil & Ministério da Saúde
+-- ============================================================
+SELECT
+  fire_event_id,
+  latitude_centroide,
+  longitude_centroide,
+  total_focos,
+  ROUND(indice_pressao_saude, 2) AS pressao_saude,
+  ROUND(distancia_hospital_km, 2) AS distancia_hospital_km,
+  LOOKUP(fk_hospital, 'hospitais_nome') AS nome_hospital,
+  LOOKUP(fk_hospital, 'hospitais_tipo') AS tipo_unidade,
+  LOOKUP(fk_municipio_principal, 'municipios_nome') AS municipio,
+  LOOKUP(fk_municipio_principal, 'municipios_uf') AS uf
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_pressao_saude > 0
+  AND latitude_centroide IS NOT NULL
+ORDER BY indice_pressao_saude DESC
+LIMIT 200

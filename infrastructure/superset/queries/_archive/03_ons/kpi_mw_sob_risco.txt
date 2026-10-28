@@ -1,0 +1,13 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Capacidade total em MW das subestações sob risco
+-- MÉTRICA: SUM(capacidade_mw) via LOOKUP das subestações ameaçadas
+-- DASHBOARD: ONS (Segurança Energética)
+-- ============================================================
+SELECT
+  ROUND(SUM(CAST(LOOKUP(fk_subestacao, 'subestacao_capacidade') AS FLOAT)), 2) AS mw_sob_risco
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_ameaca_subestacao > 0
+  AND fk_subestacao IS NOT NULL
+  AND fk_subestacao != 'NAO_INFORMADO'

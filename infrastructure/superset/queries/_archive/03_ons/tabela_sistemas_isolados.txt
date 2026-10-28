@@ -1,0 +1,21 @@
+-- ============================================================
+-- CHART: Table (Tabela Detalhada)
+-- OBJETIVO: Sistemas Isolados sob ameaça (Arco Norte / Amazônia)
+-- COLUNAS: nome, UF, focos, distância, ameaça
+-- DASHBOARD: ONS (Segurança Energética)
+-- ============================================================
+SELECT
+  __time AS momento_evento,
+  fire_event_id,
+  LOOKUP(fk_sistema_isolado, 'sistema_isolado_nome') AS nome_sistema,
+  LOOKUP(fk_sistema_isolado, 'sistema_isolado_uf') AS uf,
+  total_focos,
+  ROUND(distancia_sistema_isolado_km, 2) AS distancia_km,
+  ROUND(indice_ameaca_sistema_isolado, 2) AS ameaca
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_ameaca_sistema_isolado > 0
+  AND fk_sistema_isolado IS NOT NULL
+  AND fk_sistema_isolado != 'NAO_INFORMADO'
+ORDER BY indice_ameaca_sistema_isolado DESC
+LIMIT 50

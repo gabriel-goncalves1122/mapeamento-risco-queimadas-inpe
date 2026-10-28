@@ -1,0 +1,23 @@
+-- ============================================================
+-- CHART: Deck.gl Heatmap (Mapa de Calor)
+-- LATITUDE: latitude
+-- LONGITUDE: longitude
+-- PESO: potencia_radiativa_fogo (FRP)
+-- OBJETIVO: Mapa de calor dos focos individuais
+-- DASHBOARD: Focos Individuais (Granularidade Fina)
+-- ============================================================
+SELECT
+  latitude,
+  longitude,
+  potencia_radiativa_fogo AS frp,
+  risco_fogo_inpe AS risco,
+  fk_bioma AS bioma,
+  LOOKUP(fk_municipio, 'municipios_nome') AS municipio,
+  LOOKUP(fk_municipio, 'municipios_uf') AS uf
+FROM fato_focos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND latitude IS NOT NULL
+  AND longitude IS NOT NULL
+  AND coordenada_valida = 1
+ORDER BY potencia_radiativa_fogo DESC
+LIMIT 5000

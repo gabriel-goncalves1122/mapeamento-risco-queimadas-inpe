@@ -1,0 +1,11 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Área total queimada APENAS em megadesastres (>=5000 focos)
+-- MÉTRICA: SUM(area_evento_km2) filtrado por total_focos >= 5000
+-- DASHBOARD: Defesa Civil & Ministério da Saúde
+-- ============================================================
+SELECT
+  ROUND(SUM(area_evento_km2), 2) AS area_megadesastres_km2
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND total_focos >= 5000

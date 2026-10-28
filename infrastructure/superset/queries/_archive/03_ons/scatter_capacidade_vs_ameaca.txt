@@ -1,0 +1,25 @@
+-- ============================================================
+-- CHART: Scatterplot (Bubble Chart)
+-- EIXO X: capacidade_mw
+-- EIXO Y: indice_ameaca_subestacao
+-- TAMANHO: total_focos
+-- COR: risco_cascata (ALTO, MEDIO, BAIXO)
+-- OBJETIVO: Encontrar subestações potentes E ameaçadas (canto superior direito)
+-- DASHBOARD: ONS (Segurança Energética)
+-- ============================================================
+SELECT
+  fire_event_id,
+  LOOKUP(fk_subestacao, 'subestacao_nome') AS nome_subestacao,
+  CAST(LOOKUP(fk_subestacao, 'subestacao_capacidade') AS FLOAT) AS capacidade_mw,
+  CAST(LOOKUP(fk_subestacao, 'subestacao_betweenness') AS FLOAT) AS betweenness,
+  LOOKUP(fk_subestacao, 'subestacao_risco_cascata') AS risco_cascata,
+  total_focos,
+  ROUND(indice_ameaca_subestacao, 2) AS ameaca_subestacao,
+  ROUND(distancia_subestacao_km, 2) AS distancia_km
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_ameaca_subestacao > 0
+  AND fk_subestacao IS NOT NULL
+  AND fk_subestacao != 'NAO_INFORMADO'
+ORDER BY indice_ameaca_subestacao DESC
+LIMIT 100

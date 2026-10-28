@@ -1,0 +1,10 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Total de eventos de incêndio detectados na última semana
+-- MÉTRICA: COUNT de fire_event_id
+-- DASHBOARD: Painel Geral (Visão Executiva)
+-- ============================================================
+SELECT
+  COUNT(*) AS total_eventos_semana
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY

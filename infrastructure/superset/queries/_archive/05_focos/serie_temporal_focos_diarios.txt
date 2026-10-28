@@ -1,0 +1,18 @@
+-- ============================================================
+-- CHART: Line Chart (Série Temporal)
+-- EIXO X: Dia
+-- EIXO Y: total_focos, media_frp, media_risco
+-- OBJETIVO: Evolução diária dos focos individuais na última semana
+-- DASHBOARD: Focos Individuais (Granularidade Fina)
+-- ============================================================
+SELECT
+  TIME_FLOOR(__time, 'P1D') AS dia,
+  COUNT(*) AS total_focos,
+  ROUND(AVG(potencia_radiativa_fogo), 2) AS frp_media,
+  ROUND(MAX(potencia_radiativa_fogo), 2) AS frp_max,
+  ROUND(AVG(risco_fogo_inpe), 2) AS risco_medio,
+  ROUND(AVG(dias_sem_chuva), 1) AS media_dias_sem_chuva
+FROM fato_focos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+GROUP BY 1
+ORDER BY 1

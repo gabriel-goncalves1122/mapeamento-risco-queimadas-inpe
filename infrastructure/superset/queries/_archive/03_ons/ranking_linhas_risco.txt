@@ -1,0 +1,23 @@
+-- ============================================================
+-- CHART: Bar Chart Horizontal
+-- EIXO Y: nome_linha (tensão kV)
+-- EIXO X: indice_ameaca (acumulado)
+-- OBJETIVO: Top 15 linhas de transmissão com maior ameaça
+-- DASHBOARD: ONS (Segurança Energética)
+-- ============================================================
+SELECT
+  LOOKUP(fk_linha_transmissao, 'linha_nome') AS nome_linha,
+  CAST(LOOKUP(fk_linha_transmissao, 'linha_tensao') AS FLOAT) AS tensao_kv,
+  LOOKUP(fk_linha_transmissao, 'linha_uf') AS uf,
+  COUNT(*) AS total_eventos,
+  SUM(total_focos) AS total_focos,
+  ROUND(MAX(indice_ameaca_linha), 2) AS max_ameaca,
+  ROUND(SUM(indice_ameaca_linha), 2) AS ameaca_acumulada
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_ameaca_linha > 0
+  AND fk_linha_transmissao IS NOT NULL
+  AND fk_linha_transmissao != 'NAO_INFORMADO'
+GROUP BY 1, 2, 3
+ORDER BY ameaca_acumulada DESC
+LIMIT 15

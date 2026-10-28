@@ -1,0 +1,13 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Quantas TIs tiveram fogo no ENTORNO (vizinhança ameaçadora)
+-- MÉTRICA: COUNT DISTINCT de fk_terra_indigena_proxima
+-- DASHBOARD: FUNAI & ONGs Indígenas
+-- ============================================================
+SELECT
+  COUNT(DISTINCT fk_terra_indigena_proxima) AS tis_ameacadas_entorno
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND fk_terra_indigena_proxima IS NOT NULL
+  AND fk_terra_indigena_proxima != 'NAO_INFORMADO'
+  AND indice_pressao_terra_indigena > 0

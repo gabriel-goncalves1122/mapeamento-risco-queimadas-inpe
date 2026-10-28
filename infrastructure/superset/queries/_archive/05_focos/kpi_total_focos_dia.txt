@@ -1,0 +1,10 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Focos de calor individuais detectados hoje
+-- MÉTRICA: COUNT da fato_focos_incendio (granularidade fina)
+-- DASHBOARD: Focos Individuais (Granularidade Fina)
+-- ============================================================
+SELECT
+  COUNT(*) AS focos_hoje
+FROM fato_focos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '1' DAY

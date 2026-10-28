@@ -1,0 +1,22 @@
+-- ============================================================
+-- CHART: Bar Chart Horizontal
+-- EIXO Y: codigo_rodovia (ex: BR-010, BR-153)
+-- EIXO X: ameaca_acumulada
+-- OBJETIVO: Top 15 rodovias com maior ameaça acumulada
+-- DASHBOARD: Logística & Rodovias
+-- ============================================================
+SELECT
+  LOOKUP(fk_trecho_rodoviario, 'rodovia_codigo') AS codigo_rodovia,
+  LOOKUP(fk_trecho_rodoviario, 'rodovia_criticidade') AS criticidade,
+  COUNT(*) AS total_eventos,
+  SUM(total_focos) AS total_focos,
+  ROUND(MIN(distancia_rodovia_km), 2) AS menor_distancia_km,
+  ROUND(SUM(indice_ameaca_rodovia), 2) AS ameaca_acumulada
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_ameaca_rodovia > 0
+  AND fk_trecho_rodoviario IS NOT NULL
+  AND fk_trecho_rodoviario != 'NAO_INFORMADO'
+GROUP BY 1, 2
+ORDER BY ameaca_acumulada DESC
+LIMIT 15

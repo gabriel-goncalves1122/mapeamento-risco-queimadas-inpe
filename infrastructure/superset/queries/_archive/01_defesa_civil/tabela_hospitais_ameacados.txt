@@ -1,0 +1,25 @@
+-- ============================================================
+-- CHART: Table (Tabela Detalhada)
+-- OBJETIVO: Lista dos hospitais sob risco com detalhes dimensionais
+-- COLUNAS: hospital, tipo, criticidade, funciona_24h, municipio, pressão
+-- DASHBOARD: Defesa Civil & Ministério da Saúde
+-- ============================================================
+SELECT
+  __time AS momento_evento,
+  fire_event_id,
+  LOOKUP(fk_hospital, 'hospitais_nome') AS nome_hospital,
+  LOOKUP(fk_hospital, 'hospitais_tipo') AS tipo_unidade,
+  LOOKUP(fk_hospital, 'hospitais_critico') AS criticidade,
+  LOOKUP(fk_hospital, 'hospitais_24h') AS funciona_24h,
+  LOOKUP(fk_municipio_principal, 'municipios_nome') AS municipio,
+  LOOKUP(fk_municipio_principal, 'municipios_uf') AS uf,
+  total_focos,
+  ROUND(distancia_hospital_km, 2) AS distancia_km,
+  ROUND(indice_pressao_saude, 2) AS indice_pressao
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_pressao_saude > 0
+  AND fk_hospital IS NOT NULL
+  AND fk_hospital != 'NAO_INFORMADO'
+ORDER BY indice_pressao_saude DESC
+LIMIT 50

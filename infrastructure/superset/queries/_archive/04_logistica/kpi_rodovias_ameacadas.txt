@@ -1,0 +1,13 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Total de trechos rodoviários distintos sob ameaça
+-- MÉTRICA: COUNT DISTINCT de fk_trecho_rodoviario
+-- DASHBOARD: Logística & Rodovias
+-- ============================================================
+SELECT
+  COUNT(DISTINCT fk_trecho_rodoviario) AS rodovias_ameacadas
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_ameaca_rodovia > 0
+  AND fk_trecho_rodoviario IS NOT NULL
+  AND fk_trecho_rodoviario != 'NAO_INFORMADO'

@@ -1,0 +1,13 @@
+-- ============================================================
+-- CHART: Big Number (KPI)
+-- OBJETIVO: Total de linhas de transmissão distintas sob ameaça
+-- MÉTRICA: COUNT DISTINCT de fk_linha_transmissao
+-- DASHBOARD: ONS (Segurança Energética)
+-- ============================================================
+SELECT
+  COUNT(DISTINCT fk_linha_transmissao) AS linhas_ameacadas
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_ameaca_linha > 0
+  AND fk_linha_transmissao IS NOT NULL
+  AND fk_linha_transmissao != 'NAO_INFORMADO'

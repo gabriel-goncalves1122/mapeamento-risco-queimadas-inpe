@@ -1,0 +1,21 @@
+-- ============================================================
+-- CHART: Table (Tabela Detalhada)
+-- OBJETIVO: Fogo no ENTORNO de TIs — alerta antecipado de invasão
+-- COLUNAS: TI, etnia, UF, focos, pressão, distância
+-- DASHBOARD: FUNAI & ONGs Indígenas
+-- ============================================================
+SELECT
+  __time AS momento_evento,
+  fire_event_id,
+  LOOKUP(fk_terra_indigena_proxima, 'ti_nome') AS terra_indigena,
+  LOOKUP(fk_terra_indigena_proxima, 'ti_etnia') AS etnia,
+  LOOKUP(fk_terra_indigena_proxima, 'ti_uf') AS uf,
+  total_focos,
+  ROUND(distancia_terra_indigena_km, 2) AS distancia_ti_km,
+  ROUND(indice_pressao_terra_indigena, 2) AS pressao_ti
+FROM fato_eventos_incendio
+WHERE __time >= CURRENT_TIMESTAMP - INTERVAL '7' DAY
+  AND indice_pressao_terra_indigena > 0
+  AND (fk_terra_indigena IS NULL OR fk_terra_indigena = 'NAO_INFORMADO')
+ORDER BY indice_pressao_terra_indigena DESC
+LIMIT 50
