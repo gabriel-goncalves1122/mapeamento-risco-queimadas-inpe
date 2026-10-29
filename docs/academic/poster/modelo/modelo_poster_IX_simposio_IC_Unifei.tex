@@ -1,0 +1,211 @@
+% Template LaTeX - Pôster IX Simpósio de Iniciação Científica / UNIFEI
+% Dimensões e tipografia ajustadas ao modelo PPTX oficial.
+% Versão compatível com pdfLaTeX.
+% Compilar com:
+%   pdflatex banner_simposio_pdflatex.tex
+%
+% O modelo PPTX utiliza Verdana nos títulos e Arial no corpo.
+% Para garantir portabilidade com pdfLaTeX, este template utiliza
+% Bera Sans como família sans-serif substituta.
+%
+\documentclass[portrait]{a0poster}
+%
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+% Bera Sans family supplied by the TeX distribution.
+\usepackage[scaled]{berasans}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[paperwidth=90cm, paperheight=120cm, left=6.7cm, right=6.7cm, top=17.2cm, bottom=13.0cm]{geometry}
+%
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{eso-pic}
+\usepackage{xcolor}
+\usepackage{ragged2e}
+\usepackage{multicol}
+\usepackage{titlesec}
+\usepackage{microtype}
+%
+% ------------------------------------------------------------
+% FONTES -- versão compatível com pdfLaTeX
+% ------------------------------------------------------------
+% O PPTX exige Arial no corpo e Verdana nos títulos.
+% pdfLaTeX não acessa diretamente fontes TrueType/OpenType do sistema.
+% Bera Sans (fvs) é utilizada tanto no corpo quanto nos títulos,
+% evitando dependência de fontes instaladas no sistema operacional.
+\newcommand{\posterbody}{\fontfamily{fvs}\selectfont}
+\newcommand{\posterheading}{\fontfamily{fvs}\selectfont}
+
+% ------------------------------------------------------------
+% CABEÇALHO E RODAPÉ
+% Mantidos como no pré-modelo fornecido.
+% image2.png = cabeçalho; image3.png = rodapé.
+% ------------------------------------------------------------
+\AddToShipoutPictureBG{%
+  \AtPageUpperLeft{%
+    \raisebox{-12.25cm}{\includegraphics[width=\paperwidth]{image2.png}}%
+  }%
+}
+\AddToShipoutPictureBG{%
+  \AtPageLowerLeft{%
+    \raisebox{-0.15cm}{\includegraphics[width=\paperwidth]{image3.png}}%
+  }%
+}
+
+% ------------------------------------------------------------
+% PARÂMETROS GERAIS DO PÔSTER
+% ------------------------------------------------------------
+\pagestyle{empty}
+\setlength{\parskip}{0.55em}
+\setlength{\emergencystretch}{2em}
+
+% No PPTX, as duas colunas têm aproximadamente 36 cm de largura,
+% separadas por cerca de 4 cm.
+\setlength{\columnsep}{4.2cm}
+\setlength{\columnseprule}{0pt}
+
+% Corpo: Arial 28 pt, parágrafo simples, justificado.
+\newcommand{\postertext}{%
+  \posterbody
+  \fontsize{29}{42}\selectfont
+  \justifying
+  \setlength{\parindent}{2.0cm}%
+}
+
+% Títulos das seções: Verdana 44 pt, negrito.
+%
+\newcommand{\sectiontitle}[1]{%
+  \scalebox{1.08}[1.04]{%
+    \posterheading
+    \fontsize{42}{52}\selectfont
+    \bfseries
+    #1%
+  }%
+}
+
+\titleformat{\section}
+  {\normalfont}
+  {}{0pt}{\sectiontitle}
+% ------------------------------------------------------------
+% COMANDOS PARA TÍTULO/AUTORES
+% ------------------------------------------------------------
+\newcommand{\postertitle}[1]{%
+  \begin{center}
+    \parbox{55cm}{%
+      \centering
+      \posterheading
+      \fontsize{72}{80}\selectfont
+      \bfseries
+      \MakeUppercase{#1}\par
+    }%
+  \end{center}
+}
+
+\newcommand{\posterauthors}[1]{%
+  \begin{center}
+    {\posterheading\fontsize{34}{38}\selectfont\bfseries\itshape #1\par}
+  \end{center}
+}
+
+\newcommand{\posterinstitution}[1]{%
+  \begin{center}
+    {\posterheading\fontsize{36}{38}\selectfont #1\par}
+  \end{center}
+}
+
+\begin{document}
+
+% ------------------------------------------------------------
+% BLOCO SUPERIOR
+% ------------------------------------------------------------
+% O PPTX inicia o título aproximadamente a 18,1 cm do topo.
+\vspace*{-1.75cm}
+
+\postertitle{O título do trabalho deve ser em fonte Verdana,
+tamanho 66, letras maiúsculas, em negrito}
+
+\vspace{1.55cm}
+
+\posterauthors{SOBRENOME, Autor 1., SOBRENOME, Autor 2\ldots  Verdana, 32, negrito, centralizado}
+
+\vspace{-0.95cm}
+
+\posterinstitution{INSTITUIÇÃO DE ORIGEM}
+
+\vspace{1.90cm}
+
+% ------------------------------------------------------------
+% DUAS COLUNAS
+% ------------------------------------------------------------
+\begin{multicols}{2}
+\postertext
+
+\section*{INTRODUÇÃO}
+
+Este modelo de pôster descreve o estilo a ser usado no VIII Simpósio de
+Iniciação Científica da Unifei.
+
+A fonte a ser utilizada deve ser Arial. Aconselhamos fonte com tamanho
+mínimo 28. Pode-se deixar um recuo em cada parágrafo, a critério do autor.
+
+O texto deve ser digitado em parágrafo simples, justificado.
+
+O título deve estar em caixa alta, centralizado, fonte Verdana, tamanho 66
+em negrito. O espaço disponível para o título deverá ser mantido.
+
+A caixa de texto do título do trabalho, bem como dos autores devem ser
+colocadas de forma que fiquem centralizadas, no meio do Pôster.
+
+O título e o nome dos autores deverão ser idênticos ao do resumo submetido.
+
+\vspace{2.0cm}
+\section*{METODOLOGIA}
+
+O nome do(s) autor(es) deve(m) estar centralizado(s), com fonte Verdana,
+tamanho 32, negrito e itálico. Para mais de um autor, os nomes deverão estar
+dispostos na mesma linha e separados por vírgulas. Inicialmente, apresenta-se
+o sobrenome, em caixa alta, seguido do restante do nome.
+
+\vspace{1.2cm}
+\section*{RESULTADOS OBTIDOS E ANÁLISE}
+
+As dimensões padrão do Pôster devem ser de 90 cm de largura, com 120 cm de
+altura.
+
+Não será permitida apresentação por terceiros (não autores). Os trabalhos
+de Iniciação Científica devem ser apresentados pelo discente, acompanhado
+pelo orientador.
+
+O autor do trabalho deverá permanecer junto ao pôster durante o período da
+apresentação, junto com o respectivo orientador, para responder às questões
+dos interessados.
+
+\columnbreak
+
+Continuação do campo referente aos resultados obtidos e análises.
+
+Poderão ser inseridos gráficos, tabelas e figuras.
+
+\vspace{10.0cm}
+\section*{CONCLUSÕES}
+
+Incluir as conclusões do trabalho. Manter fonte Arial, tamanho mínimo 28.
+
+\vspace{10.0cm}
+\section*{AGRADECIMENTOS E FINANCIAMENTOS}
+
+No caso de estudantes da Unifei, é obrigatório constar no pôster
+agradecimentos à universidade e, no caso de alunos bolsistas, ao órgão
+financiador da bolsa. Outros agradecimentos são opcionais.
+
+\vspace{2.0cm}
+\section*{REFERÊNCIAS}
+
+As referências devem ser feitas respeitando-se as normas definidas pela
+ABNT. Somente deverão ser apresentadas as referências citadas no referido
+pôster.
+
+\end{multicols}
+
+\end{document}

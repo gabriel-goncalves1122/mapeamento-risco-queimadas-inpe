@@ -1,0 +1,153 @@
+% Template LaTeX - Pôster IX Simpósio de Iniciação Científica / UNIFEI
+% Dimensões e tipografia ajustadas ao modelo PPTX oficial.
+% Versão modular compatível com pdfLaTeX.
+
+\documentclass[portrait]{a0poster}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[portuguese]{babel}
+% Bera Sans family supplied by the TeX distribution.
+\usepackage[scaled]{berasans}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage[paperwidth=90cm, paperheight=120cm, left=6.7cm, right=6.7cm, top=15.5cm, bottom=11.5cm]{geometry}
+
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\graphicspath{{figures/}{./}}
+\usepackage{eso-pic}
+\usepackage{xcolor}
+\usepackage{ragged2e}
+\usepackage{multicol}
+\usepackage{titlesec}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{url}
+\usepackage{enumitem}
+
+% ------------------------------------------------------------
+% FONTES -- versão compatível com pdfLaTeX
+% ------------------------------------------------------------
+\newcommand{\posterbody}{\fontfamily{fvs}\selectfont}
+\newcommand{\posterheading}{\fontfamily{fvs}\selectfont}
+
+% ------------------------------------------------------------
+% CABEÇALHO E RODAPÉ OFICIAIS UNIFEI
+% ------------------------------------------------------------
+\AddToShipoutPictureBG{%
+  \AtPageUpperLeft{%
+    \raisebox{-12.25cm}{\includegraphics[width=\paperwidth]{image2.png}}%
+  }%
+}
+\AddToShipoutPictureBG{%
+  \AtPageLowerLeft{%
+    \raisebox{-0.15cm}{\includegraphics[width=\paperwidth]{image3.png}}%
+  }%
+}
+
+% ------------------------------------------------------------
+% PARÂMETROS GERAIS DO PÔSTER
+% ------------------------------------------------------------
+\pagestyle{empty}
+\setlength{\parskip}{0.25em}
+\setlength{\emergencystretch}{2em}
+
+\setlength{\columnsep}{4.2cm}
+\setlength{\columnseprule}{0pt}
+
+% Corpo: Arial/Bera Sans 23 pt, entrelinha 30 pt, justificado.
+\newcommand{\postertext}{%
+  \posterbody
+  \fontsize{23}{30}\selectfont
+  \justifying
+  \setlength{\parindent}{1.6cm}%
+}
+
+% Títulos das seções: Verdana/Bera Sans 38 pt, negrito.
+\newcommand{\sectiontitle}[1]{%
+  \scalebox{1.06}[1.02]{%
+    \posterheading
+    \fontsize{38}{44}\selectfont
+    \bfseries
+    #1%
+  }%
+}
+
+\titleformat{\section}
+  {\normalfont}
+  {}{0pt}{\sectiontitle}
+
+\captionsetup{
+  font={small,sf},
+  labelfont=bf,
+  justification=centering,
+  skip=5pt
+}
+
+% ------------------------------------------------------------
+% COMANDOS PARA TÍTULO/AUTORES
+% ------------------------------------------------------------
+\newcommand{\postertitle}[1]{%
+  \begin{center}
+    \parbox{68cm}{%
+      \centering
+      \posterheading
+      \fontsize{60}{70}\selectfont
+      \bfseries
+      \MakeUppercase{#1}\par
+    }%
+  \end{center}
+}
+
+\newcommand{\posterauthors}[1]{%
+  \begin{center}
+    {\posterheading\fontsize{34}{38}\selectfont\bfseries\itshape #1\par}
+  \end{center}
+}
+
+\newcommand{\posterinstitution}[1]{%
+  \begin{center}
+    {\posterheading\fontsize{34}{38}\selectfont #1\par}
+  \end{center}
+}
+
+\begin{document}
+
+% ------------------------------------------------------------
+% BLOCO SUPERIOR
+% ------------------------------------------------------------
+\vspace*{-1.75cm}
+
+\postertitle{INTELIGÊNCIA GEOESPACIAL EM TEMPO REAL PARA MITIGAÇÃO DE DESASTRES AMBIENTAIS}
+
+\vspace{0.70cm}
+
+\posterauthors{Gabriel Gonçalves Sampaio, Barbara Pimenta Caetano}
+
+\vspace{-0.90cm}
+
+\posterinstitution{INSTITUTO DE ENGENHARIA DE SISTEMAS E TECNOLOGIA DA INFORMAÇÃO -- UNIFEI}
+
+\vspace{0.70cm}
+
+% ------------------------------------------------------------
+% DUAS COLUNAS MODULARES BALANCEADAS
+% ------------------------------------------------------------
+\begin{multicols}{2}
+\postertext
+
+\input{sections/01_introducao.tex}
+\vspace{0.20cm}
+\input{sections/02_metodologia.tex}
+\vspace{0.20cm}
+\input{sections/03_resultados.tex}
+\vspace{0.20cm}
+\input{sections/04_conclusoes.tex}
+\vspace{0.20cm}
+\input{sections/05_agradecimentos.tex}
+\vspace{0.20cm}
+\input{sections/06_referencias.tex}
+
+\end{multicols}
+
+\end{document}
