@@ -44,11 +44,11 @@ A avaliação de desempenho submeteu o sistema a 29 consultas SQL analíticas em
     \includegraphics[width=0.47\linewidth]{fig_dashboard_superset.png} &
     \includegraphics[width=0.47\linewidth]{fig_pressao_indigena.png} \\
     {\fontsize{13}{16}\selectfont (c) Painel tático geral (\textbf{\textit{Superset}})} &
-    {\fontsize{13}{16}\selectfont (d) Pressão em Terras Indígenas (FUNAI)} \\
+    {\fontsize{13}{16}\selectfont (d) Pressão sobre Terras Indígenas (\textbf{\textit{Bubble Chart}})} \\
 \end{tabular}
 \vspace{0.08cm}
 \captionof{figure}{Evidências empíricas de desempenho analítico e inteligência tática no Brasil.}
 \label{fig:grid_resultados}
 \end{center}
 
-Os painéis operacionais no \textbf{\textit{Apache Superset}} integram os dados processados para prover consciência situacional às equipes de emergência e Defesa Civil. A interface centraliza a contagem de focos ativos e severidade térmica (FRP), permitindo a filtragem dinâmica por bioma e horizonte temporal para análises customizadas (Fig. 3c). Na escala territorial, o cruzamento espacial destacou a pressão sobre a Terra Indígena Parque do Araguaia (TO), 3ª colocada nacional em anomalias em 2025 (Fig. 3d). A validação geoespacial confirma que os limites demarcados da TI englobam diretamente a Aldeia Canoanã (Formoso do Araguaia), atingida por perdas materiais durante a estiagem subsequente (G1 TOCANTINS, 2026).
+Os painéis operacionais no \textbf{\textit{Apache Superset}} integram os dados processados para prover consciência situacional às equipes de emergência e Defesa Civil. A interface centraliza a contagem de focos ativos e severidade térmica (FRP), permitindo filtragem dinâmica por bioma e horizonte temporal (Fig. 3c). Na escala territorial, o índice de pressão pondera a intensidade radiativa do fogo (FRP), o fator de risco meteorológico e o decaimento com a distância ($I_{\text{pressão}} = \frac{\text{FRP} \times (1 + \text{risco})}{\max(d_{\text{km}},\, 0{,}1)}$). Sob essa ótica analítica, a Terra Indígena Parque do Araguaia (TO) desponta no 1º lugar nacional em pressão acumulada (\textit{PRESSÃO CRÍTICA}) em 2025 (Fig. 3d). A validação geoespacial confirma que os limites demarcados englobam a Aldeia Canoanã (Formoso do Araguaia), severamente atingida por queimadas subsequentes (G1 TOCANTINS, 2026).
