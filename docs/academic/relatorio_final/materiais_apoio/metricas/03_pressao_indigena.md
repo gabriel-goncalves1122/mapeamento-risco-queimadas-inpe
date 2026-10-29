@@ -125,3 +125,31 @@ LIMIT 50;
 
 ### 5.1. Interpretação Operacional
 O ranking ordena as Terras Indígenas pela métrica `pressao_acumulada`, que consiste no somatório dos índices de todos os eventos registrados no período. Um território com classe `PRESSAO_CRITICA` associado ao tipo de ameaça `DENTRO` configura estado de **emergência imediata**, o que indica que as frentes de fogo romperam as fronteiras do território. Um caso notável avaliado em testes operacionais, como o da Aldeia Canoanã (Ilha do Bananal), demonstra de forma trágica e pragmática essa exata classificação.
+
+
+## 6. Estudo de Caso Territorial: Terra Indígena Parque do Araguaia e Aldeia Canoanã
+
+A **Terra Indígena (TI) Parque do Araguaia** é um dos territórios socioambientais mais singulares e importantes do Brasil, figurando de maneira recorrente nas faixas mais severas de pressão calculadas pela nossa plataforma analítica.
+
+### 6.1. Dimensão Territorial e Geografia
+* **Extensão e Localização:** Cobre aproximadamente 1,35 milhão de hectares, ocupando cerca de 3/4 da porção centro-sul da **Ilha do Bananal** (a maior ilha fluvial do mundo), situada inteiramente no estado do Tocantins.
+* **Bacia Hidrográfica e Municípios:** Estende-se pela bacia hidrográfica do Rio Araguaia e abrange áreas de três municípios tocantinenses:
+  * **Formoso do Araguaia** (município onde se situa a Aldeia Canoanã);
+  * **Lagoa da Confusão**;
+  * **Pium**.
+* **Bioma e Dupla Afetação:** O bioma é 100% Cerrado, porém posicionado em transição direta com a Floresta Amazônica, o que lhe confere alta biodiversidade. A região é marcada por ciclos de grandes inundações sazonais, mantendo uma relação íntima de subsistência e preservação com os rios através da pesca artesanal. Existem trechos sob regime de **dupla afetação**, nos quais os limites de preservação ambiental do Parque Nacional e os direitos territoriais indígenas se sobrepõem e são geridos conjuntamente por órgãos ambientais (ICMBio) e comunidades locais.
+
+### 6.2. Histórico e Evolução da Demarcação
+1. **Origem (1959):** O território integrava originalmente o Parque Nacional do Araguaia, criado em 1959, que englobava toda a extensão da Ilha do Bananal.
+2. **A Divisão (1971):** Para equacionar conflitos de uso da terra e assegurar os direitos dos povos originários, o governo federal reduziu o Parque Nacional a apenas 1/4 da ilha (na porção norte). Os outros 3/4 (centro-sul) tornaram-se o Parque Indígena do Araguaia sob tutela da FUNAI.
+3. **Homologação Definitiva (1998):** Em 14 de abril de 1998, a área foi oficialmente homologada por decreto presidencial, passando a se chamar formalmente Terra Indígena Parque do Araguaia.
+
+### 6.3. População e Diversidade Étnica
+Segundo dados oficiais do Censo do IBGE, a TI abriga aproximadamente 4.503 indígenas distribuídos por diversas aldeias. O território é compartilhado por quatro povos principais:
+* **Javaé (Iny):** Grupo majoritário na região do Rio Javaés. A Aldeia Canoanã é uma de suas comunidades mais antigas e estruturadas.
+* **Karajá (Iny):** Historicamente ligados aos Javaé, habitando predominantemente as margens do canal principal do Rio Araguaia.
+* **Avá-Canoeiro:** Povo em situação histórica de extrema vulnerabilidade. Em 1976, após contatos traumáticos com frentes de expansão, sobreviventes foram transferidos pela FUNAI para a Aldeia Canoanã, onde residem até a atualidade.
+* **Apyãwa (Tapirapé):** Povo com presença e trânsito histórico registrado na região.
+
+### 6.4. Conexão com os Resultados do Modelo Analítico
+Durante a simulação e análise operacional dos dados de 2025/2026, a TI Parque do Araguaia despontou no 3º lugar do ranking nacional de pressão acumulada. Essa vulnerabilidade matemática decorre da expansão das fronteiras agropecuárias a partir de Formoso do Araguaia, cujas áreas de queima exercem intensa pressão de borda sobre a calha fluvial do Rio Javaés. A posterior ocorrência de incêndio devastador na Aldeia Canoanã em setembro de 2026 corrobora a capacidade do sistema em apontar antecipadamente territórios com vulnerabilidade crítica acumulada.
