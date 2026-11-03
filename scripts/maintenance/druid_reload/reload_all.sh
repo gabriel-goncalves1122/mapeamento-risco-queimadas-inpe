@@ -170,7 +170,7 @@ healthcheck() {
 
 run_etl() {
   if [[ "$RUN_ETL" -eq 1 ]]; then
-    run env UV_CACHE_DIR=/tmp/uv-cache uv run python -m pipelines.silver.src.etl_dimensions.run_etl
+    run env UV_CACHE_DIR=/tmp/uv-cache uv run python -m src.silver.etl.run_etl
   fi
 }
 

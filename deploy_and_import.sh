@@ -14,6 +14,6 @@ while ! docker compose logs superset 2>&1 | grep -q "Iniciando o servidor web do
 done
 
 echo "Superset estabilizado. Injetando os dashboards exportados..."
-docker cp infrastructure/superset/exports/superset_dashboards_export_20260908_144952.zip superset:/tmp/dashboards.zip
+docker cp infrastructure/superset/exports/superset_dashboards_export_20260518_231338.zip superset:/tmp/dashboards.zip
 docker exec superset superset import-dashboards -p /tmp/dashboards.zip -u admin
 echo "Injeção concluída!"

@@ -235,5 +235,5 @@ echo "A ingestão Python NÃO foi iniciada."
 echo
 echo "Quando quiser iniciar a ingestão:"
 echo "source venv/bin/activate"
-echo "UV_CACHE_DIR=/tmp/uv-cache uv run python -m pipelines.gold.src.streaming.produtor_eventos"
+echo "UV_CACHE_DIR=/tmp/uv-cache uv run python -m src.gold.streaming.produtor_eventos"
 echo

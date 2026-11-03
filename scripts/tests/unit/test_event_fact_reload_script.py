@@ -1,4 +1,4 @@
-from config.constants import PROJECT_ROOT
+from src.core.config.constants import PROJECT_ROOT
 
 
 def test_reload_event_fact_script_nao_reingere_dimensoes():

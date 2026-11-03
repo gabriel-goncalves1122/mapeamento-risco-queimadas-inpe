@@ -104,4 +104,4 @@ echo "🚀 Iniciando produtor de eventos (re-publicação completa do CSV)..."
 echo "   (Ctrl+C para parar o streaming)"
 echo ""
 
-uv run python -m pipelines.gold.src.streaming.produtor_eventos
+uv run python -m src.gold.streaming.produtor_eventos

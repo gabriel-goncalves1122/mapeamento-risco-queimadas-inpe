@@ -1,31 +1,31 @@
 from pathlib import Path
 
-from scripts.performance.benchmark_runner.main import (
+from scripts.benchmarks.benchmark_runner.main import (
     RAW_FIELDS,
     DOCKER_FIELDS,
     salvar_resultados,
 )
-from scripts.performance.benchmark_runner.executor import (
+from scripts.benchmarks.benchmark_runner.executor import (
     FORBIDDEN_REFERENCES,
     carregar_queries,
     split_sql,
     strip_comments,
     validar_statement,
 )
-from scripts.performance.benchmark_runner.stats import (
+from scripts.benchmarks.benchmark_runner.stats import (
     calcular_ganho_cache,
     percentile,
     summarizar_registros,
 )
-from scripts.performance.benchmark_runner.docker_sampler import (
+from scripts.benchmarks.benchmark_runner.docker_sampler import (
     coletar_docker_stats,
 )
-from scripts.performance.compare_capacity_results import consolidate
-from config.constants import PROJECT_ROOT
+from scripts.benchmarks.compare_capacity_results import consolidate
+from src.core.config.constants import PROJECT_ROOT
 
 
-SQL_DIR = PROJECT_ROOT / "infrastructure" / "superset" / "queries" / "performance"
-PROFILE_DIR = PROJECT_ROOT / "infrastructure" / "druid" / "profiles"
+SQL_DIR = PROJECT_ROOT / "infra" / "superset" / "queries" / "performance"
+PROFILE_DIR = PROJECT_ROOT / "infra" / "druid" / "profiles"
 REQUIRED_METADATA = (
     "-- categoria:",
     "-- objetivo:",
@@ -230,7 +230,7 @@ def test_coletar_docker_stats_parseia_saida(monkeypatch):
     def fake_run(*args, **kwargs):
         return FakeResult()
 
-    monkeypatch.setattr("scripts.performance.benchmark_runner.docker_sampler.subprocess.run", fake_run)
+    monkeypatch.setattr("scripts.benchmarks.benchmark_runner.docker_sampler.subprocess.run", fake_run)
 
     [row] = coletar_docker_stats(["broker"], concurrency=4)
 

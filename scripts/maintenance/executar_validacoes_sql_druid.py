@@ -17,10 +17,10 @@ PROJECT_ROOT_PATH = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT_PATH) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT_PATH))
 
-from config.constants import PROJECT_ROOT
+from src.core.config.constants import PROJECT_ROOT
 
 
-DEFAULT_SQL_DIR = PROJECT_ROOT / "scripts" / "sql" / "validation"
+DEFAULT_SQL_DIR = PROJECT_ROOT / "infra" / "superset" / "queries" / "validacao"
 DEFAULT_OUT_DIR = PROJECT_ROOT / "data" / "results" / "druid_validation"
 DEFAULT_BROKER_URL = "http://localhost:8082/druid/v2/sql"
 
