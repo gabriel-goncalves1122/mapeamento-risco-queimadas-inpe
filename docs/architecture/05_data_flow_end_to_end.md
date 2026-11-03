@@ -1,56 +1,62 @@
 # Data Flow End-to-End da Aplicação (Streaming e OLAP)
 
-Este documento detalha o fluxo completo de dados em nossa arquitetura Snowflake e Medallion, evidenciando as decisões de bifurcação paralela no nível de mensageria (Kafka) e as estratégias analíticas de indexamento vetorial (Apache Druid).
+Este documento detalha o fluxo completo de dados na arquitetura **Snowflake** e **Medallion**, evidenciando as decisões de bifurcação paralela no nível de mensageria (Kafka) e as estratégias analíticas de indexamento vetorial (Apache Druid) e visualização (Apache Superset).
 
-A representação arquitetural foi desenhada para superar fluxos lineares simples, separando os conceitos de **Focos Unitários (Anomalias)** e **Eventos Complexos (Desastres)** já no momento da ingestão.
+A representação arquitetural separa os conceitos de **Focos Unitários (Detecções Orbitais Atômicas)** e **Eventos Complexos (Desastres Consolidados via IA)** no momento da ingestão e persistência.
+
+---
 
 ## 1. O Diagrama End-to-End
 
-O diagrama abaixo ilustra o trânsito da informação desde a extração bruta das coordenadas do INPE até a exposição em Dashboards Analíticos.
+O diagrama abaixo ilustra o trânsito da informação desde a extração bruta das coordenadas orbitais até a exposição em Dashboards Analíticos:
 
 ```mermaid
 flowchart TD
-    %% Acquisicao
-    subgraph ACQUISITION [Data Acquisition / Raw]
-        api(API Focos INPE / CSV)
+    %% Ingestao Bruta
+    subgraph ACQUISITION [Camada Bronze: Data Acquisition / Raw]
+        api(API Focos INPE / Carga em Batches)
     end
 
-    %% Processamento Streaming
-    subgraph STREAMING [Streaming Processing Pipeline]
-        prod(Produtor Kafka)
+    %% Processamento Streaming e POO
+    subgraph STREAMING [Camada Gold: Streaming Processing Pipeline]
+        prod(ProdutorFocosGold: Ingestão Dual-Branch)
         
-        proc_focos(Processador Espacial)
-        motor[(Motor Espacial: Dimensões)]
-        payload_focos([FocoFatoPayload])
-        topic_focos(Kafka Topic: focos)
+        proc_focos(Enriquecimento Espacial Atômico)
+        motor[(MotorEspacial / SpatialEngineProtocol)]
+        payload_focos([FocoFatoPayload: Contrato Pydantic])
+        publisher_focos[StreamPublisherBase: KafkaEventProducer]
+        topic_focos(Kafka Topic: focos-incendio)
 
-        buffer(Buffer / Janela Temporal)
-        dbscan(Eventizador: ST-DBSCAN)
-        payload_eventos([EventoFatoPayload])
-        topic_eventos(Kafka Topic: eventos)
+        buffer(Buffer de Janela Espaço-Temporal)
+        dbscan(EventizadorIncendios: ST-DBSCAN)
+        payload_eventos([EventoFatoPayload: Contrato Pydantic])
+        publisher_eventos[StreamPublisherBase: KafkaEventProducer]
+        topic_eventos(Kafka Topic: eventos-incendio)
 
         prod --> proc_focos
         prod --> buffer
 
         %% Ramo Focos
-        proc_focos -->|cruza points| motor
-        proc_focos -->|valida e tipa| payload_focos
-        payload_focos --> topic_focos
+        proc_focos -->|cruza coordenadas WGS84| motor
+        proc_focos -->|valida tipos e FKs| payload_focos
+        payload_focos --> publisher_focos
+        publisher_focos --> topic_focos
 
         %% Ramo Eventos
         buffer --> dbscan
-        dbscan -->|cruza polígonos| motor
-        dbscan -->|agrega e tipa| payload_eventos
-        payload_eventos --> topic_eventos
+        dbscan -->|cruza polígonos e infra| motor
+        dbscan -->|rejeita NaN e tipa| payload_eventos
+        payload_eventos --> publisher_eventos
+        publisher_eventos --> topic_eventos
     end
 
     %% Armazenamento Analítico
-    subgraph OLAP [Analytical Storage: Apache Druid]
-        mid_focos(MiddleManager: Ingestão)
-        mid_eventos(MiddleManager: Ingestão)
+    subgraph OLAP [Armazenamento Analítico: Apache Druid]
+        mid_focos(Kafka Indexing Service: Supervisor)
+        mid_eventos(Kafka Indexing Service: Supervisor)
         
-        fato_focos[(Tabela: fato_focos)]
-        fato_eventos[(Tabela: fato_eventos)]
+        fato_focos[(Datasource: fato_focos_incendio)]
+        fato_eventos[(Datasource: fato_eventos_incendio)]
 
         topic_focos --> mid_focos
         topic_eventos --> mid_eventos
@@ -60,34 +66,39 @@ flowchart TD
     end
 
     %% Visualização
-    subgraph PRESENTATION [Presentation Layer]
+    subgraph PRESENTATION [Camada de Apresentação: Apache Superset]
         superset(Apache Superset)
-        dash_risco[Dashboards de Risco]
-        dash_terr[Análise Territorial]
+        dash_risco[Dashboards de Risco ONS / SIN]
+        dash_terr[Análise de Territórios e Terras Indígenas]
+        dash_hosp[Impacto em Redes Hospitalares CNES]
 
-        fato_focos -.->|SQL| superset
-        fato_eventos -.->|SQL| superset
+        fato_focos -.->|SQL via Lookups Silver| superset
+        fato_eventos -.->|SQL via Lookups Silver| superset
         
         superset --> dash_risco
         superset --> dash_terr
+        superset --> dash_hosp
     end
 
-    api -->|Streaming / Chunking| prod
+    api -->|Ingestão Contínua / Partições| prod
 ```
+
+---
 
 ## 2. Pilares do Fluxo de Dados
 
-A arquitetura não possui processamento intermediário flutuante (como um tópico de focos "brutos" que é consumido novamente). A ingestão realiza o *enriquecimento* e *eventização* no momento da leitura, publicando as Fatos terminadas diretamente em tópicos consumíveis por sistemas OLAP.
+A arquitetura não possui processamento intermediário ocioso ou persistência de tópicos brutos redundantes. A ingestão executa o *enriquecimento espacial* e a *eventização* no momento da leitura, publicando as Fatos prontas diretamente em tópicos consumíveis por sistemas OLAP.
 
 ### 2.1 Streaming Dual-Branch
-Ao capturar dados (CSV ou API), o `Produtor` separa as responsabilidades paralelamente:
-- **Ramo dos Focos (Streaming Puro):** Processa coordenada por coordenada isoladamente, buscando os relacionamentos espaciais imediatos. A latência é na casa de milissegundos.
-- **Ramo dos Eventos (Micro-batching com Janelas):** Acumula os pontos brutos em um buffer em memória. Ao encerramento de um ciclo temporal pré-definido, dispara a engine do **ST-DBSCAN**. Esta engine consolida milhares de anomalias térmicas em um único "Incêndio Florestal" (evento) utilizando Convex Hull para as delimitações espaciais, calculando agregações matemáticas robustas (duração do desastre, soma do FPR, área em $km^2$). 
+Ao capturar dados, o [`ProdutorFocosGold`](../../src/gold/streaming/produtor_focos_gold.py) bifurca as responsabilidades paralelamente:
+- **Ramo dos Focos (Streaming Atômico)**: Processa cada coordenada individualmente, consultando o [`SpatialEngineProtocol`](../../src/core/contracts/contracts.py) para identificar distâncias mínimas até linhas de transmissão, subestações, rodovias federais, hospitais e terras indígenas. A latência é na ordem de milissegundos.
+- **Ramo dos Eventos (Micro-batching Espaço-Temporal)**: Acumula pontos observacionais em buffer. Ao completar o ciclo de janela, invoca o [`EventizadorIncendios`](../../src/gold/science/dbscan/eventizador.py). Este componente agrupa anomalias térmicas correlacionadas no espaço e tempo via **ST-DBSCAN**, gera a envoltória convexa (*Convex Hull*) via [`EventGeometryBuilder`](../../src/gold/science/dbscan/event_geometry_builder.py), serializa o polígono em `path_json` e computa agregações matemáticas de área ($km^2$), FRP total e índices de ameaça.
 
-### 2.2 Contratos Estritos (Pydantic)
-Uma das "Regras de Ouro" desta infraestrutura é a preservação da arquitetura **Snowflake**. 
-Os modelos de contrato `FocoFatoPayload` e `EventoFatoPayload` garantem que nenhum dado "textual decorativo" (como nomes literais de municípios ou biomas extensos) sujeite o cluster Kafka ou o Druid à inflação de metadados. Apenas identificadores inteiros/hashes (Foreign Keys) e métricas contínuas transitam no fluxo. Os relacionamentos (\textit{Joins}) são construídos via Motor Espacial em tempo de execução usando dimensões estáticas.
+### 2.2 Contratos Estritos (Pydantic) e Regra Snowflake
+A preservação da arquitetura **Snowflake** é estritamente garantida por código:
+- Os contratos [`FocoFatoPayload`](../../src/core/domain/foco_fato_payload.py) e [`EventoFatoPayload`](../../src/core/domain/evento_fato_payload.py) possuem configuração `extra="forbid"`.
+- Nenhuma string textual decorativa (como nomes literais de municípios, estados ou concessionárias) transita pelo Kafka ou é persistida nas tabelas fato do Druid. Apenas identificadores inteiros/hashes (Foreign Keys) e métricas numéricas compõem os registros.
+- O validador `rejeitar_nan_inf` impede que valores indefinidos de ponto flutuante corrompam o parser JSON dos Supervisors do Druid.
 
-### 2.3 Consumo Analítico (Druid e Superset)
-Os `MiddleManagers` do Apache Druid puxam de maneira ininterrupta os tópicos `focos` e `eventos` via Kafka Indexing Service. Eles armazenam temporariamente os dados num modelo HDFS ou em segmentos Deep Storage e transferem para os `Historical Nodes`. 
-Por fim, o **Apache Superset** consome essas estruturas massivas através de chamadas SQL ultra-rápidas para gerar os relatórios de mitigação de risco e análise territorial.
+### 2.3 Resolução em Tempo de Consulta via Lookups
+No Apache Druid, as dimensões estáticas geradas na camada Silver (`dim_municipios`, `dim_hospitais`, `dim_ons_linhas_transmissao`, etc.) são carregadas em memória RAM como **Lookups**. Quando uma consulta SQL é disparada pelo **Apache Superset**, o Druid resolve as Foreign Keys em nomes, concessionárias e regiões instantaneamente, poupando a rede do fardo de transmitir strings repetidas em milhões de mensagens de streaming.

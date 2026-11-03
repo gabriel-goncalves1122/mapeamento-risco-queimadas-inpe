@@ -1,27 +1,24 @@
-# 📖 Índice de Dicionários de Dados
+# 📖 Índice Geral de Dicionários de Dados
 
-O CCO-DataOps foi desenhado com forte foco em rastreabilidade de dados. Os modelos estruturais transitam por diferentes esquemas na jornada Medallion. Utilize os sumários abaixo para navegar até as especificações de cada camada.
-
----
-
-## 🥉 Camada Bronze (Ingestion / Raw API)
-Os dados aqui são representações fiéis (e sujas) obtidas de provedores externos. A governança destes dados está atrelada à documentação oficial das suas respectivas agências.
-
-- **[Focos de Incêndio (INPE)](../../pipelines/bronze/inpe/DICIONARIO_DADOS.md)**: Coordenadas brutas provindas de sensores MODIS e VIIRS.
-- **[Hospitais / Saúde (CNES)](../../pipelines/bronze/cnes/DICIONARIO_DADOS.md)**: Infraestrutura de Saúde.
-- **[Linhas de Transmissão (ANEEL/ONS)](../../pipelines/bronze/aneel/DICIONARIO_DADOS.md)**: Sistema Interligado Nacional de energia.
-- **[Terras Indígenas (FUNAI)](../../pipelines/bronze/funai/DICIONARIO_DADOS.md)**: Polígonos de preservação antropológica.
-- **[Malha Rodoviária (DNIT)](../../pipelines/bronze/dnit/DICIONARIO_DADOS.md)**: Rodovias estaduais e federais (logística).
-- **[Malha Municipal (IBGE)](../../pipelines/bronze/ibge/DICIONARIO_DADOS.md)**: Limites geométricos municipais e estaduais do Brasil.
+O ecossistema **CCO-DataOps** foi desenhado com foco estrito em rastreabilidade de dados, integridade de esquemas e tipagem forte. Os modelos estruturais transitam pelas camadas da arquitetura Medallion. Utilize os sumários abaixo para navegar até as especificações de cada camada.
 
 ---
 
-## 🥈 Camada Silver (Conformed / Dimensions)
-Dimensões limpas, sem nulos absolutos, e cruzadas no motor geográfico. Servem de fundação Lookups (Joins em Memória) para a camada ouro.
-- **[Dicionário de Dimensões Espaciais (Silver)](../../pipelines/silver/DICIONARIO_DADOS.md)**: Exposição detalhada da modelagem física dos CSVs dimensionais (Hospitais, Rodovias, Municípios, etc.).
+## 🥉 Camada Bronze (Ingestão / Raw API)
+Os dados nesta camada são representações fiéis e imutáveis dos provedores governamentais externos. A extração e catalogação são gerenciadas por classes especializadas (como `AneelArcGisExtractor` para infraestrutura do setor elétrico) e rotinas de download de satélite.
+* 📋 **[Dicionário de Esquemas Brutos (Bronze)](../../src/bronze/DICIONARIO_DADOS.md):** Especificação exaustiva de atributos originais, tipos de dados e nomes literais fornecidos pelos provedores antes de qualquer transformação.
+* 🌐 **[Catálogo Técnico de Fontes e APIs (Bronze)](../../src/bronze/FONTES_E_APIS.md):** Endpoints, parâmetros HTTP GET, paginação ArcGIS REST, frequências de atualização e referências bibliográficas do Relatório Final para INPE, ANEEL, FUNAI, IBGE, DNIT e DATASUS.
 
 ---
 
-## 🥇 Camada Gold (Serving / Facts)
-A modelagem Snowflake otimizada. Sem Strings textuais nos fatos, priorizando Kafka streaming e agregação sub-segundo no Apache Druid.
-- **[Dicionário da Tabelas Fato (Gold)](../../pipelines/gold/DICIONARIO_DADOS.md)**: Contratos `Pydantic` e semântica das métricas para as Tabelas `FATO_FOCOS` e `FATO_EVENTOS_DB_SCAN`.
+## 🥈 Camada Silver (Dimensões Conformadas)
+Dimensões padronizadas, sem valores nulos em chaves primárias, com projeções métricas SIRGAS 2000 (`EPSG:5880`) e indexação espacial via *STRtree / R-Tree*. Servem de base para os mecanismos de *Lookup* em memória do Apache Druid, permitindo *Joins* analíticos com latência sub-segundo:
+* 📊 **[Dicionário de Dimensões Espaciais (Silver)](../../src/silver/DICIONARIO_DADOS.md):** Especificação física detalhada das 7 tabelas de dimensão (`dim_municipios_coordenadas`, `dim_hospitais_cnes`, `dim_terras_indigenas`, `dim_ons_linhas_transmissao`, `dim_ons_subestacoes`, `dim_ons_sistemas_isolados`, `dim_rodovias_federais`).
+* 📘 **[Guia e Arquitetura da Camada Silver](../../src/silver/README.md):** Visão geral da engenharia de dimensões, motor espacial e validadores de qualidade.
+
+---
+
+## 🥇 Camada Gold (Serving / Tabelas Fato & Streaming)
+Modelagem Snowflake otimizada. Não trafega strings redundantes no payload de streaming Kafka, priorizando chaves estrangeiras (`fk_*`), métricas contínuas e serialização compacta para agregação no Apache Druid:
+* 📋 **[Dicionário das Tabelas Fato (Gold)](../../src/gold/DICIONARIO_DADOS.md):** Contratos de dados Pydantic (`FocoFatoPayload` e `EventoFatoPayload`), métricas térmicas (FRP, Risco de Fogo), índices dinâmicos de ameaça e topologia de grafos (Betweenness Centrality e Risco de Cascata ONS).
+* 🏛️ **[Arquitetura e Engenharia da Camada Gold](../../src/gold/ARQUITETURA.md):** Detalhamento dos princípios POO/SOLID, modelos científicos (ST-DBSCAN e NetworkX) e produtores de streaming.

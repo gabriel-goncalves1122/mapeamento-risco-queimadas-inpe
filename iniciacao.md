@@ -45,7 +45,7 @@ Desenvolver e avaliar experimentalmente uma arquitetura *DataOps* orientada a ev
 | **Camada de Visualização** | `Apache Superset` | Criação de conjuntos de dados virtuais (SQL), mapeamentos geoespaciais e painéis analíticos interativos. |
 | **Geoprocessamento** | `GeoPandas`, `Shapely`, `PyProj`, `PyOgrio` | Manipulação de dados vetoriais, conversão de sistemas de coordenadas (SIRGAS 2000 / EPSG:4674), indexação em árvore (*R-Tree*) e operações de envoltória convexa. |
 | **Modelagem & Ciência de Dados** | `NetworkX`, `Scikit-Learn`, `SciPy`, `Pandas` | Modelagem em grafo da infraestrutura do Sistema Interligado Nacional (SIN), cálculo de *Betweenness Centrality* e clusterização de focos via ST-DBSCAN. |
-| **Contratos de Dados** | `Pydantic v2` | Validação de esquemas e tipagem estrita dos payloads trafegados no Kafka. |
+| **Contratos & POO / SOLID** | `Pydantic v2`, `typing.Protocol`, `abc` | Validação de esquemas e contratos estritos (`extra="forbid"`); aplicação de princípios SOLID, *Template Method*, *Context Manager* e injeção de dependências em pipelines de dados. |
 | **Infraestrutura & DevOps** | `Docker`, `Docker Compose`, Bash Scripting | Conteinerização dos microsserviços do Druid, Kafka, Dagster e Superset, com controle de alocação de vCPU e limites de memória (*cgroups*). |
 | **Engenharia de Performance** | JVM Tuning, Benchmarking | Parametrização de memória da JVM (`-Xms`, `-Xmx`, `MaxDirectMemorySize`), análise de *Garbage Collection*, testes de estresse de consultas e avaliação de cache. |
 | **Análise Estatística** | Linguagem `R`, `ggplot2` | Processamento estatístico das métricas de desempenho dos ensaios e geração de gráficos de latência (P95, violinos de cache e vazão). |
@@ -68,6 +68,12 @@ O fluxo de dados foi estruturado em três níveis de processamento:
 ### 4.3. Indexação Espacial em Camada Prévia
 * Para evitar a sobrecarga de junções espaciais (*Point-in-Polygon*) em tempo de consulta no motor OLAP, o enriquecimento geográfico foi antecipado para a etapa de processamento em Python.
 * A utilização de estruturas de dados espaciais baseadas em árvores (*R-Tree* no GeoPandas) reduziu o custo de busca de geometrias para ordem logarítmica $O(\log N)$, entregando ao banco analítico dados com chaves de pertencimento já calculadas.
+
+### 4.4. Arquitetura Orientada a Objetos e Princípios SOLID
+* **Princípio da Responsabilidade Única (SRP):** Refatoração da base de código para o padrão de 1 Classe por Arquivo em `snake_case`, desacoplando o motor espacial em especificação (`SpatialLayerSpec`), carregamento (`SpatialLayerLoader`), catálogo (`SpatialLayerCatalog`) e motor de consulta (`MotorEspacial`).
+* **Inversão e Segregação de Dependências (DIP / ISP):** Definição de protocolos desacoplados (`SpatialEngineProtocol`, `StreamPublisherBase`, `ExecutablePipelineStep`), permitindo testes unitários com mocks em memória sem necessidade de infraestrutura ativa de Kafka ou Druid.
+* **Padronização Comportamental via Template Method:** O contrato `ExecutablePipelineStep.execute()` centraliza cronometragem de alta precisão (`perf_counter`) e logging estruturado, acoplando-se nativamente à execução em memória dos Assets do Dagster.
+* **Segurança de Recursos via Context Manager:** Implementação de protocolo de gerenciamento de contexto (`with`) em conexões de rede streaming, garantindo esvaziamento determinístico de buffers (*flush*) e fechamento de sockets.
 
 ---
 
@@ -116,7 +122,8 @@ Como parte da investigação científica da Iniciação Científica, estruturou-
 ## 7. Documentação de Código e Padronização
 
 * **Governança de Ambiente (`agents.md`):** Estabelecimento de diretrizes explícitas para garantir reprodutibilidade e consistência na escrita de código (como uso obrigatório do gerenciador `uv`, validação de contratos Pydantic e preservação de esquemas dimensionais sem campos textuais soltos na tabela fato).
-* **Testes Automatizados:** Implementação de testes unitários e de integração com `pytest`, verificando a integridade dos cálculos matemáticos de grafos, os contratos de payload do Kafka e a sintaxe das consultas analíticas do Superset.
+* **Refatoração para POO e SOLID:** Padronização estrutural de toda a base em módulos de responsabilidade única (1 Classe por Arquivo), encapsulamento de pipelines via `ExecutablePipelineStep`, injeção de dependências (`SpatialEngineProtocol`) e uso de *Context Managers* em drivers de rede.
+* **Testes Automatizados:** Implementação de testes unitários e de integração com `pytest` e `pytest-mock`, cobrindo conformidade de contratos Pydantic, algoritmos matemáticos de grafos, validação de integridade dimensional e consultas analíticas do Superset.
 
 ---
 
@@ -138,7 +145,8 @@ Como parte da investigação científica da Iniciação Científica, estruturou-
 
 ### Engenharia de Dados & Infraestrutura Analítica
 * *Implementou pipeline de ingestão e análise de dados de streaming com Apache Kafka, Apache Druid e Dagster, processando mais de 4 milhões de registros geoespaciais e tabulares.*
-* *Estruturou modelo analítico (Esquema Constelação) para armazenamento em banco colunar, normalizando payloads via Pydantic e reduzindo o volume em disco para 0,16 KB por registro.*
+* *Estruturou arquitetura orientada a objetos (POO) com princípios SOLID e Design Patterns (Template Method, Context Manager, Protocol), segregando responsabilidades em 1 classe por arquivo e viabilizando testes unitários desacoplados via mocks.*
+* *Concebeu contratos estritos com Pydantic v2 para tabelas fato e dimensões (Esquema Snowflake), eliminando sobrecarga textual em streaming e reduzindo o payload para 0,16 KB por registro.*
 * *Conduziu ensaios de compactação de segmentos no Apache Druid, mensurando redução de latência média de 2.320 ms para 60 ms no processamento de consultas colunares.*
 * *Realizou testes de estresse e planejamento de capacidade (Capacity Planning) sob concorrência de até 16 conexões simultâneas, avaliando latências P95 e utilização de CPU e memória.*
 * *Conteinerizou serviços em Docker Compose e ajustou parâmetros de memória e heap da JVM para estabilização de serviços analíticos sob limites de hardware.*

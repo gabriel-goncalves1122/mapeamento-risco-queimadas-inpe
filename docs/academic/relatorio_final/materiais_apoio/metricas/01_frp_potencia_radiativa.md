@@ -21,7 +21,7 @@ As seguintes classes de FRP são definidas no sistema (ver arquivo `calculators.
 | $> 0$ | `BAIXA` | Foco detectado mas com baixa intensidade |
 | $0$ ou null | `SEM_FRP` | Sem leitura disponível |
 
-**Código-fonte** ([calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/streaming_processing/processors/calculators.py), linhas 25-31):
+**Código-fonte** ([calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/streaming_processing/processors/calculators.py), linhas 25-31):
 ```python
 @staticmethod
 def classe_frp(frp):
@@ -34,13 +34,13 @@ def classe_frp(frp):
 ```
 
 ## Agregações no Cluster ST-DBSCAN
-Dentro do processo de clusterização, o FRP é agregado para cada evento de incêndio ([eventizador.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/gold/src/science/dbscan/eventizador.py), linhas 200-218):
+Dentro do processo de clusterização, o FRP é agregado para cada evento de incêndio ([eventizador.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/gold/science/dbscan/eventizador.py), linhas 200-218):
 - `soma_frp`: Energia acumulada de todo o cluster ($\sum FRP$). Serve como multiplicador principal de intensidade para todos os índices de ameaça do evento.
 - `media_frp`: Intensidade térmica média por pixel.
 - `max_frp`: Pico térmico dentro do cluster, usado como coluna de ordenação principal nas queries Druid (`ORDER BY max_frp DESC`).
 
 ## Como o FRP Alimenta os 6 Índices
-**Código-fonte** ([calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/streaming_processing/processors/calculators.py), linhas 73-87):
+**Código-fonte** ([calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/streaming_processing/processors/calculators.py), linhas 73-87):
 ```python
 @staticmethod
 def calcular_indices_ameaca(frp, risco, dist_rodovia, dist_linha, dist_sub, dist_sis, dist_hosp, dist_ti, tensao_kv, capac_mw):

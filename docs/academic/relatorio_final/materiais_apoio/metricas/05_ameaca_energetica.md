@@ -201,8 +201,8 @@ Quando a SE Rio Verde Norte (Betweenness 100.00, Risco EXTREMO) aparece sob amea
 
 ## Arquivos Fonte
 
-- [etl_dim_ons_subestacoes.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/etl_dimensions/etl_dim_ons_subestacoes.py)
-- [etl_dim_ons_linhas_transmissao.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/etl_dimensions/etl_dim_ons_linhas_transmissao.py)
-- [etl_dim_ons_sistemas_isolados.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/etl_dimensions/etl_dim_ons_sistemas_isolados.py)
-- [calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/streaming_processing/processors/calculators.py)
-- [network_builder.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/gold/src/science/networkx/network_builder.py)
+- [etl_dim_ons_subestacoes.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/etl/etl_dim_ons_subestacoes.py)
+- [etl_dim_ons_linhas_transmissao.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/etl/etl_dim_ons_linhas_transmissao.py)
+- [etl_dim_ons_sistemas_isolados.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/etl/etl_dim_ons_sistemas_isolados.py)
+- [calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/streaming_processing/processors/calculators.py)
+- [network_builder.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/gold/science/networkx/network_builder.py)

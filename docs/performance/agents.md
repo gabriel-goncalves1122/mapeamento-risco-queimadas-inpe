@@ -26,5 +26,5 @@ interpretacao conservadora dos resultados.
   texto principal ficaria longo demais.
 - Use `path_json`, nomes de datasources e queries exatamente como estao nos
   artefatos de benchmark para manter o vinculo com Superset/Druid.
-- Use `scripts/performance/capacity_metadata.py` como fonte de verdade para
+- Use `scripts/benchmarks/capacity_metadata.py` como fonte de verdade para
   perfis Baseline, Balanced e Query Heavy nos relatorios.

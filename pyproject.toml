@@ -24,4 +24,11 @@ dependencies = [
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["pipelines", "infrastructure", "scripts"]
+testpaths = [
+    "src/bronze/tests",
+    "src/silver/tests",
+    "src/gold/tests",
+    "src/orchestration/tests",
+    "infra/tests",
+    "scripts/tests",
+]

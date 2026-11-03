@@ -6,7 +6,7 @@ O **Índice de Pressão sobre Terras Indígenas** quantifica a ameaça térmica 
 
 ## 2. Classificação da Dimensão Terra Indígena
 
-As Terras Indígenas são categorizadas no momento da ingestão (Camada Silver) por área, estágio de regularização e prioridade de monitoramento para a FUNAI. A lógica de classificação encontra-se em [etl_dim_terras_indigenas.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/etl_dimensions/etl_dim_terras_indigenas.py).
+As Terras Indígenas são categorizadas no momento da ingestão (Camada Silver) por área, estágio de regularização e prioridade de monitoramento para a FUNAI. A lógica de classificação encontra-se em [etl_dim_terras_indigenas.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/etl/etl_dim_terras_indigenas.py).
 
 ### 2.1. Classificação por Área
 
@@ -63,7 +63,7 @@ def _classificar_prioridade_funai(self, estagio_regularizacao, em_faixa_fronteir
 
 ## 3. Fórmula do Índice de Pressão Territorial
 
-O índice consolida a intensidade térmica (FRP), o risco meteorológico de fogo (calculado pelo INPE) e a distância do evento até o limite da Terra Indígena mais próxima. O cálculo é realizado em [calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/streaming_processing/processors/calculators.py).
+O índice consolida a intensidade térmica (FRP), o risco meteorológico de fogo (calculado pelo INPE) e a distância do evento até o limite da Terra Indígena mais próxima. O cálculo é realizado em [calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/streaming_processing/processors/calculators.py).
 
 $$ \text{índice\_pressão}_{TI} = \frac{FRP \times (1 + risco\_fogo\_inpe)}{\max(dist\_terra\_indígena_{km}, 0.1)} $$
 
@@ -89,7 +89,7 @@ def classe_pressao_territorial(indice):
 
 ## 4. Classificação Operacional Espacial (Dentro vs. Entorno)
 
-A modelagem de dados no Superset ([ds_eventos_indigenas.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infrastructure/superset/queries/virtual_datasets/ds_eventos_indigenas.sql)) distingue se a ameaça encontra-se dentro do polígono ou apenas na vizinhança, exercendo pressão de borda:
+A modelagem de dados no Superset ([ds_eventos_indigenas.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infra/superset/queries/virtual_datasets/ds_eventos_indigenas.sql)) distingue se a ameaça encontra-se dentro do polígono ou apenas na vizinhança, exercendo pressão de borda:
 
 - **DENTRO**: O cluster de focos intersecta fisicamente o polígono da Terra Indígena (`fk_terra_indigena != 'NAO INFORMADO'`).
 - **ENTORNO**: Focos fora do perímetro, mas dentro do raio de pressão ativa (`indice_pressao_terra_indigena > 0`).
@@ -104,7 +104,7 @@ END AS tipo_ameaca
 
 ## 5. Análise de Risco Operacional
 
-O ranking abaixo consolida os dados dos últimos 7 dias para monitoramento pelas ONGs e pela própria FUNAI ([03_ranking_tis_ameacadas.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infrastructure/superset/queries/stakeholders/ongs_indigenas/03_ranking_tis_ameacadas.sql)):
+O ranking abaixo consolida os dados dos últimos 7 dias para monitoramento pelas ONGs e pela própria FUNAI ([03_ranking_tis_ameacadas.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infra/superset/queries/stakeholders/ongs_indigenas/03_ranking_tis_ameacadas.sql)):
 
 ```sql
 SELECT

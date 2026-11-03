@@ -2,7 +2,7 @@
 
 A ingestão bruta (Bronze/Prata) nos fornece satélites apontando pixels quentes e linhas elétricas cruzando o mapa. No entanto, para um tomador de decisão num CCO (Centro de Controle e Operações), 10.000 pixels soltos no mapa é apenas "ruído visual".
 
-O ecossistema utiliza scripts avançados de Matemática e Machine Learning na Camada Gold (`pipelines/gold/src/science`) para transformar Dados Puros em **Inteligência Preditiva**.
+O ecossistema utiliza scripts avançados de Matemática e Machine Learning na Camada Gold (`src/gold/science`) para transformar Dados Puros em **Inteligência Preditiva**.
 
 ## 1. Machine Learning: O Algoritmo ST-DBSCAN
 O *Spatio-Temporal Density-Based Spatial Clustering of Applications with Noise* é a evolução do famoso DB-SCAN (Machine Learning Não-Supervisionado). 

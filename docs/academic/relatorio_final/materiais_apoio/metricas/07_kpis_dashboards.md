@@ -149,11 +149,11 @@ Em vez de realizar operações de `JOIN` em uma base distribuída, as descriçõ
 Os KPIs do dashboard condensam toda a complexidade analítica em números acionáveis. O operador de resposta emergencial não precisa entender conceitos teóricos como *Betweenness Centrality* ou a clusterização subjacente via *ST-DBSCAN*. Ele apenas consome as conclusões traduzidas ("Rio Verde Norte está com Risco EXTREMO" ou "Hospital X está com pressão 150"). O uso extensivo de Lookups garante que todas essas traduções ocorram de forma escalável em $\mathcal{O}(1)$ pelo Apache Druid, conferindo latência interativa sem comprometer a riqueza técnica.
 
 ## Referências
-- [eventizador.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/gold/src/science/dbscan/eventizador.py)
-- [layers.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/spatial/layers.py)
+- [eventizador.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/gold/science/dbscan/eventizador.py)
+- [layers.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/spatial/layers.py)
 - [constants.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/config/constants.py)
-- [04_druid_lookups.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/scripts/etapas/04_druid_lookups.py)
-- [etl_dim_rodovias_federais.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/etl_dimensions/etl_dim_rodovias_federais.py)
-- [03_ranking_municipios_criticos.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infrastructure/superset/queries/stakeholders/defesa_civil/03_ranking_municipios_criticos.sql)
-- [ds_eventos_geral.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infrastructure/superset/queries/virtual_datasets/ds_eventos_geral.sql)
-- [ds_eventos_mapa_disperso.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infrastructure/superset/queries/virtual_datasets/ds_eventos_mapa_disperso.sql)
+- [04_druid_lookups.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/scripts/run/04_druid_lookups.py)
+- [etl_dim_rodovias_federais.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/etl/etl_dim_rodovias_federais.py)
+- [03_ranking_municipios_criticos.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infra/superset/queries/stakeholders/defesa_civil/03_ranking_municipios_criticos.sql)
+- [ds_eventos_geral.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infra/superset/queries/virtual_datasets/ds_eventos_geral.sql)
+- [ds_eventos_mapa_disperso.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infra/superset/queries/virtual_datasets/ds_eventos_mapa_disperso.sql)

@@ -6,22 +6,23 @@ Bem-vindo ao diretório raiz `src/`. Este documento orienta Agentes de IA sobre 
 1. **Nunca utilize o binário global `python` ou `pytest`.** 
 2. Este projeto utiliza o `uv` como gerenciador de dependências e ambientes virtuais ultrarrápido em Rust. Todos os comandos Python DEVEM, sem exceção, ser executados através dele:
    - ✅ Correto: `uv run python script.py` ou `uv run pytest`
-   - ✅ Correto: `uv run dagster dev ...`
+   - ✅ Correto: `uv run dagster dev -f src/orchestration/dagster/repo.py`
    - ❌ Errado: `python script.py` ou `pytest` (Isso polui o sistema global ou não acha dependências)
 3. Trabalhe preferencialmente com `uv` para gestão de dependências (`uv add pacote`, `uv run comando`, `uv sync`). Nunca use `pip install`.
 
 ## 🏢 Arquitetura de Dados e Hierarquia (Medallion / Snowflake)
-O projeto baseia-se num sistema de ingestão de dados em Streaming (Kafka -> Apache Druid -> Apache Superset) utilizando uma arquitetura analítica do tipo **Snowflake**, dividida pelas camadas Medallion. 
+O projeto baseia-se num sistema de ingestão de dados em Streaming (Kafka -> Apache Druid -> Apache Superset) utilizando uma arquitetura analítica do tipo **Snowflake**, dividida pelas camadas Medallion sob o diretório `src/`. 
 
-1. **Camada de Orquestração (`pipelines/orchestration/`)**: Define o grafo de assets do Dagster. **Nenhum script roda solto/órfão.**
-2. **Camada Bronze (`pipelines/bronze/`)**: Extração de dados brutos (APIs do INPE, ONS, FUNAI).
-3. **Camada Silver (`pipelines/silver/`)**: Processa as Dimensões estáticas (Hospitais, Rodovias, Municípios). Cruza geometrias usando `shapely` e `geopandas`. Persiste em `pipelines/silver/data/dimensions`.
-4. **Camada Gold (`pipelines/gold/`)**: Scripts de Ciência de Dados e Produção Kafka. A Tabela Fato `FATO_FOCOS_INCENDIO` é estruturada aqui. O payload **NÃO** deve conter strings redundantes (como nomes de municípios ou classes de vulnerabilidade), exceto FKs (identificadores) e Métricas.
-5. **Configurações e Shared (`config/` e `scripts/`)**: Constantes ficam em `config/`. Scripts bash operacionais ficam em `scripts/etapas/`.
-6. **Legado e Análises (`legacy/analytics/`)**: Centraliza relatórios gráficos offline.
+1. **Camada de Orquestração (`src/orchestration/`)**: Define o grafo de assets do Dagster. **Nenhum script roda solto/órfão.**
+2. **Camada Bronze (`src/bronze/`)**: Extração de dados brutos (APIs do INPE, ONS, FUNAI). Persiste em `src/bronze/data/`.
+3. **Camada Silver (`src/silver/`)**: Processa as Dimensões estáticas (Hospitais, Rodovias, Municípios). Cruza geometrias usando `shapely` e `geopandas`. Persiste em `src/silver/data/dimensions`.
+4. **Camada Gold (`src/gold/`)**: Scripts de Ciência de Dados e Produção Kafka. A Tabela Fato `FATO_FOCOS_INCENDIO` é estruturada aqui. O payload **NÃO** deve conter strings redundantes (como nomes de municípios ou classes de vulnerabilidade), exceto FKs (identificadores) e Métricas. Persiste em `src/gold/data/`.
+5. **Núcleo Compartilhado (`src/core/`)**: Contratos abstratos (`src/core/contracts/`), contratos Pydantic (`src/core/domain/`) e constantes/configurações (`src/core/config/`).
+6. **Infraestrutura e Scripts (`infra/` e `scripts/`)**: Configurações de Docker, Druid e Superset em `infra/`. Scripts operacionais em `scripts/run/`, `scripts/maintenance/`, `scripts/benchmarks/` e `scripts/setup/`.
+7. **Legado e Análises (`legacy/analytics/`)**: Centraliza relatórios gráficos offline.
 
 ## 🛡️ Regras Globais para Agentes
-- **Atenção aos Paths**: **Nunca** tente importar de diretórios que não existem mais (como `src.etl` ou `src.streaming`). Os imports devem seguir a estrutura `pipelines.silver.*`, `pipelines.gold.*`, etc.
+- **Atenção aos Paths**: **Nunca** tente importar de diretórios que não existem mais (como `pipelines.*`, `config.*` ou `src.etl`). Os imports devem seguir a estrutura `src.silver.*`, `src.gold.*`, `src.core.*`, etc.
 - **Sem Strings na Fato**: Nunca adicione colunas puramente textuais (`nome_X`, `classe_Y`) no payload de streaming. Isso quebra o modelo Snowflake. Use FKs para apontar para as Dimensões.
 - **Tipagem Forte**: Utilize `Pydantic` para definir contratos de dados estritos no payload Kafka.
 - **Antes de Codar**: Consulte os `DICIONARIO_DADOS.md` nas pastas Silver e Gold para saber a estrutura correta.

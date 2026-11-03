@@ -18,9 +18,9 @@ Base de dados analisada: `data/results/performance/druid_capacity/20260818_21223
 ## Reprodução
 
 ```bash
-UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/performance/generate_capacity_report_assets.py \
+UV_CACHE_DIR=/tmp/uv-cache uv run python scripts/benchmarks/generate_capacity_report_assets.py \
   --matrix-dir data/results/performance/druid_capacity/20260818_212232
-scripts/performance/compile_capacity_reports.sh docs/performance/druid_capacity/20260818_212232
+scripts/benchmarks/compile_capacity_reports.sh docs/performance/druid_capacity/20260818_212232
 ```
 
 Nenhum comando acima executa benchmark; eles apenas transformam evidências já

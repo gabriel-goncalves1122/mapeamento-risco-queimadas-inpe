@@ -6,7 +6,7 @@ O **Índice de Pressão sobre a Saúde** quantifica a ameaça que incêndios flo
 
 ## 2. Taxonomia e Classificação das Unidades de Saúde
 
-Os dados das unidades de saúde são pré-processados na Camada Silver ([etl_dim_hospitais.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/etl_dimensions/etl_dim_hospitais.py)) com uma taxonomia baseada nas categorias oficiais do CNES.
+Os dados das unidades de saúde são pré-processados na Camada Silver ([etl_dim_hospitais.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/etl/etl_dim_hospitais.py)) com uma taxonomia baseada nas categorias oficiais do CNES.
 
 ### 2.1. Taxonomia de Unidades (CNES)
 
@@ -55,7 +55,7 @@ def _classificar_atendimento(self, categoria, funciona_24h):
 
 ## 3. Fórmula do Índice de Pressão sobre a Saúde
 
-O índice correlaciona a potência térmica radiante, o risco meteorológico de ignição e a distância mínima registrada entre o cluster e o estabelecimento de saúde cadastrado no CNES mais próximo ([calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/streaming_processing/processors/calculators.py)).
+O índice correlaciona a potência térmica radiante, o risco meteorológico de ignição e a distância mínima registrada entre o cluster e o estabelecimento de saúde cadastrado no CNES mais próximo ([calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/streaming_processing/processors/calculators.py)).
 
 $$ \text{índice\_pressão}_{saúde} = \frac{FRP \times (1 + risco\_fogo\_inpe)}{\max(dist\_hospital_{km}, 0.1)} $$
 
@@ -80,7 +80,7 @@ As queries a seguir fornecem materializações analíticas para Defesa Civil e �
 
 ### 4.1. Alerta Hospitalar Imediato
 
-Esta query ([01_alerta_hospitais.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infrastructure/superset/queries/stakeholders/defesa_civil/01_alerta_hospitais.sql)) expõe os hospitais que estão em alerta na janela de tempo recente de 7 dias, elencados pelo índice de pressão térmica.
+Esta query ([01_alerta_hospitais.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infra/superset/queries/stakeholders/defesa_civil/01_alerta_hospitais.sql)) expõe os hospitais que estão em alerta na janela de tempo recente de 7 dias, elencados pelo índice de pressão térmica.
 
 ```sql
 SELECT
@@ -104,7 +104,7 @@ LIMIT 50;
 
 ### 4.2. Top Hospitais Ameaçados e Enriquecimento Dimensional
 
-Cruzamento detalhado das estatísticas vitais da Tabela Fato com as tipologias estruturais e logísticas da Dimensão de Hospitais ([07_saude_lookup_hospitais_top.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infrastructure/superset/queries/07_eventos_incendio/07_saude_lookup_hospitais_top.sql)).
+Cruzamento detalhado das estatísticas vitais da Tabela Fato com as tipologias estruturais e logísticas da Dimensão de Hospitais ([07_saude_lookup_hospitais_top.sql](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/infra/superset/queries/07_eventos_incendio/07_saude_lookup_hospitais_top.sql)).
 
 ```sql
 WITH top_hospitais AS (

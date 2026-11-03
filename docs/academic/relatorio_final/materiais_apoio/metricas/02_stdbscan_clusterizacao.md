@@ -34,7 +34,7 @@ O processamento geométrico dos eventos ocorre nas seguintes etapas:
 4. A geometria é reprojetada para `WGS84` para armazenamento como GeoJSON.
 5. A área é calculada em km²: $\text{area\_km2} = \frac{\text{area\_metros}}{1.000.000}$.
 
-**Código-fonte da Geometria** ([eventizador.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/gold/src/science/dbscan/eventizador.py), linhas 276-304):
+**Código-fonte da Geometria** ([eventizador.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/gold/science/dbscan/eventizador.py), linhas 276-304):
 ```python
 def _geometria_evento(self, grupo: pd.DataFrame):
     gdf_gps = gpd.GeoDataFrame(
@@ -53,7 +53,7 @@ def _geometria_evento(self, grupo: pd.DataFrame):
     return geom_gps, float(centroide_gps.y), float(centroide_gps.x), area_km2
 ```
 
-**Código-fonte do Clustering** ([eventizador.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/gold/src/science/dbscan/eventizador.py), linhas 150-175):
+**Código-fonte do Clustering** ([eventizador.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/gold/science/dbscan/eventizador.py), linhas 150-175):
 ```python
 def _eventizar_janela(self, grupo_janela: pd.DataFrame) -> list[dict]:
     if len(grupo_janela) < self.config.min_samples:
@@ -118,4 +118,4 @@ Um evento com `total_focos` $\geq 5000$ e `area_evento_km2` $\geq 500$ é classi
 **Arquivos de Origem:**
 - [settings.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/config/settings.py)
 - [constants.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/config/constants.py)
-- [eventizador.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/gold/src/science/dbscan/eventizador.py)
+- [eventizador.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/gold/science/dbscan/eventizador.py)

@@ -103,4 +103,4 @@ def classe_queimada_evento(indice):
 O **ICA** é um termômetro ambiental prévio (avaliado sem necessariamente considerar fogo ativo no instante). O **IQE**, por sua vez, é o indicador de gravidade *real* de um incêndio em andamento. Quando observamos simultaneamente um $\text{ICA} \ge 1.5$ e um $\text{IQE} \ge 20$, deparamo-nos com o pior cenário possível: seca extrema alimentando um incêndio altamente enérgico e violento, sob condições climáticas que amplificam ativamente sua propagação pela infraestrutura local.
 
 ## Arquivos Fonte
-- [calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/pipelines/silver/src/streaming_processing/processors/calculators.py)
+- [calculators.py](file:///home/gabriel/Documentos/UNIFEI/IC%20-%20DataOps/src/silver/streaming_processing/processors/calculators.py)

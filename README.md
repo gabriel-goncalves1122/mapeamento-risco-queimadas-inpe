@@ -15,50 +15,66 @@ Este sistema processa dados climáticos e coordenadas de focos de incêndio em t
 
 ## 🏗️ Arquitetura Medallion & Fluxo de Dados
 
-O fluxo de dados foi desenhado seguindo uma rigorosa arquitetura **Medallion**, orquestrado via **Dagster** e escalado via **Docker**.
+O fluxo de dados foi desenhado seguindo a arquitetura **Medallion**, orientada a objetos (POO) com princípios **SOLID**, orquestrada via **Dagster** e escalada via **Docker**.
 
 ### 1. Camada Bronze (Raw/Ingestion)
-Scripts Python extraem dados de fontes governamentais (INPE, ONS, FUNAI, IBGE, DNIT, CNES). O processamento utiliza técnicas de _chunking_ para evitar o esgotamento de memória.
-- **Responsabilidade**: Coletar dados como vieram da fonte.
+Classes extratoras especializadas (`AneelArcGisExtractor`) coletam dados brutos governamentais (INPE, ONS, FUNAI, IBGE, DNIT, CNES) com injeção de dependências e técnicas de *chunking* para evitar esgotamento de memória.
+- **Responsabilidade**: Coletar dados como vieram da fonte e assegurar proveniência.
 
 ### 2. Camada Silver (Conformed/Cleaned)
-Camada de processamento pesado espacial e ETL tabular. 
-- **Responsabilidade**: Gerar Dimensões analíticas tratadas (CSVs padronizados) cruzando geometrias espaciais.
-- *Ferramentas*: Pandas, Shapely, PyProj.
+Camada de processamento espacial vetorial e conformação dimensional estruturada em classes herdeiras de `BaseETL` e `ExecutablePipelineStep`.
+- **Responsabilidade**: Gerar Dimensões analíticas padronizadas cruzando geometrias espaciais via *R-Tree* e indexação policônica (EPSG:5880).
+- *Ferramentas*: GeoPandas, Shapely, PyProj.
 
 ### 3. Camada Gold (Science/Serving)
-A camada que consome as Dimensões e aplica cálculos complexos, gerando Tabelas Fato focadas em performance.
-- **Machine Learning**: ST-DBSCAN agrupa Focos de Incêndio (espaço e tempo) em Eventos maiores.
-- **Teoria dos Grafos**: Centralidade de Intermediação (_Betweenness_) de Subestações via NetworkX, predizendo risco de colapso em cascata no ONS.
-- **Streaming de Última Milha**: Envio de payloads Fato extremamente enxutos, usando apenas IDs (Snowflake Schema), via Apache Kafka.
+A camada que consome as Dimensões e aplica cálculos complexos, gerando Tabelas Fato focadas em performance analítica.
+- **Machine Learning**: `EventizadorIncendios` agrupa focos de incêndio (espaço e tempo) em manchas poligonais (*Convex Hull*) via ST-DBSCAN.
+- **Teoria dos Grafos**: `SINNetworkCentralityModel` calcula a Centralidade de Intermediação (*Betweenness Centrality*) das subestações via NetworkX, quantificando riscos de colapso em cascata no ONS.
+- **Streaming de Última Milha**: Envio de payloads Fato extremamente enxutos, usando apenas IDs (Snowflake Schema), via Apache Kafka (`KafkaStreamClient` como Context Manager).
 
 ### 4. Motores de Performance (A Ponta do Iceberg)
-- **Mensageria (Apache Kafka):** Atua como um _buffer_ de resiliência. Garante que picos extremos de dados gerados por desastres não derrubem o banco de dados.
-- **Motor Analítico (Apache Druid):** O coração OLAP. Indexa os dados utilizando compressão LZ4 e bitmaps _Roaring_ permitindo agregações temporais ultrarrápidas em ~35ms.
-- **Camada de Visualização (Apache Superset):** Consome os dados do Druid para renderizar mapas táticos e dashboards.
+- **Mensageria (Apache Kafka):** Atua como um *buffer* de resiliência, absorvendo picos extremos de dados gerados por desastres.
+- **Motor Analítico (Apache Druid):** O coração OLAP colunar. Indexa os dados utilizando compressão LZ4 e bitmaps *Roaring*, permitindo agregações temporais ultrarrápidas em ~35ms.
+- **Camada de Visualização (Apache Superset):** Consome os dados do Druid para renderizar mapas táticos e dashboards gerenciais.
 
 ---
 
 ## 🎯 Casos de Uso: Os Eixos de Operação
 
-Os _dashboards_ embutidos no Apache Superset foram projetados com foco em UX analítico para três autarquias específicas:
-- ⚡ **Operador Nacional do Sistema (ONS):** Prevenção de blecautes. Ranqueando infraestruturas com maior risco eletromagnético.
-- 🏹 **Proteção Territorial (FUNAI / IBAMA):** Matrizes de alerta que filtram anomalias térmicas estritamente dentro das delimitações de Terras Indígenas.
-- 🚒 **Comando da Defesa Civil:** Mapas geoespaciais e curvas temporais para prever o pico do fogo.
+Os *dashboards* no Apache Superset foram projetados com foco em UX analítico para três autarquias específicas:
+- ⚡ **Operador Nacional do Sistema (ONS):** Prevenção de blecautes e monitoramento de contingência N-2 em subestações de alta centralidade.
+- 🏹 **Proteção Territorial (FUNAI / IBAMA):** Matrizes de alerta que filtram anomalias térmicas e pressão de borda estritamente dentro das delimitações de Terras Indígenas (ex: TI Parque do Araguaia).
+- 🚒 **Comando da Defesa Civil:** Mapas geoespaciais e curvas temporais para prever o avanço e o perímetro dinâmico do fogo.
 
 ---
 
 ## 📚 Navegação da Documentação
 
-A documentação detalhada foi dividida nos seguintes eixos para facilitar o entendimento técnico:
-- 📖 [Dicionários de Dados das Camadas](docs/data_dictionary/index.md) *(Em construção)*
-- 🏛️ [Guias de Arquitetura e Engenharia](docs/architecture/index.md) *(Em construção)*
+A documentação adota um modelo **descentralizado por camadas** na arquitetura Medalhão, com governança executiva em `docs/`:
+
+### Documentação Especializada por Camada
+- 🥉 **Camada Bronze**: [Guia da Camada](src/bronze/README.md) | [Fontes e APIs Governamentais](src/bronze/FONTES_E_APIS.md) | [Dicionário de Esquemas Brutos](src/bronze/DICIONARIO_DADOS.md)
+- 🥈 **Camada Silver**: [Guia da Camada e Motor Espacial](src/silver/README.md) | [Dicionário de Dimensões Conformadas](src/silver/DICIONARIO_DADOS.md)
+- 🥇 **Camada Gold**: [Guia da Camada e Streaming](src/gold/README.md) | [Arquitetura POO e Modelos](src/gold/ARQUITETURA.md) | [Dicionário das Tabelas Fato](src/gold/DICIONARIO_DADOS.md)
+- ⚙️ **Orquestração**: [Guia de Assets Dagster e Execução In-Memory](src/orchestration/README.md)
+
+### Guias Sistêmicos e Acadêmicos (`docs/`)
+- 🏛️ [Portal de Governança Geral](docs/README.md)
+- 📖 [Índice Geral de Dicionários de Dados](docs/data_dictionary/index.md)
+- 🏛️ [Guias de Arquitetura e Engenharia](docs/architecture/index.md)
+  - [Streaming e OLAP (Kafka + Druid)](docs/architecture/01_streaming_e_olap.md)
+  - [Orquestração e Medallion (Dagster)](docs/architecture/02_orquestracao.md)
+  - [Data Science e Modelagem Preditiva](docs/architecture/03_data_science.md)
+  - [Referencial Teórico (SIRDA)](docs/architecture/04_referencial_teorico.md)
+  - [Data Flow End-to-End](docs/architecture/05_data_flow_end_to_end.md)
+  - [Arquitetura POO e Princípios SOLID](docs/architecture/06_arquitetura_poo_solid.md)
+- 🎓 [Portfólio Técnico e Síntese de Competências](iniciacao.md)
 
 ---
 
 ## 🚀 Como Executar o Projeto Localmente
 
-O ambiente é 100% conteinerizado e automatizado (Monorepo Python).
+O ambiente é 100% conteinerizado e automatizado (Monorepo Python com gestão determinística via `uv`).
 
 ### 1. Pré-requisitos
 - Docker e Docker Compose instalados.
@@ -66,45 +82,57 @@ O ambiente é 100% conteinerizado e automatizado (Monorepo Python).
 - Recomendado: Mínimo de 8GB de RAM dedicados ao Docker.
 
 ### 2. Sincronização e Testes (Ambiente Local)
-Sincronize as dependências num ambiente virtual via `uv` e execute os testes independentes:
+Sincronize as dependências num ambiente virtual via `uv` e execute a suíte de testes:
 ```bash
 uv sync
 uv run pytest -v
 ```
 
-### 3. Pipeline Simplificada (Scripts de Etapas)
-Para rodar todo o ecossistema (da extração até o streaming interativo), utilize a pasta `scripts/etapas`:
-
+### 3. Execução Orientada a Objetos (Classes / Python Direto)
+As etapas de processamento foram modeladas como classes herdando de `ExecutablePipelineStep`, permitindo execução direta e isolada:
 ```bash
-# Etapa 1: Ingestão e Geração das Dimensões Espaciais (Camada Silver)
-./scripts/etapas/01_etl_batch.sh
+# Execução da Camada Silver: orquestração de todas as 7 dimensões espaciais
+uv run python src/silver/etl/run_etl.py
 
-# Etapa 2: Aplicação de Algoritmos Preditivos e Grafos (Camada Gold)
-./scripts/etapas/02_modelos_ciencia.sh
+# Execução da Camada Gold: cálculo do modelo de grafos do SIN (Betweenness Centrality)
+uv run python src/gold/science/networkx/network_builder.py
 
-# Etapa 3: Subir Kafka e Infraestrutura (Docker)
-./scripts/etapas/03_docker_e_kafka.sh
-
-# Etapa 4: Ingerir Dimensões e Lookups no Druid OLAP
-./scripts/etapas/04_druid_dimensoes.sh
-
-# Etapa 5: Iniciar o Streaming Contínuo dos Sensores Orbitais
-./scripts/etapas/05_streaming_eventos.sh
+# Validação estrutural de integridade (Hospitais vs Municípios)
+uv run python src/silver/validators/valida_joins_municipios_hospital.py
 ```
 
-### 4. Inicializando o Apache Superset
+### 4. Pipeline Completa Automatizada (Scripts de Etapas)
+Para subir a infraestrutura Docker e disparar o fluxo integrado:
+```bash
+# Etapa 1: Ingestão e Geração das Dimensões Espaciais (Camada Silver)
+./scripts/run/01_etl_batch.sh
+
+# Etapa 2: Aplicação de Algoritmos Preditivos e Grafos (Camada Gold)
+./scripts/run/02_modelos_ciencia.sh
+
+# Etapa 3: Subir Kafka e Infraestrutura (Docker)
+./scripts/run/03_docker_e_kafka.sh
+
+# Etapa 4: Ingerir Dimensões e Lookups no Druid OLAP
+./scripts/run/04_druid_dimensoes.sh
+
+# Etapa 5: Iniciar o Streaming Contínuo dos Sensores Orbitais
+./scripts/run/05_streaming_eventos.sh
+```
+
+### 5. Inicializando o Apache Superset
 Como o Superset necessita de configurações de segurança, execute o utilitário na raiz:
 ```bash
 ./scripts/bootstrap_stack.sh
 ```
 
-### 5. Orquestrador Dagster
+### 6. Orquestrador Dagster
 Para visualizar e ativar as pipelines via interface gráfica do Dagster, inicie o `dev server`:
 ```bash
 uv run dagster dev -m pipelines.orchestration.repo
 ```
 
-### 6. Acessando as Interfaces
+### 7. Acessando as Interfaces
 
 Com tudo rodando, acesse através do seu navegador:
 - 🐙 **Orquestrador Dagster:** http://localhost:3000
