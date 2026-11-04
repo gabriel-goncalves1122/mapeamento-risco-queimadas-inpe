@@ -21,11 +21,28 @@ O projeto baseia-se num sistema de ingestão de dados em Streaming (Kafka -> Apa
 6. **Infraestrutura e Scripts (`infra/` e `scripts/`)**: Configurações de Docker, Druid e Superset em `infra/`. Scripts operacionais em `scripts/run/`, `scripts/maintenance/`, `scripts/benchmarks/` e `scripts/setup/`.
 7. **Legado e Análises (`legacy/analytics/`)**: Centraliza relatórios gráficos offline.
 
-## 🛡️ Regras Globais para Agentes
-- **Atenção aos Paths**: **Nunca** tente importar de diretórios que não existem mais (como `pipelines.*`, `config.*` ou `src.etl`). Os imports devem seguir a estrutura `src.silver.*`, `src.gold.*`, `src.core.*`, etc.
-- **Sem Strings na Fato**: Nunca adicione colunas puramente textuais (`nome_X`, `classe_Y`) no payload de streaming. Isso quebra o modelo Snowflake. Use FKs para apontar para as Dimensões.
-- **Tipagem Forte**: Utilize `Pydantic` para definir contratos de dados estritos no payload Kafka.
-- **Antes de Codar**: Consulte os `DICIONARIO_DADOS.md` nas pastas Silver e Gold para saber a estrutura correta.
+## 🛡️ Regras Globais para Agentes (Padrão FCIS — `arquitetura-dados-pragmatica`)
+1. **Núcleo Funcional para Dados (Functional Core)**:
+   - Toda e qualquer transformação, sanitização, enriquecimento, cálculo matemático ou feature engineering deve ser estruturada como **função pura e sem estado** (`Data In -> Data Out`, preferencialmente `DataFrame -> DataFrame`).
+   - É **proibido** criar classes para apenas uma função de transformação (anti-padrão *"Stop Writing Classes"* / Javaficação do Python). O arquivo `.py` (módulo) já é o namespace.
+   - **Vetorização em primeiro lugar**: nunca instancie objetos linha a linha para iterar sobre DataFrames (destrói o throughput colunar).
+   - Funções puras devem ser 100% determinísticas, idempotentes e testáveis em milissegundos com pequenos DataFrames sintéticos no `pytest`, sem depender de mocks de rede ou banco.
+2. **Casca Orientada a Objetos para Infraestrutura (OO Shell)**:
+   - Use POO e princípios SOLID estritos **exclusivamente** onde há gerenciamento real de estado e ciclo de vida:
+     - Conexões de rede, sockets e buffers (Kafka, PostgreSQL, S3, MinIO) gerenciados obrigatoriamente via Context Managers (`__enter__` e `__exit__`) para flush e fechamento determinísticos.
+     - Clientes de API HTTP externos que exigem paginação, controle de taxa (*rate-limiting*), retentativas e sessão persistente.
+     - Estruturas pesadas em memória que devem ser cacheadas (árvores espaciais R-Tree, cKDTree, grafos NetworkX) para consultas $O(\log N)$.
+     - Recursos e adaptadores de orquestração (`Dagster ConfigurableResource` / `IOManagers`).
+   - **Inversão de Dependência (DIP)**: toda classe de infraestrutura deve aceitar clientes/sessões injetados no construtor para permitir testes unitários em memória sem contêineres Docker.
+3. **Rigor de Contratos nas Bordas, Flexibilidade no Miolo**:
+   - **Bordas do Sistema** (Ingestão externa, Mensageria/Kafka e Carga na Tabela Fato): rigor estrito de schema e tipagem usando `Pydantic` ou Dataclasses imutáveis.
+   - **Modelagem Analítica Snowflake**: a tabela Fato deve conter **exclusivamente** Chaves Estrangeiras (FKs), métricas numéricas e timestamps/geometrias. **Nunca** insira strings textuais redundantes (`nome_X`, `classe_Y`) no payload da Fato — essas pertencem exclusivamente às Tabelas Dimensão.
+   - **Miolo Analítico**: mantenha o processamento intermediário flexível, livre e vetorizado (Polars, Pandas, DuckDB).
+4. **Pragmatismo Operacional e Scripts Procedurais**:
+   - Ferramentas de linha de comando (CLI), rotinas de manutenção (`scripts/maintenance/`), diagnósticos de banco, backfills únicos (*one-off*) e scripts de setup/deploy (`scripts/setup/`) devem ser **scripts procedurais diretos** (`if __name__ == "__main__":`), sem classes abstratas artificiais.
+5. **Atenção aos Paths e Dicionário de Dados**:
+   - **Nunca** tente importar de diretórios legados (`pipelines.*`, `config.*` ou `src.etl`). Os imports devem seguir a estrutura `src.silver.*`, `src.gold.*`, `src.core.*`, etc.
+   - Consulte os `DICIONARIO_DADOS.md` nas pastas Silver e Gold antes de codificar.
 
 ## 📝 Comentários e Legibilidade
 Comentários devem explicar a intenção técnica e a regra de domínio por trás do código, não narrar operações óbvias do Python.

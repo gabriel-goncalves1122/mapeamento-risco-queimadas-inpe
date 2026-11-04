@@ -12,16 +12,17 @@ As dependências declaradas no repositório ([`src/orchestration/dagster/repo.py
 flowchart LR
     subgraph Bronze [Camada Bronze: Extração Bruta]
         aneel[aneel_ons_data]
+        inpe[inpe_queimadas_data]
     end
 
     subgraph Silver [Camada Silver: Dimensões Espaciais]
+        linhas[dim_linhas_transmissao]
+        subestacoes[dim_subestacoes]
+        sistemas[dim_sistemas_isolados]
         municipios[dim_municipios]
         hospitais[dim_hospitais]
         terras_indigenas[dim_terras_indigenas]
         rodovias[dim_rodovias_federais]
-        linhas[dim_linhas_transmissao]
-        subestacoes[dim_subestacoes]
-        sistemas[dim_sistemas_isolados]
     end
 
     subgraph Gold [Camada Gold: Modelos e Grafos]
@@ -29,11 +30,26 @@ flowchart LR
         dbscan[st_dbscan_fire_events]
     end
 
+    subgraph Sync [Sincronização OLAP]
+        lookups[druid_lookups]
+    end
+
     aneel --> linhas
     aneel --> subestacoes
     aneel --> sistemas
+
     linhas --> network
     subestacoes --> network
+
+    inpe --> dbscan
+
+    municipios --> lookups
+    hospitais --> lookups
+    terras_indigenas --> lookups
+    linhas --> lookups
+    subestacoes --> lookups
+    sistemas --> lookups
+    rodovias --> lookups
 ```
 
 1. **Bronze (Extração Bruta - Raw)**: Componentes responsáveis por requisições a serviços externos (APIs ArcGIS da ANEEL, FTP/APIs do INPE, portais do IBGE, CNES e FUNAI). O asset [`aneel_ons_data`](../../src/bronze/extractors/ingestao_aneel.py) materializa arquivos brutos GeoJSON/JSON sem mutações estruturais.

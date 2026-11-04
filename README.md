@@ -129,7 +129,7 @@ Como o Superset necessita de configurações de segurança, execute o utilitári
 ### 6. Orquestrador Dagster
 Para visualizar e ativar as pipelines via interface gráfica do Dagster, inicie o `dev server`:
 ```bash
-uv run dagster dev -m pipelines.orchestration.repo
+uv run dagster dev -f src/orchestration/dagster/repo.py
 ```
 
 ### 7. Acessando as Interfaces

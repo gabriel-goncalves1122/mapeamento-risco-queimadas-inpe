@@ -48,12 +48,12 @@ def calcular_indices_ameaca(frp, risco, dist_rodovia, dist_linha, dist_sub, dist
     risco_base = risco if risco is not None else 0.0
     fator_risco = 1 + risco_base
     return {
-        "indice_ameaca_rodovia": round(FogoCalculators.safe_div(frp_base * fator_risco, dist_rodovia), 6),
-        "indice_ameaca_linha": round(FogoCalculators.safe_div(frp_base * fator_risco * math.log(tensao_base + 1), dist_linha), 6),
-        "indice_ameaca_subestacao": round(FogoCalculators.safe_div(frp_base * fator_risco * math.log(capacidade_base + 1), dist_sub), 6),
-        "indice_ameaca_sistema_isolado": round(FogoCalculators.safe_div(frp_base * fator_risco, dist_sis), 6),
-        "indice_pressao_saude": round(FogoCalculators.safe_div(frp_base * fator_risco, dist_hosp), 6),
-        "indice_pressao_terra_indigena": round(FogoCalculators.safe_div(frp_base * fator_risco, dist_ti), 6),
+        "indice_ameaca_rodovia": round(safe_div(frp_base * fator_risco, dist_rodovia), 6),
+        "indice_ameaca_linha": round(safe_div(frp_base * fator_risco * math.log(tensao_base + 1), dist_linha), 6),
+        "indice_ameaca_subestacao": round(safe_div(frp_base * fator_risco * math.log(capacidade_base + 1), dist_sub), 6),
+        "indice_ameaca_sistema_isolado": round(safe_div(frp_base * fator_risco, dist_sis), 6),
+        "indice_pressao_saude": round(safe_div(frp_base * fator_risco, dist_hosp), 6),
+        "indice_pressao_terra_indigena": round(safe_div(frp_base * fator_risco, dist_ti), 6),
     }
 ```
 

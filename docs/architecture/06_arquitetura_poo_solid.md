@@ -45,7 +45,7 @@ Interfaces enxutas e focadas substituem interfaces monolíticas:
 ### 1.5 D — Dependency Inversion Principle (DIP)
 Módulos de alto nível dependem de abstrações, não de implementações concretas:
 - O orquestrador Dagster ([`src/orchestration/dagster/repo.py`](../../src/orchestration/dagster/repo.py)) depende da abstração [`ExecutablePipelineStep`](../../src/core/contracts/contracts.py).
-- O produtor streaming ([`ProdutorFocosGold`](../../src/gold/streaming/produtor_focos_gold.py)) recebe por Injeção de Dependência (DI) instâncias de [`SpatialEngineProtocol`](../../src/core/contracts/contracts.py) e [`StreamPublisherBase`](../../src/core/contracts/contracts.py), desacoplando a lógica de enriquecimento analítico do driver concreto de Kafka e da instância de disco do motor espacial.
+- O produtor streaming ([`ProdutorFocosGold`](../../src/gold/streaming/produtor_focos.py)) recebe por Injeção de Dependência (DI) instâncias de [`SpatialEngineProtocol`](../../src/core/contracts/contracts.py) e [`StreamPublisherBase`](../../src/core/contracts/contracts.py), desacoplando a lógica de enriquecimento analítico do driver concreto de Kafka e da instância de disco do motor espacial.
 
 ---
 
@@ -124,7 +124,9 @@ classDiagram
     }
 
     class SINNetworkCentralityModel {
-        #_run() dict
+        +construir_grafo(df_sub, df_lin) tuple
+        +calcular_centralidade(G, df_sub) DataFrame
+        #_run() DataFrame
     }
 
     class MotorEspacial {
@@ -236,9 +238,12 @@ erDiagram
         float longitude
         float potencia_radiativa_fogo
         float risco_fogo_inpe
+        float dias_sem_chuva
+        float precipitacao_mm
         float distancia_linha_km
         float distancia_hospital_km
         float distancia_terra_indigena_km
+        float distancia_rodovia_km
     }
 
     FATO_EVENTOS_INCENDIO {
@@ -256,8 +261,11 @@ erDiagram
         float longitude_centroide
         string path_json
         int total_focos
+        float duracao_dias
         float area_evento_km2
         float soma_frp
+        float max_frp
+        float max_risco_fogo
         float indice_ameaca_linha
         float indice_pressao_saude
         float indice_pressao_terra_indigena
@@ -265,58 +273,62 @@ erDiagram
 
     DIM_MUNICIPIOS {
         string codigo_ibge PK
-        string nome_municipio
-        string sigla_uf
-        string nome_regiao
+        string municipios_nome
+        string estado_sigla
+        string regiao_brasil
         float latitude
         float longitude
         string path_json
     }
 
     DIM_HOSPITAIS {
-        string cnes PK
-        string nome_fantasia
-        string fk_municipio FK
-        int leitos_internacao
-        int leitos_uti
+        string codigo_cnes PK
+        string nome_hospital
         string tipo_unidade
+        string tipo_unidade_critica
+        string funciona_24h
+        string codigo_ibge FK
     }
 
     DIM_TERRAS_INDIGENAS {
         string codigo_ti PK
-        string nome_ti
-        string etnia_predominante
-        string fase_demarcacao
-        float area_ha
+        string nome_terra_indigena
+        string etnia
+        string estado_sigla
+        float area_hectares
+        string path_json
     }
 
     DIM_LINHAS_TRANSMISSAO {
-        string cod_linha PK
+        string id_linha_transmissao PK
         string nome_linha
         float tensao_kv
-        string concessionaria
+        string classe_tensao
         float extensao_km
-        float betweenness_centrality
+        string path_json
     }
 
     DIM_SUBESTACOES {
-        string cod_subestacao PK
+        string id_subestacao PK
         string nome_subestacao
-        float tensao_kv
-        string fk_municipio FK
+        float capacidade_mw
+        float betweenness_score_norm
+        string risco_cascata
+        string codigo_ibge FK
     }
 
     DIM_SISTEMAS_ISOLADOS {
-        string cod_sistema PK
-        string nome_localidade
+        string id_sistema_isolado PK
+        string nome_sistema_isolado
+        string estado_sigla
         string concessionaria
-        int populacao_atendida
     }
 
     DIM_RODOVIAS_FEDERAIS {
-        string id_trecho PK
-        string vl_br
-        string sg_uf
+        string id_trecho_rodoviario PK
+        string codigo_rodovia
+        string criticidade_rodovia
+        string jurisdicao
         float extensao_km
     }
 ```

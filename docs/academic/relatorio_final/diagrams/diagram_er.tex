@@ -14,122 +14,161 @@
         },
         fato/.style={
             table,
-            font=\small\bfseries
+            font=\small\bfseries,
+            rectangle split part fill={yellow!25, white}
         },
         dimensao/.style={
             table,
-            font=\footnotesize
+            font=\footnotesize,
+            rectangle split part fill={gray!15, white}
         },
         relation/.style={
             -latex,
             very thick,
-            draw=black!50
+            draw=black!60
         },
-        background_box/.style={
-            rectangle, draw=gray!40, thick, dashed, fill=gray!3, rounded corners=6pt, inner sep=15pt
+        bg_gold/.style={
+            rectangle, draw=yellow!60!orange, thick, dashed, fill=yellow!10, rounded corners=6pt, inner sep=15pt
         },
-        label_text/.style={font=\scriptsize\sffamily\bfseries, fill=gray!5, draw=gray!40, rounded corners=2pt, inner sep=3pt}
+        bg_silver/.style={
+            rectangle, draw=gray!50, thick, dashed, fill=gray!8, rounded corners=6pt, inner sep=15pt
+        },
+        label_text/.style={font=\scriptsize\sffamily\bfseries, fill=white, draw=gray!40, rounded corners=2pt, inner sep=3pt}
     ]
 
-    % --- FATOS (EM CIMA) ---
-    \node[fato] (fato_focos) {
+    % --- FATOS (CAMADA GOLD - EM CIMA) ---
+    \node[fato] at (0, 0) (fato_focos) {
         FATO\_FOCOS\_INCENDIO
         \nodepart{two}
         \normalfont
-        PK: foco\_id \\
-        \textit{timestamp} \\
-        M: satelite \\
-        M: latitude, longitude \\
-        M: frp (Potência Radiativa) \\
-        M: risco\_ons\_calc
+        PK: data\_hora (\_\_time) \\
+        FK: fk\_municipio\_ibge \\
+        FK: fk\_linha\_transmissao \\
+        FK: fk\_subestacao \\
+        FK: fk\_terra\_indigena \\
+        FK: fk\_hospital\_proximo \\
+        FK: fk\_trecho\_rodoviario \\
+        M: potencia\_radiativa\_fogo (FRP) \\
+        M: risco\_fogo\_inpe \\
+        M: distancia\_linha\_km \\
+        M: distancia\_subestacao\_km \\
+        M: distancia\_terra\_indigena\_km
     };
 
-    \node[fato, right=3cm of fato_focos] (fato_eventos) {
+    \node[fato] at (11.0, 0) (fato_eventos) {
         FATO\_EVENTOS\_INCENDIO
         \nodepart{two}
         \normalfont
-        PK: evento\_id \\
-        \textit{timestamp\_inicio} \\
-        \textit{timestamp\_fim} \\
-        M: densidade \\
-        M: risco\_cascata\_global \\
-        M: area\_estimada\_km2
+        PK: fire\_event\_id, data\_inicio (\_\_time) \\
+        FK: fk\_municipio\_principal \\
+        FK: fk\_linha\_transmissao \\
+        FK: fk\_subestacao \\
+        FK: fk\_terra\_indigena \\
+        FK: fk\_hospital \\
+        FK: fk\_trecho\_rodoviario \\
+        M: total\_focos, duracao\_dias \\
+        M: area\_evento\_km2 \\
+        M: soma\_frp, max\_frp \\
+        M: indice\_ameaca\_linha \\
+        G: path\_json (Deck.gl Polygon)
     };
 
-    % --- DIMENSOES (EM BAIXO) ---
+    % --- DIMENSOES (CAMADA SILVER - EM BAIXO) ---
     % Linha 1 de Dimensões (4 tabelas)
-    \node[dimensao, below left=3cm and -1.5cm of fato_focos] (dim_mun) {
+    \node[dimensao] at (-4.5, -7.5) (dim_mun) {
         \textbf{DIM\_MUNICIPIOS}
         \nodepart{two}
         PK: codigo\_ibge \\
         estado\_sigla \\
-        municipios\_nome
+        municipios\_nome \\
+        regiao\_brasil \\
+        latitude, longitude \\
+        path\_json
     };
 
-    \node[dimensao, right=0.6cm of dim_mun] (dim_ti) {
+    \node[dimensao] at (0.8, -7.5) (dim_ti) {
         \textbf{DIM\_TERRAS\_INDIGENAS}
         \nodepart{two}
         PK: codigo\_ti \\
         nome\_terra\_indigena \\
-        area\_hectares
+        etnia, estado\_sigla \\
+        area\_hectares \\
+        prioridade\_funai \\
+        path\_json
     };
 
-    \node[dimensao, right=0.6cm of dim_ti] (dim_hosp) {
+    \node[dimensao] at (6.0, -7.5) (dim_hosp) {
         \textbf{DIM\_HOSPITAIS}
         \nodepart{two}
         PK: codigo\_cnes \\
         nome\_hospital \\
-        tipo\_unidade
+        tipo\_unidade \\
+        tipo\_unidade\_critica \\
+        funciona\_24h \\
+        codigo\_ibge
     };
 
-    \node[dimensao, right=0.6cm of dim_hosp] (dim_rod) {
+    \node[dimensao] at (11.0, -7.5) (dim_rod) {
         \textbf{DIM\_RODOVIAS}
         \nodepart{two}
         PK: id\_trecho\_rodoviario \\
         codigo\_rodovia \\
-        jurisdicao
+        criticidade\_rodovia \\
+        jurisdicao \\
+        extensao\_km
     };
 
-    % Linha 2 de Dimensões (3 tabelas centralizadas)
-    \node[dimensao, below=1.5cm of dim_ti, xshift=-1cm] (dim_lt) {
+    % Linha 2 de Dimensões (3 tabelas da infraestrutura ONS)
+    \node[dimensao] at (-1.5, -12.5) (dim_lt) {
         \textbf{DIM\_LINHAS\_TRANSMISSAO}
         \nodepart{two}
         PK: id\_linha\_transmissao \\
         nome\_linha \\
-        tensao\_kv
+        tensao\_kv, classe\_tensao \\
+        extensao\_km \\
+        estado\_sigla\_estimado \\
+        path\_json
     };
 
-    \node[dimensao, right=0.6cm of dim_lt] (dim_sub) {
+    \node[dimensao] at (4.5, -12.5) (dim_sub) {
         \textbf{DIM\_SUBESTACOES}
         \nodepart{two}
         PK: id\_subestacao \\
         nome\_subestacao \\
-        capacidade\_mw
+        capacidade\_mw \\
+        betweenness\_score\_norm \\
+        risco\_cascata (5 Faixas) \\
+        codigo\_ibge
     };
     
-    \node[dimensao, right=0.6cm of dim_sub] (dim_sis) {
+    \node[dimensao] at (10.0, -12.5) (dim_sis) {
         \textbf{DIM\_SISTEMAS\_ISOLADOS}
         \nodepart{two}
         PK: id\_sistema\_isolado \\
         nome\_sistema\_isolado \\
-        prioridade
+        estado\_sigla \\
+        concessionaria \\
+        latitude, longitude
     };
 
-    % --- GRUPO BACKGROUND (DIMENSÕES COMPARTILHADAS) ---
+    % --- BOUNDING BOXES (MEDALLION TAXONOMY) ---
     \begin{scope}[on background layer]
-        \coordinate (bg_top) at ([yshift=0.8cm]dim_mun.north);
-        \node[background_box, fit=(bg_top) (dim_mun) (dim_ti) (dim_hosp) (dim_rod) (dim_lt) (dim_sub) (dim_sis)] (bg_dimensoes) {};
-        \node[anchor=north west, font=\bfseries\color{black!70}, xshift=5pt, yshift=-5pt] at (bg_dimensoes.north west) {Dimensões Compartilhadas (Esquema Constelação)};
+        % Box Gold (Fatos)
+        \node[bg_gold, fit={([shift={(-0.6,0.8)}]fato_focos.north west) ([shift={(0.6,-0.8)}]fato_eventos.south east)}] (bg_fatos) {};
+        \node[anchor=north west, font=\bfseries\color{black}, xshift=5pt, yshift=-5pt] at (bg_fatos.north west) {Tabelas Fato: Camada Gold / Streaming (Zero Strings Decorativas)};
+
+        % Box Silver (Dimensões)
+        \node[bg_silver, fit={([shift={(-0.6,0.8)}]dim_mun.north west) ([shift={(0.6,-0.8)}]dim_sis.south east)}] (bg_dimensoes) {};
+        \node[anchor=north west, font=\bfseries\color{black}, xshift=5pt, yshift=-5pt] at (bg_dimensoes.north west) {Dimensões Conformadas: Camada Silver (Resolução via URI Lookups no Druid)};
     \end{scope}
 
-    % --- RELACIONAMENTOS (Setas Reduzidas) ---
-    % Apenas 2 setas direcionadas ao Container de Dimensões
-    \draw[relation] (fato_focos.south) -- node[label_text, right=3pt] {Foreign Keys} (bg_dimensoes.north -| fato_focos.south);
-    \draw[relation] (fato_eventos.south) -- node[label_text, left=3pt] {Foreign Keys} (bg_dimensoes.north -| fato_eventos.south);
+    % --- RELACIONAMENTOS ORTOGONAIS ---
+    \draw[relation] (fato_focos.south) -- node[label_text, right=3pt] {Foreign Keys} (fato_focos.south |- bg_dimensoes.north);
+    \draw[relation] (fato_eventos.south) -- node[label_text, left=3pt] {Foreign Keys} (fato_eventos.south |- bg_dimensoes.north);
 
     \end{tikzpicture}
     }
-    \caption{Modelo Entidade-Relacionamento (Constelação).}
-    \fonte{Elaborada pelos autores.}
+    \caption{Modelo Entidade-Relacionamento Snowflake e Resolução de Lookups.}
     \label{fig:diagrama_er}
+    \fonte{Elaborada pelos autores.}
 \end{figure}

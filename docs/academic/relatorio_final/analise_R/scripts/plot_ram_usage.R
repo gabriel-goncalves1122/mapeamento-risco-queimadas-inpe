@@ -12,7 +12,7 @@ library(dplyr)
 library(viridis)
 
 # Diretório base
-base_dir <- "../../../../../pipelines/gold/data/results/performance/druid_capacity/20260818_212232/scenario_02_balanced/"
+base_dir <- "../../../../../src/gold/data/results/performance/druid_capacity/20260818_212232/scenario_02_balanced/"
 stats_path <- paste0(base_dir, "docker_stats.csv")
 output_dir <- "../plots/"
 

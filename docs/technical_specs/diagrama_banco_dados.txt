@@ -1,125 +1,243 @@
-erDiagram
-    %% Tabelas de Fato
-    FATO_FOCOS_INCENDIO {
-        string foco_id PK
-        timestamp __time
-        double latitude
-        double longitude
-        double frp
-        string satelite
-        double risco_fogo
-        double dias_sem_chuva
-        string fk_municipio FK
-        string fk_hospital_proximo FK
-        string fk_terra_indigena FK
-        string fk_linha_transmissao FK
-        string fk_subestacao FK
-        string fk_sistema_isolado FK
-        string fk_rodovia FK
-    }
+================================================================================
+MODELAGEM ANALÍTICA SNOWFLAKE (ESQUEMA FÍSICO APACHE DRUID & SILVER DIMENSIONS)
+PROJETO: SIRDA / CCO-DataOps
+================================================================================
 
-    FATO_EVENTOS_INCENDIO {
-        string fire_event_id PK
-        timestamp __time "Início do Evento"
-        timestamp fim_evento
-        double duracao_dias
-        double area_evento_km2
-        long total_focos
-        double soma_frp
-        double indice_pressao_saude
-        double indice_ameaca_linha
-        double indice_ameaca_subestacao
-        double indice_ameaca_sistema_isolado
-        double indice_pressao_terra_indigena
-        string fk_municipio_principal FK
-        string fk_hospital FK
-        string fk_terra_indigena FK
-        string fk_terra_indigena_proxima FK
-        string fk_linha_transmissao FK
-        string fk_subestacao FK
-        string fk_sistema_isolado FK
-        string fk_rodovia FK
-    }
+Este diagrama descreve o esquema físico exato das Tabelas Fato (Camada Gold / Kafka Streaming)
+e das Tabelas Dimensão (Camada Silver / Lookups em Memória RAM no Apache Druid).
 
-    %% Dimensões (Lookups no Druid)
-    DIM_MUNICIPIOS {
-        string codigo_ibge PK
-        string codigo_ibge_7digitos
-        string estado_sigla
-        string estado_nome
-        string regiao_brasil
-        string municipios_nome
-        double latitude
-        double longitude
-    }
+--------------------------------------------------------------------------------
+1. TABELAS FATO (Streaming Contínuo - Zero Strings Textuais Decorativas)
+--------------------------------------------------------------------------------
 
-    DIM_HOSPITAIS {
-        string codigo_cnes PK
-        string nome_hospital
-        string tipo_unidade
-        string categoria_unidade
-        string tipo_unidade_critica
-        string funciona_24h
-        string codigo_ibge FK
-    }
-
-    DIM_TERRAS_INDIGENAS {
-        string codigo_ti PK
-        string nome_terra_indigena
-        string etnia
-        string estado_sigla
-        double area_hectares
-        string estagio_regularizacao
-        string modalidade
-    }
-
-    DIM_LINHAS_TRANSMISSAO {
-        string id_linha_transmissao PK
-        string nome_linha
-        double tensao_kv
-        string classe_tensao
-        double extensao_km
-    }
-
-    DIM_SUBESTACOES {
-        string id_subestacao PK
-        string nome_subestacao
-        double capacidade_mw
-        string classe_capacidade
-        string criticidade_subestacao
-        string agente_responsavel
-    }
-
-    DIM_SISTEMAS_ISOLADOS {
-        string id_sistema_isolado PK
-        string nome_sistema_isolado
-        string estado_sigla
-        string regiao_eletrica
-        string prioridade_sistema_isolado
-    }
+TABLE fato_focos_incendio (
+    -- Chave Temporal Primária (__time no Druid)
+    data_hora                   VARCHAR(30) PRIMARY KEY, -- ISO 8601 UTC
     
-    DIM_RODOVIAS {
-        string id_trecho_rodoviario PK
-        string codigo_rodovia
-        string jurisdicao
-        string classe_revestimento
-        string tipo_pavimento
-    }
+    -- Dimensões Degeneradas / Identificadores Rápidos
+    pais_origem                 VARCHAR(50),
+    fk_bioma                    VARCHAR(50),             -- ex: 'CERRADO', 'AMAZONIA'
+    fk_satelite_sensor          VARCHAR(50),             -- ex: 'AQUA_M-T', 'NOAA-20'
+    
+    -- Chaves Estrangeiras (Snowflake Foreign Keys)
+    fk_municipio                VARCHAR(10),             -- codigo_ibge (6 dígitos)
+    fk_municipio_espacial       VARCHAR(10),             -- codigo_ibge validado via geometria
+    fk_terra_indigena           VARCHAR(20),             -- codigo_ti (FUNAI) se contido
+    fk_terra_indigena_proxima   VARCHAR(20),             -- codigo_ti mais próxima
+    fk_trecho_rodoviario        VARCHAR(50),             -- id_trecho_rodoviario (DNIT)
+    fk_linha_transmissao        VARCHAR(50),             -- id_linha_transmissao (ONS)
+    fk_subestacao               VARCHAR(50),             -- id_subestacao (ONS)
+    fk_sistema_isolado          VARCHAR(50),             -- id_sistema_isolado (ONS)
+    fk_hospital_proximo         VARCHAR(20),             -- codigo_cnes (DATASUS)
+    
+    -- Coordenadas Geográficas (EPSG:4326 WGS84)
+    latitude                    DOUBLE,
+    longitude                   DOUBLE,
+    coordenada_valida           INTEGER,                 -- 1 para válida, 0 para descartada
+    foco_point                  VARCHAR(50),             -- Formato "lat,lon" para mapas
+    
+    -- Métricas Quantitativas Físicas e Meteorológicas
+    dias_sem_chuva              DOUBLE,                  -- Dias acumulados sem precipitação
+    precipitacao_mm             DOUBLE,                  -- Chuva em milímetros (24h)
+    risco_fogo_inpe             DOUBLE,                  -- Índice estocástico INPE [0.0, 1.0]
+    potencia_radiativa_fogo     DOUBLE,                  -- Fire Radiative Power (FRP) em MW
+    indice_condicao_ambiental   DOUBLE,                  -- Combinação normalizada [0.0, 100.0]
+    indice_queimada_evento      DOUBLE,                  -- Severidade pontual [0.0, 100.0]
+    
+    -- Métricas Espaciais (Distâncias Euclidianas em km calculadas em SIRGAS 2000 EPSG:5880)
+    distancia_rodovia_km        DOUBLE,
+    distancia_linha_km          DOUBLE,
+    distancia_subestacao_km     DOUBLE,
+    distancia_hospital_km       DOUBLE,
+    distancia_ti_km             DOUBLE,
+    
+    -- Índices Táticos de Ameaça [0.0, 100.0]
+    indice_ameaca_linha         DOUBLE,
+    indice_ameaca_subestacao    DOUBLE,
+    indice_ameaca_rodovia       DOUBLE,
+    indice_pressao_saude        DOUBLE,
+    indice_pressao_ti           DOUBLE
+);
 
-    %% Relacionamentos: Foco -> Dimensões
-    FATO_FOCOS_INCENDIO }o--|| DIM_MUNICIPIOS : "fk_municipio"
-    FATO_FOCOS_INCENDIO }o--o| DIM_HOSPITAIS : "fk_hospital_proximo"
-    FATO_FOCOS_INCENDIO }o--o| DIM_TERRAS_INDIGENAS : "fk_terra_indigena"
-    FATO_FOCOS_INCENDIO }o--o| DIM_LINHAS_TRANSMISSAO : "fk_linha_transmissao"
-    FATO_FOCOS_INCENDIO }o--o| DIM_SUBESTACOES : "fk_subestacao"
-    FATO_FOCOS_INCENDIO }o--o| DIM_SISTEMAS_ISOLADOS : "fk_sistema_isolado"
-    FATO_FOCOS_INCENDIO }o--o| DIM_RODOVIAS : "fk_rodovia"
+TABLE fato_eventos_incendio (
+    -- Identificador Canônico do Evento ST-DBSCAN
+    fire_event_id               VARCHAR(64) PRIMARY KEY,
+    data_inicio                 VARCHAR(30),             -- __time no Apache Druid (ISO 8601)
+    data_fim                    VARCHAR(30),
+    
+    pais_origem                 VARCHAR(50),
+    fk_bioma                    VARCHAR(50),
+    fk_satelite_sensor          VARCHAR(50),
+    
+    -- Chaves Estrangeiras Principais e Listas Interceptadas
+    fk_municipio_principal      VARCHAR(10),             -- Município com maior centroide/área
+    codigos_ibge_interceptados  VARCHAR(1024),           -- Lista JSON de códigos municipais
+    qtd_municipios_interceptados INTEGER,
+    fk_terra_indigena           VARCHAR(20),             -- TI sobreposta pelo polígono
+    codigos_ti_interceptadas    VARCHAR(1024),           -- Lista JSON de TIs
+    qtd_terras_indigenas_interceptadas INTEGER,
+    fk_terra_indigena_proxima   VARCHAR(20),
+    fk_trecho_rodoviario        VARCHAR(50),
+    fk_linha_transmissao        VARCHAR(50),
+    fk_subestacao               VARCHAR(50),
+    fk_sistema_isolado          VARCHAR(50),
+    fk_hospital                 VARCHAR(20),
+    
+    -- Baricentro e Geometria da Mancha (Envoltória Convexa Convex Hull)
+    latitude_centroide          DOUBLE,
+    longitude_centroide         DOUBLE,
+    path_json                   VARCHAR(65535),          -- Coordenadas Deck.gl Polygon
+    
+    -- Métricas de Agregação do Desastre
+    total_focos                 INTEGER,
+    duracao_horas               DOUBLE,
+    duracao_dias                DOUBLE,
+    area_evento_km2             DOUBLE,                  -- Área real em km² (SIRGAS 2000)
+    
+    -- Agregações Estatísticas de FRP e Risco
+    soma_frp                    DOUBLE,                  -- Energia radiativa total (MW)
+    media_frp                   DOUBLE,
+    max_frp                     DOUBLE,
+    media_risco_fogo            DOUBLE,
+    max_risco_fogo              DOUBLE,
+    media_dias_sem_chuva        DOUBLE,
+    media_precipitacao_mm       DOUBLE,
+    
+    -- Índices Compostos de Risco
+    indice_condicao_ambiental_medio DOUBLE,
+    indice_queimada_evento_medio    DOUBLE,
+    indice_queimada_evento_max      DOUBLE,
+    indice_ameaca_linha             DOUBLE,
+    indice_ameaca_subestacao        DOUBLE,
+    indice_ameaca_rodovia           DOUBLE,
+    indice_pressao_saude            DOUBLE,
+    indice_pressao_ti               DOUBLE,
+    max_risco_cascata               VARCHAR(20)          -- 'EXTREMO', 'ALTO', 'MEDIO', 'BAIXO'
+);
 
-    %% Relacionamentos: Evento -> Dimensões
-    FATO_EVENTOS_INCENDIO }o--|| DIM_MUNICIPIOS : "fk_municipio_principal"
-    FATO_EVENTOS_INCENDIO }o--o| DIM_HOSPITAIS : "fk_hospital"
-    FATO_EVENTOS_INCENDIO }o--o| DIM_TERRAS_INDIGENAS : "fk_terra_indigena / proxima"
-    FATO_EVENTOS_INCENDIO }o--o| DIM_LINHAS_TRANSMISSAO : "fk_linha_transmissao"
-    FATO_EVENTOS_INCENDIO }o--o| DIM_SUBESTACOES : "fk_subestacao"
-    FATO_EVENTOS_INCENDIO }o--o| DIM_SISTEMAS_ISOLADOS : "fk_sistema_isolado"
-    FATO_EVENTOS_INCENDIO }o--o| DIM_RODOVIAS : "fk_rodovia"
+--------------------------------------------------------------------------------
+2. TABELAS DE DIMENSÃO (Camada Silver / Resolvidas via Lookups URI em RAM)
+--------------------------------------------------------------------------------
+
+TABLE dim_municipios_coordenadas (
+    codigo_ibge                 VARCHAR(10) PRIMARY KEY, -- Código IBGE 6 dígitos
+    municipios_nome             VARCHAR(100),
+    estado_sigla                VARCHAR(2),
+    regiao_brasil               VARCHAR(20),
+    latitude                    DOUBLE,
+    longitude                   DOUBLE,
+    path_json                   VARCHAR(65535)           -- Polígono municipal simplificado
+);
+
+TABLE dim_terras_indigenas (
+    codigo_ti                   VARCHAR(20) PRIMARY KEY, -- Código oficial FUNAI
+    nome_terra_indigena         VARCHAR(100),            -- ex: 'PARQUE DO ARAGUAIA'
+    etnia                       VARCHAR(100),            -- ex: 'JAVAÉ, KARAJÁ, AVÁ-CANOEIRO'
+    estado_sigla                VARCHAR(2),
+    area_hectares               DOUBLE,
+    classe_area_ti              VARCHAR(20),             -- 'MUITO_GRANDE', 'GRANDE', etc.
+    estagio_regularizacao       VARCHAR(50),             -- 'REGULARIZADA', 'HOMOLOGADA'
+    modalidade                  VARCHAR(50),
+    coordenacao_regional        VARCHAR(100),
+    em_faixa_fronteira          VARCHAR(3),              -- 'SIM' / 'NAO'
+    prioridade_funai            VARCHAR(30),
+    codigo_ibge_principal       VARCHAR(10),             -- FK para dim_municipios
+    qtd_municipios_interceptados INTEGER,
+    percentual_area_interceptada DOUBLE,
+    latitude                    DOUBLE,
+    longitude                   DOUBLE,
+    path_json                   VARCHAR(65535)           -- Polígono da reserva
+);
+
+TABLE dim_hospitais_cnes (
+    codigo_cnes                 VARCHAR(20) PRIMARY KEY, -- Cadastro Nacional de Estabelecimentos
+    nome_hospital               VARCHAR(150),
+    tipo_unidade                VARCHAR(100),            -- 'HOSPITAL GERAL', 'PRONTO SOCORRO'
+    categoria_unidade           VARCHAR(50),             -- 'HOSPITAL_URGENCIA_EMERGENCIA'
+    classe_capacidade_saude     VARCHAR(30),             -- 'ALTA_CAPACIDADE', 'MEDIA_CAPACIDADE'
+    tipo_unidade_critica        VARCHAR(3),              -- 'SIM' / 'NAO'
+    categoria_atendimento       VARCHAR(30),             -- 'CRITICO_24H', 'CRITICO'
+    funciona_24h                VARCHAR(3),              -- 'SIM' / 'NAO'
+    codigo_ibge                 VARCHAR(10),             -- FK para dim_municipios
+    latitude                    DOUBLE,
+    longitude                   DOUBLE,
+    path_json                   VARCHAR(1024)
+);
+
+TABLE dim_ons_linhas_transmissao (
+    id_linha_transmissao        VARCHAR(50) PRIMARY KEY, -- Identificador único do vão
+    nome_linha                  VARCHAR(150),
+    tensao_kv                   DOUBLE,                  -- 230.0, 440.0, 500.0, 800.0
+    classe_tensao               VARCHAR(20),             -- 'EXTRA_ALTA', 'ALTA'
+    extensao_km                 DOUBLE,
+    classe_extensao             VARCHAR(20),             -- 'MUITO_LONGA', 'LONGA'
+    estado_sigla_estimado       VARCHAR(2),
+    classe_criticidade_linha    VARCHAR(20),             -- 'CRITICA', 'ALTA'
+    latitude                    DOUBLE,                  -- Ponto médio
+    longitude                   DOUBLE,
+    path_json                   VARCHAR(65535)           -- LineString Deck.gl
+);
+
+TABLE dim_ons_subestacoes (
+    id_subestacao               VARCHAR(50) PRIMARY KEY, -- Identificador da subestação
+    nome_subestacao             VARCHAR(100),            -- ex: 'ASSIS', 'SAMAMBAIA'
+    capacidade_mw               DOUBLE,                  -- Capacidade de transformação
+    classe_capacidade           VARCHAR(20),             -- 'EXTREMA', 'MUITO_ALTA'
+    criticidade_subestacao      VARCHAR(20),
+    agente_responsavel          VARCHAR(100),            -- Concessionária (ex: 'FURNAS')
+    betweenness_centrality      DOUBLE,                  -- Betweenness bruto do grafo
+    betweenness_score_norm      DOUBLE,                  -- Normalizado de 0 a 100
+    grau_conectividade          INTEGER,                 -- Quantidade de linhas incidentes
+    risco_cascata               VARCHAR(20),             -- 'EXTREMO', 'ALTO', 'MEDIO', 'BAIXO'
+    codigo_ibge                 VARCHAR(10),             -- FK para dim_municipios
+    latitude                    DOUBLE,
+    longitude                   DOUBLE,
+    path_json                   VARCHAR(1024)
+);
+
+TABLE dim_ons_sistemas_isolados (
+    id_sistema_isolado          VARCHAR(50) PRIMARY KEY,
+    nome_sistema_isolado        VARCHAR(100),
+    estado_sigla                VARCHAR(2),
+    concessionaria              VARCHAR(100),
+    populacao_atendida          INTEGER,
+    latitude                    DOUBLE,
+    longitude                   DOUBLE,
+    path_json                   VARCHAR(1024)
+);
+
+TABLE dim_rodovias_federais (
+    id_trecho_rodoviario        VARCHAR(50) PRIMARY KEY,
+    codigo_rodovia              VARCHAR(20),             -- ex: 'BR-153', 'BR-101'
+    jurisdicao                  VARCHAR(20),             -- 'FEDERAL'
+    criticidade_rodovia         VARCHAR(20),             -- 'ALTA_CRITICIDADE'
+    extensao_km                 DOUBLE,
+    latitude                    DOUBLE,
+    longitude                   DOUBLE,
+    path_json                   VARCHAR(65535)           -- LineString do trecho
+);
+
+--------------------------------------------------------------------------------
+3. CARDINALIDADE E INTEGRIDADE RELACIONAL (SNOWFLAKE CONSTELLATION)
+--------------------------------------------------------------------------------
+
+FATO_FOCOS_INCENDIO (N) ----> (1) DIM_MUNICIPIOS            [via fk_municipio = codigo_ibge]
+FATO_FOCOS_INCENDIO (N) ----> (1) DIM_HOSPITAIS             [via fk_hospital_proximo = codigo_cnes]
+FATO_FOCOS_INCENDIO (N) ----> (1) DIM_TERRAS_INDIGENAS      [via fk_terra_indigena = codigo_ti]
+FATO_FOCOS_INCENDIO (N) ----> (1) DIM_LINHAS_TRANSMISSAO    [via fk_linha_transmissao = id_linha_transmissao]
+FATO_FOCOS_INCENDIO (N) ----> (1) DIM_SUBESTACOES           [via fk_subestacao = id_subestacao]
+FATO_FOCOS_INCENDIO (N) ----> (1) DIM_SISTEMAS_ISOLADOS     [via fk_sistema_isolado = id_sistema_isolado]
+FATO_FOCOS_INCENDIO (N) ----> (1) DIM_RODOVIAS_FEDERAIS     [via fk_trecho_rodoviario = id_trecho_rodoviario]
+
+FATO_EVENTOS_INCENDIO (N) --> (1) DIM_MUNICIPIOS            [via fk_municipio_principal = codigo_ibge]
+FATO_EVENTOS_INCENDIO (N) --> (1) DIM_HOSPITAIS             [via fk_hospital = codigo_cnes]
+FATO_EVENTOS_INCENDIO (N) --> (1) DIM_TERRAS_INDIGENAS      [via fk_terra_indigena = codigo_ti]
+FATO_EVENTOS_INCENDIO (N) --> (1) DIM_LINHAS_TRANSMISSAO    [via fk_linha_transmissao = id_linha_transmissao]
+FATO_EVENTOS_INCENDIO (N) --> (1) DIM_SUBESTACOES           [via fk_subestacao = id_subestacao]
+FATO_EVENTOS_INCENDIO (N) --> (1) DIM_SISTEMAS_ISOLADOS     [via fk_sistema_isolado = id_sistema_isolado]
+FATO_EVENTOS_INCENDIO (N) --> (1) DIM_RODOVIAS_FEDERAIS     [via fk_trecho_rodoviario = id_trecho_rodoviario]
+
+DIM_HOSPITAIS (N) ----------> (1) DIM_MUNICIPIOS            [via codigo_ibge = codigo_ibge]
+DIM_SUBESTACOES (N) --------> (1) DIM_MUNICIPIOS            [via codigo_ibge = codigo_ibge]
+DIM_TERRAS_INDIGENAS (N) ---> (1) DIM_MUNICIPIOS            [via codigo_ibge_principal = codigo_ibge]
+================================================================================

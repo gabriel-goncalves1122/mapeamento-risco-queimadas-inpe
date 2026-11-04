@@ -3,69 +3,90 @@
     \resizebox{\textwidth}{!}{
     \begin{tikzpicture}[
         font=\sffamily\small,
-        %% -- ESTILOS --
-        asset/.style={rectangle, draw=black!60, thick, fill=white, rounded corners=4pt, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, minimum width=3.5cm, minimum height=1.0cm},
+        %% -- ESTILOS RÍGIDOS --
+        asset/.style={rectangle, draw=black!60, thick, fill=white, rounded corners=4pt, drop shadow={opacity=0.15, shadow xshift=2pt, shadow yshift=-2pt}, align=center, inner sep=6pt, minimum width=3.8cm, minimum height=1.1cm},
         relation/.style={-Stealth, thick, draw=gray!80},
-        %% -- GRUPOS --
-        bg_infra/.style={rectangle, draw=cyan!60!blue, thick, dashed, fill=cyan!5, rounded corners=6pt, inner sep=12pt},
-        bg_science/.style={rectangle, draw=purple!60!blue, thick, dashed, fill=purple!5, rounded corners=6pt, inner sep=12pt},
-        bg_dim/.style={rectangle, draw=gray!50, thick, dashed, fill=gray!8, rounded corners=6pt, inner sep=12pt},
+        %% -- MEDALLION BACKGROUNDS --
+        bg_bronze/.style={rectangle, draw=orange!40!brown, thick, dashed, fill=orange!5, rounded corners=6pt, inner sep=12pt},
+        bg_silver/.style={rectangle, draw=gray!50, thick, dashed, fill=gray!8, rounded corners=6pt, inner sep=12pt},
+        bg_gold/.style={rectangle, draw=yellow!60!orange, thick, dashed, fill=yellow!10, rounded corners=6pt, inner sep=12pt},
+        bg_sync/.style={rectangle, draw=blue!40, thick, dashed, fill=blue!5, rounded corners=6pt, inner sep=12pt},
         lbl/.style={font=\sffamily\bfseries\scriptsize, text=black, fill=white, draw=gray!40, rounded corners=2pt, inner sep=2pt}
     ]
 
     % ==========================================
-    % INFRA_ONS
+    % COLUNA 1 (X=0): CAMADA BRONZE (RAW)
     % ==========================================
-    \node[asset] at (0, 0) (aneel) {\textbf{aneel\_ons\_data}\\(Python)};
-    
-    \node[asset] at (6.5, 2.0) (dim_lt) {\textbf{dim\_linhas\_transmissao}\\(Python)};
-    \node[asset] at (6.5, 0) (dim_sub) {\textbf{dim\_subestacoes}\\(Python)};
-    \node[asset] at (6.5, -2.0) (dim_sis) {\textbf{dim\_sistemas\_isolados}\\(Python)};
+    \node[asset] at (0, 2.0) (aneel) {\textbf{aneel\_ons\_data}\\(AneelArcGisExtractor)};
+    \node[asset] at (0, -2.0) (inpe) {\textbf{inpe\_queimadas\_data}\\(InpeQueimadasExtractor)};
 
     % ==========================================
-    % SCIENCE_MODELS
+    % COLUNA 2 (X=6.5): CAMADA SILVER (DIMENSÕES)
     % ==========================================
-    \node[asset] at (13.5, 1.0) (network) {\textbf{network\_centrality\_model}\\(NetworkX)};
-    \node[asset] at (13.5, -2.0) (dbscan) {\textbf{st\_dbscan\_fire\_events}\\(Scikit-Learn)};
+    \node[asset] at (6.5, 4.0) (dim_lt) {\textbf{dim\_linhas\_transmissao}\\(ETLDimLinhasTransmissao)};
+    \node[asset] at (6.5, 2.0) (dim_sub) {\textbf{dim\_subestacoes}\\(ETLDimSubestacoes)};
+    \node[asset] at (6.5, 0.0) (dim_sis) {\textbf{dim\_sistemas\_isolados}\\(ETLDimSistemasIsolados)};
+    \node[asset] at (6.5, -2.0) (dim_mun) {\textbf{dim\_municipios}\\(ETLDimMunicipios)};
+    \node[asset] at (6.5, -4.0) (dim_hosp) {\textbf{dim\_hospitais}\\(ETLDimHospitais)};
+    \node[asset] at (6.5, -6.0) (dim_ti) {\textbf{dim\_terras\_indigenas}\\(ETLDimTerrasIndigenas)};
+    \node[asset] at (6.5, -8.0) (dim_rod) {\textbf{dim\_rodovias\_federais}\\(ETLDimRodoviasFederais)};
 
     % ==========================================
-    % DIMENSIONS (Static)
+    % COLUNA 3 (X=14.0): CAMADA GOLD (DATA SCIENCE)
     % ==========================================
-    \node[asset] at (0, -5.5) (dim_mun) {\textbf{dim\_municipios}\\(Python)};
-    \node[asset] at (4.5, -5.5) (dim_hosp) {\textbf{dim\_hospitais}\\(Python)};
-    \node[asset] at (9.0, -5.5) (dim_ti) {\textbf{dim\_terras\_indigenas}\\(Python)};
-    \node[asset] at (13.5, -5.5) (dim_rod) {\textbf{dim\_rodovias\_federais}\\(Python)};
+    \node[asset] at (14.0, 3.0) (network) {\textbf{network\_centrality\_model}\\(SINNetworkCentralityModel)};
+    \node[asset] at (14.0, -2.0) (dbscan) {\textbf{st\_dbscan\_fire_events}\\(EventizadorIncendios)};
 
     % ==========================================
-    % BACKGROUNDS
+    % COLUNA 4 (X=21.0): DRUID SYNC
+    % ==========================================
+    \node[asset] at (21.0, -2.0) (druid_sync) {\textbf{druid\_lookups}\\(DruidLookupRegistrar)};
+
+    % ==========================================
+    % BOUNDING BOXES (TAXONOMIA MEDALLION)
     % ==========================================
     \begin{scope}[on background layer]
-        % Infra
-        \node[bg_infra, fit={([shift={(-0.5,1.0)}]aneel.west|-dim_lt.north) ([shift={(0.5,-0.5)}]dim_lt.east|-dim_sis.south)}] (bg_infra_node) {};
-        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_infra_node.north west) {\textbf{Group: infra\_ons}};
+        % Bronze
+        \node[bg_bronze, fit={([shift={(-0.6,0.8)}]aneel.north west) ([shift={(0.6,-0.8)}]inpe.south east)}] (bg_bronze_box) {};
+        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_bronze_box.north west) {\textbf{Camada Bronze: Extração Raw}};
 
-        % Science
-        \node[bg_science, fit={([shift={(-0.5,1.0)}]network.north west) ([shift={(0.5,-0.5)}]dbscan.south east)}] (bg_science_node) {};
-        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_science_node.north west) {\textbf{Group: science\_models}};
+        % Silver
+        \node[bg_silver, fit={([shift={(-0.6,0.8)}]dim_lt.north west) ([shift={(0.6,-0.8)}]dim_rod.south east)}] (bg_silver_box) {};
+        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_silver_box.north west) {\textbf{Camada Silver: Dimensões Espaciais}};
 
-        % Dimensions
-        \node[bg_dim, fit={([shift={(-0.5,1.0)}]dim_mun.north west) ([shift={(0.5,-0.5)}]dim_rod.south east)}] (bg_dim_node) {};
-        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_dim_node.north west) {\textbf{Group: dimensions}};
+        % Gold
+        \node[bg_gold, fit={([shift={(-0.6,0.8)}]network.north west) ([shift={(0.6,-0.8)}]dbscan.south east)}] (bg_gold_box) {};
+        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_gold_box.north west) {\textbf{Camada Gold: Modelagem Científica}};
+
+        % Druid Lookups Sync
+        \node[bg_sync, fit={([shift={(-0.6,0.8)}]druid_sync.north west) ([shift={(0.6,-0.8)}]druid_sync.south east)}] (bg_sync_box) {};
+        \node[anchor=north west, font=\sffamily\color{black}, xshift=6pt, yshift=-6pt] at (bg_sync_box.north west) {\textbf{Sincronização OLAP}};
     \end{scope}
 
     % ==========================================
-    % SETAS DE LINHAGEM (DEPENDÊNCIAS)
+    % SETAS DE LINHAGEM (ROTEAMENTO ORTOGONAL .east -> .west)
     % ==========================================
-    \draw[relation] (aneel.east) to[out=0, in=180] (dim_lt.west);
-    \draw[relation] (aneel.east) to[out=0, in=180] (dim_sub.west);
-    \draw[relation] (aneel.east) to[out=0, in=180] (dim_sis.west);
+    % Bronze -> Infra ONS Dimensões
+    \draw[relation] (aneel.east) -- ++(1.2,0) |- (dim_lt.west);
+    \draw[relation] (aneel.east) -- (dim_sub.west);
+    \draw[relation] (aneel.east) -- ++(1.2,0) |- (dim_sis.west);
 
-    \draw[relation] (dim_lt.east) to[out=0, in=180] (network.west);
-    \draw[relation] (dim_sub.east) to[out=0, in=180] (network.west);
+    % Silver ONS -> Network Model
+    \draw[relation] (dim_lt.east) -- ++(1.5,0) |- (network.west);
+    \draw[relation] (dim_sub.east) -- ++(1.5,0) |- (network.west);
+
+    % Bronze INPE -> ST-DBSCAN
+    \draw[relation] (inpe.east) -- ++(1.5,0) |- (dbscan.west);
+
+    % Dimensões Silver -> Druid Lookups
+    \draw[relation] (dim_mun.east) -- ++(2.0,0) |- (druid_sync.west);
+    \draw[relation] (dim_hosp.east) -- ++(2.0,0) |- (druid_sync.west);
+    \draw[relation] (dim_ti.east) -- ++(2.0,0) |- (druid_sync.west);
+    \draw[relation] (dim_rod.east) -- ++(2.0,0) |- (druid_sync.west);
 
     \end{tikzpicture}
     }
-    \caption{Grafo de Dependência Declarativa (Software-Defined Assets).}
+    \caption{Grafo Declarativo de Linhagem e Dependências (Software-Defined Assets no Dagster).}
     \label{fig:diagrama_dagster}
     \fonte{Elaborada pelos autores.}
 \end{figure}

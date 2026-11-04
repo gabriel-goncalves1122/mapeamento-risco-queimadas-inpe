@@ -90,7 +90,7 @@ flowchart TD
 A arquitetura não possui processamento intermediário ocioso ou persistência de tópicos brutos redundantes. A ingestão executa o *enriquecimento espacial* e a *eventização* no momento da leitura, publicando as Fatos prontas diretamente em tópicos consumíveis por sistemas OLAP.
 
 ### 2.1 Streaming Dual-Branch
-Ao capturar dados, o [`ProdutorFocosGold`](../../src/gold/streaming/produtor_focos_gold.py) bifurca as responsabilidades paralelamente:
+Ao capturar dados, o [`ProdutorFocosGold`](../../src/gold/streaming/produtor_focos.py) bifurca as responsabilidades paralelamente:
 - **Ramo dos Focos (Streaming Atômico)**: Processa cada coordenada individualmente, consultando o [`SpatialEngineProtocol`](../../src/core/contracts/contracts.py) para identificar distâncias mínimas até linhas de transmissão, subestações, rodovias federais, hospitais e terras indígenas. A latência é na ordem de milissegundos.
 - **Ramo dos Eventos (Micro-batching Espaço-Temporal)**: Acumula pontos observacionais em buffer. Ao completar o ciclo de janela, invoca o [`EventizadorIncendios`](../../src/gold/science/dbscan/eventizador.py). Este componente agrupa anomalias térmicas correlacionadas no espaço e tempo via **ST-DBSCAN**, gera a envoltória convexa (*Convex Hull*) via [`EventGeometryBuilder`](../../src/gold/science/dbscan/event_geometry_builder.py), serializa o polígono em `path_json` e computa agregações matemáticas de área ($km^2$), FRP total e índices de ameaça.
 
