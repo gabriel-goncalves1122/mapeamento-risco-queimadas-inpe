@@ -122,8 +122,6 @@ class ETLDimSistemasIsolados(BaseETL):
         return pd.DataFrame(gdf[colunas_finais]).drop_duplicates(subset=["id_sistema_isolado"])
 
 
-# Alias preservado para retrocompatibilidade
-SistemasIsoladosONSETL = ETLDimSistemasIsolados
 
 
 def executar() -> pd.DataFrame | None:

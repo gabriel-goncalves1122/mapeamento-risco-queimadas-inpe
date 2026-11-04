@@ -21,7 +21,7 @@ class EventoFatoPayload(BaseModel):
     ou `Inf` que quebrariam o parser JSON do Apache Druid.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     fire_event_id: str
     data_inicio: str = Field(..., description="Timestamp inicial do evento (__time no Druid)")

@@ -20,7 +20,7 @@ class FocoFatoPayload(BaseModel):
     distância até infraestruturas críticas.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     # 1. Chave Temporal (__time no Apache Druid)
     data_hora: str = Field(..., description="Timestamp ISO (__time no Druid)")

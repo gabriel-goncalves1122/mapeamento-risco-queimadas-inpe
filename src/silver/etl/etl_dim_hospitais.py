@@ -3,7 +3,7 @@ Pipeline ETL da Dimensão de Hospitais e Unidades de Saúde (`ETLDimHospitais`).
 
 Integra as tabelas brutas do CNES/DATASUS, corrige coordenadas invertidas no
 território brasileiro, classifica capacidade assistencial e resolve FKs espaciais
-contra Municípios (IBGE) e Terras Indígenas (FUNAI).
+contra Municípios (IBGE) e Terras Indígenas (FUNAI) no padrão Functional Core / OO Shell.
 """
 from __future__ import annotations
 
@@ -39,6 +39,97 @@ ARQUIVO_TIPO_UNIDADE = "tbTipoUnidade202603.csv"
 OUTPUT_CSV = os.path.join(str(DIMENSIONS_DIR), "dim_hospitais_cnes.csv")
 
 
+# ==============================================================================
+# NÚCLEO FUNCIONAL (Functional Core) - Funções puras de transformação e limpeza
+# ==============================================================================
+
+
+def limpar_coord(valor: object) -> float | None:
+    """Converte strings com vírgula ou números para float, tratando nulos com segurança."""
+    if pd.isna(valor):
+        return None
+    try:
+        return float(str(valor).strip().replace(",", "."))
+    except ValueError:
+        return None
+
+
+def classificar_categoria_unidade(codigo_tipo: object, tipo_unidade: object) -> str:
+    """Agrupa códigos TP_UNIDADE do CNES em categorias táticas de resposta a emergências."""
+    codigo = limpar_codigo(codigo_tipo)
+    tipo = limpar_texto_druid(tipo_unidade)
+    hospitais = {"05", "07", "15", "20", "21", "61", "62", "73"}
+    atencao_basica = {"01", "02", "71", "72"}
+    apoio_diagnostico = {"39", "67", "80"}
+    regulacao_gestao = {"64", "68", "76", "81", "82", "84"}
+    unidade_movel = {"32", "40", "42"}
+    vigilancia = {"50", "85", "83"}
+    consultorios = {"04", "22", "36", "77", "78", "79"}
+    farmacia = {"43"}
+
+    if codigo in hospitais or "HOSPITAL" in tipo or "PRONTO" in tipo:
+        return "HOSPITAL_URGENCIA_EMERGENCIA"
+    if codigo in atencao_basica:
+        return "ATENCAO_BASICA"
+    if codigo in apoio_diagnostico:
+        return "APOIO_DIAGNOSTICO_LABORATORIAL"
+    if codigo in regulacao_gestao:
+        return "REGULACAO_GESTAO"
+    if codigo in unidade_movel:
+        return "UNIDADE_MOVEL"
+    if codigo in vigilancia:
+        return "VIGILANCIA_IMUNIZACAO"
+    if codigo in consultorios:
+        return "CONSULTORIO_ESPECIALIDADE"
+    if codigo in farmacia:
+        return "FARMACIA"
+    if "SAUDE INDIGENA" in tipo:
+        return "SAUDE_INDIGENA"
+    return "OUTROS"
+
+
+def classificar_unidade_critica(categoria: str, funciona_24h: str) -> str:
+    """Determina se o estabelecimento possui operação ininterrupta ou perfil crítico."""
+    if categoria in {"HOSPITAL_URGENCIA_EMERGENCIA", "UNIDADE_MOVEL", "SAUDE_INDIGENA"} or funciona_24h == "S":
+        return "SIM"
+    return "NAO"
+
+
+def classificar_capacidade_saude(categoria: str, funciona_24h: str) -> str:
+    """Classifica o escalonamento da capacidade médica e de internação."""
+    if categoria == "HOSPITAL_URGENCIA_EMERGENCIA" and funciona_24h == "S":
+        return "ALTA_CAPACIDADE"
+    if categoria == "HOSPITAL_URGENCIA_EMERGENCIA":
+        return "MEDIA_CAPACIDADE"
+    if categoria == "UNIDADE_MOVEL":
+        return "RESPOSTA_MOVEL"
+    if categoria == "SAUDE_INDIGENA":
+        return "SAUDE_INDIGENA"
+    if categoria == "ATENCAO_BASICA":
+        return "ATENCAO_LOCAL"
+    return "SUPORTE"
+
+
+def classificar_atendimento(categoria: str, funciona_24h: str) -> str:
+    """Padroniza a tipologia de atendimento para o dashboard analítico Superset."""
+    if funciona_24h == "S" and categoria == "HOSPITAL_URGENCIA_EMERGENCIA":
+        return "CRITICO_24H"
+    if categoria == "HOSPITAL_URGENCIA_EMERGENCIA":
+        return "CRITICO"
+    if categoria == "UNIDADE_MOVEL":
+        return "MOBILIDADE_ASSISTENCIAL"
+    if categoria == "SAUDE_INDIGENA":
+        return "SAUDE_INDIGENA"
+    if categoria == "ATENCAO_BASICA":
+        return "ATENCAO_LOCAL"
+    return "SUPORTE"
+
+
+# ==============================================================================
+# CASCA ORIENTADA A OBJETOS (OO Shell) - Orquestração de I/O e Ciclo de Vida ETL
+# ==============================================================================
+
+
 class ETLDimHospitais(BaseETL):
     """ETL da dimensão assistencial `dim_hospitais_cnes.csv` com enriquecimento geográfico."""
 
@@ -58,83 +149,6 @@ class ETLDimHospitais(BaseETL):
             output_path=output_path or OUTPUT_CSV,
             expected_geom_type="Point",
         )
-
-    @staticmethod
-    def _limpar_coord(valor: object) -> float | None:
-        if pd.isna(valor):
-            return None
-        try:
-            return float(str(valor).strip().replace(",", "."))
-        except ValueError:
-            return None
-
-    @staticmethod
-    def _classificar_categoria_unidade(codigo_tipo: object, tipo_unidade: object) -> str:
-        """Agrupa códigos TP_UNIDADE do CNES em categorias táticas de resposta a emergências."""
-        codigo = limpar_codigo(codigo_tipo)
-        tipo = limpar_texto_druid(tipo_unidade)
-        hospitais = {"05", "07", "15", "20", "21", "61", "62", "73"}
-        atencao_basica = {"01", "02", "71", "72"}
-        apoio_diagnostico = {"39", "67", "80"}
-        regulacao_gestao = {"64", "68", "76", "81", "82", "84"}
-        unidade_movel = {"32", "40", "42"}
-        vigilancia = {"50", "85", "83"}
-        consultorios = {"04", "22", "36", "77", "78", "79"}
-        farmacia = {"43"}
-
-        if codigo in hospitais or "HOSPITAL" in tipo or "PRONTO" in tipo:
-            return "HOSPITAL_URGENCIA_EMERGENCIA"
-        if codigo in atencao_basica:
-            return "ATENCAO_BASICA"
-        if codigo in apoio_diagnostico:
-            return "APOIO_DIAGNOSTICO_LABORATORIAL"
-        if codigo in regulacao_gestao:
-            return "REGULACAO_GESTAO"
-        if codigo in unidade_movel:
-            return "UNIDADE_MOVEL"
-        if codigo in vigilancia:
-            return "VIGILANCIA_IMUNIZACAO"
-        if codigo in consultorios:
-            return "CONSULTORIO_ESPECIALIDADE"
-        if codigo in farmacia:
-            return "FARMACIA"
-        if "SAUDE INDIGENA" in tipo:
-            return "SAUDE_INDIGENA"
-        return "OUTROS"
-
-    @staticmethod
-    def _classificar_unidade_critica(categoria: str, funciona_24h: str) -> str:
-        if categoria in {"HOSPITAL_URGENCIA_EMERGENCIA", "UNIDADE_MOVEL", "SAUDE_INDIGENA"} or funciona_24h == "S":
-            return "SIM"
-        return "NAO"
-
-    @staticmethod
-    def _classificar_capacidade_saude(categoria: str, funciona_24h: str) -> str:
-        if categoria == "HOSPITAL_URGENCIA_EMERGENCIA" and funciona_24h == "S":
-            return "ALTA_CAPACIDADE"
-        if categoria == "HOSPITAL_URGENCIA_EMERGENCIA":
-            return "MEDIA_CAPACIDADE"
-        if categoria == "UNIDADE_MOVEL":
-            return "RESPOSTA_MOVEL"
-        if categoria == "SAUDE_INDIGENA":
-            return "SAUDE_INDIGENA"
-        if categoria == "ATENCAO_BASICA":
-            return "ATENCAO_LOCAL"
-        return "SUPORTE"
-
-    @staticmethod
-    def _classificar_atendimento(categoria: str, funciona_24h: str) -> str:
-        if funciona_24h == "S" and categoria == "HOSPITAL_URGENCIA_EMERGENCIA":
-            return "CRITICO_24H"
-        if categoria == "HOSPITAL_URGENCIA_EMERGENCIA":
-            return "CRITICO"
-        if categoria == "UNIDADE_MOVEL":
-            return "MOBILIDADE_ASSISTENCIAL"
-        if categoria == "SAUDE_INDIGENA":
-            return "SAUDE_INDIGENA"
-        if categoria == "ATENCAO_BASICA":
-            return "ATENCAO_LOCAL"
-        return "SUPORTE"
 
     def _adicionar_municipio_espacial(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
@@ -225,8 +239,8 @@ class ETLDimHospitais(BaseETL):
         df["CO_CNES"] = df["CO_CNES"].apply(limpar_codigo)
         df["CO_MUNICIPIO_GESTOR"] = df["CO_MUNICIPIO_GESTOR"].apply(limpar_codigo)
         df["TP_UNIDADE"] = df["TP_UNIDADE"].apply(limpar_codigo)
-        df["latitude"] = df["NU_LATITUDE"].apply(self._limpar_coord)
-        df["longitude"] = df["NU_LONGITUDE"].apply(self._limpar_coord)
+        df["latitude"] = df["NU_LATITUDE"].apply(limpar_coord)
+        df["longitude"] = df["NU_LONGITUDE"].apply(limpar_coord)
         df[["latitude", "longitude"]] = df.apply(
             lambda r: normalizar_par_coordenadas(r["latitude"], r["longitude"]),
             axis=1,
@@ -275,16 +289,16 @@ class ETLDimHospitais(BaseETL):
         )
 
         gdf["categoria_unidade"] = gdf.apply(
-            lambda r: self._classificar_categoria_unidade(r["TP_UNIDADE"], r["DS_TIPO_UNIDADE"]), axis=1
+            lambda r: classificar_categoria_unidade(r["TP_UNIDADE"], r["DS_TIPO_UNIDADE"]), axis=1
         )
         gdf["classe_capacidade_saude"] = gdf.apply(
-            lambda r: self._classificar_capacidade_saude(r["categoria_unidade"], r["funciona_24h"]), axis=1
+            lambda r: classificar_capacidade_saude(r["categoria_unidade"], r["funciona_24h"]), axis=1
         )
         gdf["tipo_unidade_critica"] = gdf.apply(
-            lambda r: self._classificar_unidade_critica(r["categoria_unidade"], r["funciona_24h"]), axis=1
+            lambda r: classificar_unidade_critica(r["categoria_unidade"], r["funciona_24h"]), axis=1
         )
         gdf["categoria_atendimento"] = gdf.apply(
-            lambda r: self._classificar_atendimento(r["categoria_unidade"], r["funciona_24h"]), axis=1
+            lambda r: classificar_atendimento(r["categoria_unidade"], r["funciona_24h"]), axis=1
         )
 
         gdf["path_json"] = gdf.geometry.apply(geometry_para_path_json)

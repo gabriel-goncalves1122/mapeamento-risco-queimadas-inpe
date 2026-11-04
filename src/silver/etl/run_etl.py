@@ -26,6 +26,7 @@ from src.silver.etl.etl_dim_ons_sistemas_isolados import ETLDimSistemasIsolados
 from src.silver.etl.etl_dim_ons_subestacoes import ETLDimSubestacoes
 from src.silver.etl.etl_dim_rodovias_federais import ETLDimRodoviasFederais
 from src.silver.etl.etl_dim_terras_indigenas import ETLDimTerrasIndigenas
+from src.silver.validators.dimensao_integridade_validator import DimensionIntegrityValidator
 from src.silver.validators.valida_joins_municipios_hospital import HospitalMunicipioJoinValidator
 
 CURRENT_DIR = Path(__file__).resolve().parent
@@ -75,6 +76,7 @@ class DimensionETLOrchestrator(ExecutablePipelineStep):
         ]
         self.validators = list(validators) if validators is not None else [
             HospitalMunicipioJoinValidator(),
+            DimensionIntegrityValidator(),
         ]
 
     def _executar_etapa(self, step: ExecutablePipelineStep) -> Any:

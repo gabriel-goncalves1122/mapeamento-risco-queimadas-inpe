@@ -34,9 +34,12 @@ from src.core.contracts.contracts import ExecutablePipelineStep, SpatialEnginePr
 from src.core.domain.evento_fato_payload import EventoFatoPayload
 from src.gold.science.dbscan.event_geometry_builder import EventGeometryBuilder
 from src.gold.science.dbscan.evento_config import EventoConfig
-from src.silver.streaming_processing.processors.calculators import FogoCalculators
-from src.silver.streaming_processing.processors.extractor import FogoExtractor
-from src.silver.utils.cleaners import limpar_texto_druid
+from src.silver.streaming_processing.processors.calculators import (
+    calcular_indices_ameaca,
+    indice_condicao_ambiental,
+    indice_queimada_evento,
+)
+from src.silver.utils.cleaners import limpar_texto_druid, limpar_valor_numerico_nullable
 
 logger = logging.getLogger(__name__)
 
@@ -88,12 +91,12 @@ class EventizadorIncendios(ExecutablePipelineStep):
                 df[coluna] = None
 
         df["datahora_dt"] = pd.to_datetime(df["DataHora"], errors="coerce")
-        df["latitude"] = df["Latitude"].apply(FogoExtractor.limpar_valor_numerico_nullable)
-        df["longitude"] = df["Longitude"].apply(FogoExtractor.limpar_valor_numerico_nullable)
-        df["frp"] = df["FRP"].apply(FogoExtractor.limpar_valor_numerico_nullable).fillna(0.0)
-        df["risco_fogo"] = df["RiscoFogo"].apply(FogoExtractor.limpar_valor_numerico_nullable).fillna(0.0)
-        df["dias_sem_chuva"] = df["DiaSemChuva"].apply(FogoExtractor.limpar_valor_numerico_nullable).fillna(0.0)
-        df["precipitacao_mm"] = df["Precipitacao"].apply(FogoExtractor.limpar_valor_numerico_nullable).fillna(0.0)
+        df["latitude"] = df["Latitude"].apply(limpar_valor_numerico_nullable)
+        df["longitude"] = df["Longitude"].apply(limpar_valor_numerico_nullable)
+        df["frp"] = df["FRP"].apply(limpar_valor_numerico_nullable).fillna(0.0)
+        df["risco_fogo"] = df["RiscoFogo"].apply(limpar_valor_numerico_nullable).fillna(0.0)
+        df["dias_sem_chuva"] = df["DiaSemChuva"].apply(limpar_valor_numerico_nullable).fillna(0.0)
+        df["precipitacao_mm"] = df["Precipitacao"].apply(limpar_valor_numerico_nullable).fillna(0.0)
 
         mascara = (
             df["datahora_dt"].notna()
@@ -110,11 +113,11 @@ class EventizadorIncendios(ExecutablePipelineStep):
         df["fk_bioma"] = df["Bioma"].apply(limpar_texto_druid)
         df["fk_satelite_sensor"] = df["Satelite"].apply(limpar_texto_druid)
         df["indice_condicao_ambiental"] = [
-            FogoCalculators.indice_condicao_ambiental(risco, dias, chuva)
+            indice_condicao_ambiental(risco, dias, chuva)
             for risco, dias, chuva in zip(df["risco_fogo"], df["dias_sem_chuva"], df["precipitacao_mm"])
         ]
         df["indice_queimada_evento"] = [
-            FogoCalculators.indice_queimada_evento(frp, risco, dias, chuva)
+            indice_queimada_evento(frp, risco, dias, chuva)
             for frp, risco, dias, chuva in zip(
                 df["frp"],
                 df["risco_fogo"],
@@ -196,7 +199,7 @@ class EventizadorIncendios(ExecutablePipelineStep):
         max_frp = self._max(grupo["frp"])
         max_risco = self._max(grupo["risco_fogo"])
 
-        indices = FogoCalculators.calcular_indices_ameaca(
+        indices = calcular_indices_ameaca(
             frp=soma_frp,
             risco=max_risco,
             dist_rodovia=analise.get("distancia_rodovia_km"),

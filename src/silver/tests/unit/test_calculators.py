@@ -1,10 +1,14 @@
 import math
 
-from src.silver.streaming_processing.processors.calculators import FogoCalculators
+from src.silver.streaming_processing.processors.calculators import (
+    calcular_indices_ameaca,
+    indice_queimada_evento,
+    safe_div,
+)
 
 
 def test_calculators_normalizam_nulos_sem_nan():
-    indices = FogoCalculators.calcular_indices_ameaca(
+    indices = calcular_indices_ameaca(
         frp=None,
         risco=None,
         dist_rodovia=None,
@@ -30,20 +34,20 @@ def test_calculators_normalizam_nulos_sem_nan():
 
 
 def test_indice_queimada_evento_reage_a_frp_risco_e_seca():
-    baixo = FogoCalculators.indice_queimada_evento(1.0, 0.1, 1.0, 10.0)
-    alto = FogoCalculators.indice_queimada_evento(120.0, 0.9, 30.0, 0.0)
+    baixo = indice_queimada_evento(1.0, 0.1, 1.0, 10.0)
+    alto = indice_queimada_evento(120.0, 0.9, 30.0, 0.0)
 
     assert alto > baixo
 
 
 def test_safe_div_usa_fallback_para_denominador_invalido():
-    assert FogoCalculators.safe_div(10, None) == 100.0
-    assert FogoCalculators.safe_div(10, 0) == 100.0
-    assert FogoCalculators.safe_div(10, -3) == 100.0
+    assert safe_div(10, None) == 100.0
+    assert safe_div(10, 0) == 100.0
+    assert safe_div(10, -3) == 100.0
 
 
 def test_indices_ameaca_sao_finitos_com_distancias_invalidas():
-    indices = FogoCalculators.calcular_indices_ameaca(
+    indices = calcular_indices_ameaca(
         frp=50.0,
         risco=0.8,
         dist_rodovia=0,

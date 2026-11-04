@@ -12,7 +12,7 @@ A **Camada Bronze** constitui o estágio inicial de ingestão da arquitetura Med
 2. **Tolerância a Falhas e Paginação Robusta**:
    - Serviços de terceiros impõem limites de consulta (ex: paginação máxima de 1.000 feições no ArcGIS Server da ANEEL). A ingestão automatizada controla cursores de deslocamento (`resultOffset`) e intervalos de espera (*rate limiting*) para mitigar bloqueios por *throttling* ou *HTTP 429/503*.
 3. **Desacoplamento e Testabilidade (POO / SOLID)**:
-   - A extração é encapsulada em classes com responsabilidade única ([`AneelArcGisExtractor`](src/ingestao_aneel.py)), implementando o contrato [`ExecutablePipelineStep`](../../src/core/contracts/contracts.py) (LSP).
+   - A extração é encapsulada em classes com responsabilidade única ([`AneelArcGisExtractor`](extractors/ingestao_aneel.py)), implementando o contrato [`ExecutablePipelineStep`](../../src/core/contracts/contracts.py) (LSP).
    - Permite a injeção de clientes HTTP simulados (`http_client`) e diretórios temporários para validação determinística em suítes de testes unitários sem chamadas de rede externas.
 
 ---
@@ -24,9 +24,11 @@ src/bronze/
 ├── README.md              # Este guia geral da Camada Bronze
 ├── FONTES_E_APIS.md       # Especificação técnica profunda de todas as APIs e fontes de dados
 ├── DICIONARIO_DADOS.md    # Dicionário e esquema estrutural dos dados brutos retornados
-├── src/
+├── extractors/            # Extratores POO com responsabilidade única (SRP)
 │   ├── __init__.py
 │   └── ingestao_aneel.py  # Extrator POO da API ArcGIS REST da ANEEL/ONS
+├── tests/                 # Testes unitários co-localizados da Camada Bronze
+│   └── test_aneel_extractor.py
 └── data/                  # Diretório de persistência dos arquivos brutos (Raw Data)
     ├── aneel/             # GeoJSONs brutos da malha do SIN (linhas, subestações, sistemas isolados)
     ├── inpe/              # CSVs brutos de focos de calor do BDQueimadas

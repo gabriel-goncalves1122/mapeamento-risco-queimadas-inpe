@@ -13,7 +13,7 @@ from typing import Any
 import pandas as pd
 
 from src.core.config.constants import NOT_INFORMED, UNKNOWN_UF
-from src.silver.utils.cleaners import DruidTextCleaner
+from src.silver.utils.cleaners import limpar_texto_druid
 
 UF_POR_NOME: dict[str, str] = {
     "ACRE": "AC",
@@ -88,7 +88,7 @@ class DimensionalKeyNormalizer:
     @staticmethod
     def normalizar_uf(valor: Any) -> str:
         """Converte nome por extenso ou sigla de unidade federativa em UF de 2 letras."""
-        texto = DruidTextCleaner.limpar_texto_druid(valor)
+        texto = limpar_texto_druid(valor)
         if texto == NOT_INFORMED:
             return UNKNOWN_UF
         if texto in UF_POR_NOME:
@@ -99,7 +99,7 @@ class DimensionalKeyNormalizer:
     @staticmethod
     def normalizar_localidade(valor: Any) -> str:
         """Normaliza nome de localidade para auditoria e comparações de QA."""
-        texto = DruidTextCleaner.limpar_texto_druid(valor)
+        texto = limpar_texto_druid(valor)
         if texto == NOT_INFORMED:
             return ""
         return re.sub(r"[^A-Z0-9 ]", "", texto).strip()

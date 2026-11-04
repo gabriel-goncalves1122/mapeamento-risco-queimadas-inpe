@@ -170,8 +170,6 @@ class ETLDimRodoviasFederais(BaseETL):
         )
 
 
-# Alias preservado para retrocompatibilidade
-RodoviasFederaisETL = ETLDimRodoviasFederais
 
 
 def executar() -> pd.DataFrame | None:

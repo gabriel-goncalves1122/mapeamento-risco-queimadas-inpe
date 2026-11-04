@@ -30,19 +30,18 @@ src/gold/
 ├── data/
 │   ├── fatos/             # Cache em disco das tabelas fato geradas
 │   └── results/           # Relatórios e benchmarks de ingestão
-├── src/
-│   ├── science/           # Algoritmos avançados de Data Science
-│   │   ├── dbscan/        # Clusterização ST-DBSCAN segregada (SRP)
-│   │   │   ├── evento_config.py          # Dataclass imutável de hiperparâmetros
-│   │   │   ├── event_geometry_builder.py # Cálculo de Convex Hull e centroides
-│   │   │   └── eventizador.py            # Executável do algoritmo ST-DBSCAN
-│   │   └── networkx/      # Teoria dos Grafos da Rede Elétrica
-│   │       └── network_builder.py        # Modelo de Centralidade SIN (SINNetworkCentralityModel)
-│   └── streaming/         # Produtores de mensageria para o Apache Kafka
-│       ├── kafka_client.py               # Driver concreto KafkaEventProducer (StreamPublisherBase)
-│       ├── streaming_audit_logger.py     # Registro e auditoria de envio de mensagens
-│       ├── produtor_focos.py             # Publicador de streaming atômico
-│       └── produtor_eventos.py           # Publicador de streaming agregado
+├── science/               # Algoritmos avançados de Data Science
+│   ├── dbscan/            # Clusterização ST-DBSCAN segregada (SRP)
+│   │   ├── evento_config.py          # Dataclass imutável de hiperparâmetros
+│   │   ├── event_geometry_builder.py # Cálculo de Convex Hull e centroides
+│   │   └── eventizador.py            # Executável do algoritmo ST-DBSCAN
+│   └── networkx/          # Teoria dos Grafos da Rede Elétrica
+│       └── network_builder.py        # Modelo de Centralidade SIN (SINNetworkCentralityModel)
+├── streaming/             # Produtores de mensageria para o Apache Kafka
+│   ├── kafka_client.py               # Driver concreto KafkaEventProducer (StreamPublisherBase)
+│   ├── streaming_audit_logger.py     # Registro e auditoria de envio de mensagens
+│   ├── produtor_focos.py             # Publicador de streaming atômico
+│   └── produtor_eventos.py           # Publicador de streaming agregado
 └── tests/                 # Suíte de testes unitários e de contratos
 ```
 
@@ -78,9 +77,9 @@ classDiagram
     }
 
     class EventGeometryBuilder {
-        +calcular_convex_hull(pontos: list) Polygon
-        +calcular_centroide(pontos: list) tuple
-        +gerar_path_json(geom: Polygon) str
+        +area_buffer_km: float
+        +pontos_metricos(df: DataFrame) GeoSeries
+        +construir_geometria(grupo: DataFrame) tuple
     }
 
     class EventizadorIncendios {
@@ -91,10 +90,12 @@ classDiagram
     }
 
     class SINNetworkCentralityModel {
-        -linhas_path: Path
-        -subestacoes_path: Path
-        +calcular_betweenness_centrality() dict
-        #_run() dict
+        -subestacoes_csv: Path
+        -linhas_csv: Path
+        -tolerance_degrees: float
+        +construir_grafo(df_sub, df_lin) tuple
+        +calcular_centralidade(G, df_sub) DataFrame
+        #_run() DataFrame
     }
 
     class KafkaEventProducer {

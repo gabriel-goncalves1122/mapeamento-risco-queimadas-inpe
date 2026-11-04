@@ -63,6 +63,7 @@ Essas 7 tabelas de dimensão residem em `src/silver/data/dimensions/` e são car
 * **Classe Responsável:** `ETLDimTerrasIndigenas` (`src/silver/etl/etl_dim_terras_indigenas.py`)
 * **Fonte:** Fundação Nacional dos Povos Indígenas (FUNAI).
 * **Descrição:** Polígonos de reservas demarcadas e em estudo, com mapeamento de sobreposição municipal.
+* **Caso de Estudo de Referência:** [Terra Indígena Parque do Araguaia e Aldeia Canoanã](../../docs/domain/ti_parque_araguaia_canoana.md) (1,35 milhão de hectares na Ilha do Bananal/TO, abrangendo Formoso do Araguaia, Lagoa da Confusão e Pium, coabitada pelos povos Javaé, Karajá, Avá-Canoeiro e Apyãwa).
 
 | Coluna | Tipo | Descrição |
 | :--- | :--- | :--- |

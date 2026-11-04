@@ -27,26 +27,26 @@ src/silver/
 ├── DICIONARIO_DADOS.md    # Especificação física detalhada das 7 tabelas de dimensão
 ├── data/
 │   └── dimensions/        # Diretório de saída dos arquivos CSV de dimensão conformados
-├── src/
-│   ├── etl_dimensions/    # Módulos POO de ETL das 7 Dimensões
-│   │   ├── base_etl_dim.py                   # Classe base abstrata ETLDimBase (Template Method)
-│   │   ├── etl_dim_municipios.py             # Dimensão de Municípios
-│   │   ├── etl_dim_hospitais.py              # Dimensão de Hospitais CNES
-│   │   ├── etl_dim_terras_indigenas.py       # Dimensão de Terras Indígenas FUNAI
-│   │   ├── etl_dim_ons_linhas_transmissao.py # Dimensão de Linhas de Transmissão ONS
-│   │   ├── etl_dim_ons_subestacoes.py        # Dimensão de Subestações ONS
-│   │   ├── etl_dim_ons_sistemas_isolados.py  # Dimensão de Sistemas Isolados ONS
-│   │   ├── etl_dim_rodovias_federais.py      # Dimensão de Rodovias Federais DNIT
-│   │   └── run_etl.py                        # Orquestrador sequencial CLI da Silver
-│   ├── spatial/           # Motor Espacial Segregado (Princípios SOLID)
-│   │   ├── spatial_layer_spec.py             # Especificação imutável de camadas (SRP)
-│   │   ├── spatial_layer_loader.py           # Carregamento e reprojeção métrica (SRP)
-│   │   ├── spatial_layer_catalog.py          # Catálogo e registro de infraestruturas (OCP)
-│   │   ├── distance_classifier.py            # Faixas de proximidade e scores de ameaça (SRP)
-│   │   └── motor_espacial.py                 # Engine de consulta com STRtree (DIP/ISP)
-│   ├── streaming_processing/                 # Processamento de enriquecimento de streaming
-│   └── validators/                           # Validadores de integridade referencial (QA)
-│       └── valida_joins_municipios_hospital.py
+├── etl/                   # Módulos POO de ETL das 7 Dimensões
+│   ├── base_etl_dim.py                   # Classe base abstrata ETLDimBase (Template Method)
+│   ├── etl_dim_municipios.py             # Dimensão de Municípios
+│   ├── etl_dim_hospitais.py              # Dimensão de Hospitais CNES
+│   ├── etl_dim_terras_indigenas.py       # Dimensão de Terras Indígenas FUNAI
+│   ├── etl_dim_ons_linhas_transmissao.py # Dimensão de Linhas de Transmissão ONS
+│   ├── etl_dim_ons_subestacoes.py        # Dimensão de Subestações ONS
+│   ├── etl_dim_ons_sistemas_isolados.py  # Dimensão de Sistemas Isolados ONS
+│   ├── etl_dim_rodovias_federais.py      # Dimensão de Rodovias Federais DNIT
+│   └── run_etl.py                        # Orquestrador sequencial CLI da Silver
+├── spatial/               # Motor Espacial Segregado (Princípios SOLID)
+│   ├── spatial_layer_spec.py             # Especificação imutável de camadas (SRP)
+│   ├── spatial_layer_loader.py           # Carregamento e reprojeção métrica (SRP)
+│   ├── spatial_layer_catalog.py          # Catálogo e registro de infraestruturas (OCP)
+│   ├── distance_classifier.py            # Faixas de proximidade e scores de ameaça (SRP)
+│   └── motor_espacial.py                 # Engine de consulta com STRtree (DIP/ISP)
+├── lookups/               # Serviço de registro de Lookups URI no Apache Druid
+│   └── druid_lookup_registrar.py         # DruidLookupRegistrar (file:// cachedNamespace)
+├── validators/            # Validadores de integridade referencial (QA)
+│   └── valida_joins_municipios_hospital.py
 ├── utils/                 # Utilitários puros de geometria, CRS e string
 │   └── path_json_codec.py # Codificador de geometrias Shapely para formato JSON
 └── tests/                 # Suíte de testes unitários e de integração

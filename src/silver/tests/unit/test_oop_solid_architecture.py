@@ -21,6 +21,7 @@ from src.core.domain.foco_fato_payload import FocoFatoPayload
 from src.core.config.settings import PipelineSettings
 from src.bronze.extractors.ingestao_aneel import AneelArcGisExtractor
 from src.orchestration.dagster.repo import build_druid_lookup_registrar
+from src.silver.lookups.druid_lookup_registrar import DruidLookupRegistrar
 from src.silver.etl.etl_dim_municipios import ETLDimMunicipios
 from src.silver.etl.run_etl import DimensionETLOrchestrator
 from src.silver.spatial import (
@@ -36,13 +37,16 @@ from src.silver.validators.valida_joins_municipios_hospital import (
     HospitalMunicipioJoinValidator,
 )
 from src.silver.utils import (
-    DataFrameHelper,
     DimensionalKeyNormalizer,
-    DruidTextCleaner,
     GeometryService,
-    OnsMetadataParser,
     PathJsonCodec,
     SpatialDimensionRepository,
+    coordenada_valida,
+    extrair_popup_valor,
+    extrair_uf_popup,
+    limpar_numero,
+    limpar_texto_druid,
+    salvar_csv,
 )
 
 
@@ -118,11 +122,11 @@ def test_aneel_arcgis_extractor_com_injecao_de_dependencia(tmp_path: Path) -> No
 
 
 def test_classes_utilitarias_silver_mantem_contratos_limpos(tmp_path: Path) -> None:
-    """Verifica encapsulamento POO em DruidTextCleaner, DataFrameHelper, PathJsonCodec e OnsMetadataParser."""
-    assert DruidTextCleaner.limpar_texto_druid(" São Lourenço ") == "SAO LOURENCO"
-    assert DataFrameHelper.limpar_numero("1234,5", default=0.0) == 1234.5
-    assert DataFrameHelper.coordenada_valida(-22.4, -45.4) is True
-    assert DataFrameHelper.coordenada_valida(0.0, 0.0) is False
+    """Verifica funções puras e serviços de domínio em cleaners, df_helpers, PathJsonCodec e string_helpers."""
+    assert limpar_texto_druid(" São Lourenço ") == "SAO LOURENCO"
+    assert limpar_numero("1234,5", default=0.0) == 1234.5
+    assert coordenada_valida(-22.4, -45.4) is True
+    assert coordenada_valida(0.0, 0.0) is False
 
     ponto_json = PathJsonCodec.geometry_para_path_json(Point(-45.4, -22.4))
     geom_reconstruida = PathJsonCodec.path_json_para_geometry(ponto_json, tipo_geometria="point")
@@ -130,10 +134,10 @@ def test_classes_utilitarias_silver_mantem_contratos_limpos(tmp_path: Path) -> N
     assert geom_reconstruida.geom_type == "Point"
 
     assert DimensionalKeyNormalizer.normalizar_codigo_ibge("3132404.0") == "313240"
-    assert OnsMetadataParser.extrair_popup_valor("<b>Tensão:</b> 500 kV<br/>", "Tensão") == "500 kV"
-    assert OnsMetadataParser.extrair_uf_popup("USINA MANAUS - AM") == "AM"
+    assert extrair_popup_valor("<b>Tensão:</b> 500 kV<br/>", "Tensão") == "500 kV"
+    assert extrair_uf_popup("USINA MANAUS - AM") == "AM"
 
-    csv_out = DataFrameHelper.salvar_csv(pd.DataFrame({"a": [1]}), tmp_path / "out.csv")
+    csv_out = salvar_csv(pd.DataFrame({"a": [1]}), tmp_path / "out.csv")
     assert csv_out.exists()
 
 

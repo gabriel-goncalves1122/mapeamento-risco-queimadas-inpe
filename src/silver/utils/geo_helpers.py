@@ -23,14 +23,14 @@ from src.core.config.constants import (
     EPSG_GPS,
     EPSG_METRICO,
 )
-from src.silver.utils.df_helpers import DataFrameHelper
+from src.silver.utils.df_helpers import coordenada_valida
 from src.silver.utils.path_json_codec import PathJsonCodec
 
 
 class GeometryService:
     """Serviço de higienização topológica, reprojeção CRS e cálculo de centroides."""
 
-    coordenada_valida = staticmethod(DataFrameHelper.coordenada_valida)
+    coordenada_valida = staticmethod(coordenada_valida)
 
     @staticmethod
     def garantir_crs_4326(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:

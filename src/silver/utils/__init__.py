@@ -1,7 +1,6 @@
-"""Façade dos serviços utilitários orientados a objetos e funções da Camada Silver."""
+"""Façade de funções puras e serviços da Camada Silver."""
 from src.silver.utils.base import BaseETL
 from src.silver.utils.cleaners import (
-    DruidTextCleaner,
     gerar_chave_join,
     limpar_numero,
     limpar_texto_druid,
@@ -9,7 +8,7 @@ from src.silver.utils.cleaners import (
     limpar_valor_numerico_nullable,
     limpar_wkt,
 )
-from src.silver.utils.df_helpers import DataFrameHelper, coordenada_valida, salvar_csv
+from src.silver.utils.df_helpers import coordenada_valida, salvar_csv
 from src.silver.utils.geo_helpers import (
     GeometryService,
     PathJsonCodec,
@@ -42,7 +41,6 @@ from src.silver.utils.spatial_dimensions import (
     limpar_geometria,
 )
 from src.silver.utils.string_helpers import (
-    OnsMetadataParser,
     extrair_popup_valor,
     extrair_uf_nome_linha,
     extrair_uf_popup,
@@ -50,16 +48,13 @@ from src.silver.utils.string_helpers import (
 )
 
 __all__ = [
-    # Classes POO principais
+    # Serviços de infraestrutura e normalização
     "BaseETL",
-    "DruidTextCleaner",
-    "DataFrameHelper",
     "GeometryService",
     "PathJsonCodec",
     "DimensionalKeyNormalizer",
     "SpatialDimensionRepository",
-    "OnsMetadataParser",
-    # Funções e helpers re-exportados na Façade
+    # Funções puras
     "gerar_chave_join",
     "limpar_numero",
     "limpar_texto_druid",
