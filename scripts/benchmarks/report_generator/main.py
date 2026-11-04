@@ -1,7 +1,7 @@
 """
 Orquestrador de geração de relatórios científicos da matriz de capacidade (`CapacityReportGenerator`).
 
-Coordena `QueryCatalogParser`, `CapacityTableBuilder`, `CapacityChartPlotter` e
+Coordena `QueryCatalogParser`, `CapacityTableBuilder`, `make_figures` e
 `LatexReportWriter` sobre o contrato `ExecutablePipelineStep` (SRP / DIP).
 """
 from __future__ import annotations
@@ -20,7 +20,7 @@ from scripts.benchmarks.capacity_metadata import (
     DEFAULT_SQL_DIR,
     PROJECT_ROOT,
 )
-from .figures import CapacityChartPlotter
+from .figures import make_figures
 from .latex_writer import LatexReportWriter
 from .metadata_parser import QueryCatalogParser
 from .tables import CapacityTableBuilder
@@ -369,7 +369,7 @@ coletadas em documentação.
         capacity = CapacityTableBuilder.add_enriched_columns(capacity)
         query_catalog = QueryCatalogParser.read_query_catalog(self.sql_dir)
 
-        CapacityChartPlotter.make_figures(
+        make_figures(
             self.output_dir, capacity, docker_peaks, cache_gain, query_hotspots
         )
         CapacityTableBuilder.make_tables(

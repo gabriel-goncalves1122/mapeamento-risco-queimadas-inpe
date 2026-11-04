@@ -5,9 +5,6 @@ Orquestra as classes de domínio das camadas Bronze, Silver e Gold diretamente
 em memória sobre o contrato `ExecutablePipelineStep` (DIP / LSP), eliminando
 overhead de subprocessos e registrando telemetria nativa no `AssetExecutionContext`.
 """
-import importlib.util
-import os
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Optional
@@ -18,9 +15,9 @@ if _ROOT not in sys.path:
 
 from dagster import AssetExecutionContext, Definitions, asset
 
-from src.core.config.constants import PROJECT_ROOT
 from src.core.contracts.contracts import ExecutablePipelineStep
 from src.bronze.extractors.ingestao_aneel import AneelArcGisExtractor
+from src.bronze.extractors.inpe_queimadas_extractor import InpeQueimadasExtractor
 from src.gold.science.dbscan.eventizador import EventizadorIncendios
 from src.gold.science.networkx.network_builder import SINNetworkCentralityModel
 from src.silver.etl.etl_dim_hospitais import ETLDimHospitais
@@ -30,10 +27,7 @@ from src.silver.etl.etl_dim_ons_sistemas_isolados import ETLDimSistemasIsolados
 from src.silver.etl.etl_dim_ons_subestacoes import ETLDimSubestacoes
 from src.silver.etl.etl_dim_rodovias_federais import ETLDimRodoviasFederais
 from src.silver.etl.etl_dim_terras_indigenas import ETLDimTerrasIndigenas
-
-BRONZE_SRC = os.path.join(str(PROJECT_ROOT), "src", "bronze", "extractors")
-ETL_DIR = os.path.join(str(PROJECT_ROOT), "src", "silver", "etl")
-SCIENCE_DIR = os.path.join(str(PROJECT_ROOT), "src", "gold", "science")
+from src.silver.lookups.druid_lookup_registrar import DruidLookupRegistrar
 
 
 def execute_pipeline_step(
@@ -48,17 +42,6 @@ def execute_pipeline_step(
         total = len(resultado) if hasattr(resultado, "__len__") and resultado is not None else "N/A"
         context.log.info(f"Componente {step.step_name} finalizado (registros/itens: {total}).")
     return resultado
-
-
-def run_python_script(context: AssetExecutionContext, script_path: str) -> None:
-    """Fallback de execução isolada via subprocesso."""
-    context.log.info(f"Rodando script: {script_path}")
-    result = subprocess.run([sys.executable, script_path], capture_output=True, text=True)
-    if result.returncode != 0:
-        context.log.error(result.stdout)
-        context.log.error(result.stderr)
-        raise RuntimeError(f"Falha ao executar {script_path}")
-    context.log.info(result.stdout)
 
 
 @asset(group_name="dimensions", compute_kind="python")
@@ -83,6 +66,12 @@ def dim_terras_indigenas(context: AssetExecutionContext) -> Any:
 def dim_rodovias_federais(context: AssetExecutionContext) -> Any:
     """Dimensão de Rodovias Federais DNIT simplificada em `path_json`."""
     return execute_pipeline_step(context, ETLDimRodoviasFederais())
+
+
+@asset(group_name="bronze_ingestion", compute_kind="python")
+def inpe_queimadas_data(context: AssetExecutionContext) -> Any:
+    """Extrai focos de calor diários do repositório aberto do INPE/COIDS."""
+    return execute_pipeline_step(context, InpeQueimadasExtractor())
 
 
 @asset(group_name="infra_ons", compute_kind="python")
@@ -121,19 +110,32 @@ def st_dbscan_fire_events(context: AssetExecutionContext) -> Any:
     return execute_pipeline_step(context, EventizadorIncendios())
 
 
-def build_druid_lookup_registrar(**kwargs: Any) -> ExecutablePipelineStep:
-    """Carrega dinamicamente `DruidLookupRegistrar` de `scripts/run/04_druid_lookups.py`."""
-    script_path = os.path.join(str(PROJECT_ROOT), "scripts", "run", "04_druid_lookups.py")
-    spec = importlib.util.spec_from_file_location("druid_lookups_step", script_path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Não foi possível carregar {script_path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module.DruidLookupRegistrar(**kwargs)
+@asset(
+    deps=[
+        dim_municipios,
+        dim_hospitais,
+        dim_terras_indigenas,
+        dim_linhas_transmissao,
+        dim_subestacoes,
+        dim_sistemas_isolados,
+        dim_rodovias_federais,
+    ],
+    group_name="druid_sync",
+    compute_kind="apache_druid",
+)
+def druid_lookups(context: AssetExecutionContext) -> Any:
+    """Registra mapas de lookups URI em memória no Apache Druid Coordinator."""
+    return execute_pipeline_step(context, DruidLookupRegistrar())
+
+
+def build_druid_lookup_registrar(**kwargs: Any) -> DruidLookupRegistrar:
+    """Instancia `DruidLookupRegistrar` para retrocompatibilidade com testes e orquestrações customizadas."""
+    return DruidLookupRegistrar(**kwargs)
 
 
 defs = Definitions(
     assets=[
+        inpe_queimadas_data,
         dim_municipios,
         dim_hospitais,
         dim_terras_indigenas,
@@ -144,5 +146,6 @@ defs = Definitions(
         dim_sistemas_isolados,
         network_centrality_model,
         st_dbscan_fire_events,
+        druid_lookups,
     ],
 )

@@ -4,7 +4,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-ETAPAS_DIR="$PROJECT_ROOT/scripts/etapas"
+ETAPAS_DIR="$PROJECT_ROOT/scripts/run"
 
 SKIP_ETL=0
 SKIP_DOCKER=0

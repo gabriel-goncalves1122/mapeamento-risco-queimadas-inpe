@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-SPECS_DIR="$PROJECT_ROOT/infrastructure/druid/specs"
+SPECS_DIR="$PROJECT_ROOT/infra/druid/specs"
 RESULTS_ROOT="$PROJECT_ROOT/data/results/ingestion/fato_eventos"
 
 DRUID_OVERLORD_URL="${DRUID_OVERLORD_URL:-http://localhost:8081}"

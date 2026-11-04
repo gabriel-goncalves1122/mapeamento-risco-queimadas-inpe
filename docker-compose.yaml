@@ -84,8 +84,10 @@ services:
     volumes:
     - druid_shared:/opt/shared
     - coordinator_var:/opt/druid/var
-    - ./pipelines/silver/data:/opt/pipelines/silver/data
-    - ./pipelines/gold/data:/opt/pipelines/gold/data
+    - ./src/silver/data:/opt/src/silver/data
+    - ./src/silver/data:/opt/pipelines/silver/data
+    - ./src/gold/data:/opt/src/gold/data
+    - ./src/gold/data:/opt/pipelines/gold/data
     depends_on:
     - zookeeper-kafka
     - postgres
@@ -112,8 +114,10 @@ services:
     volumes:
     - broker_var:/opt/druid/var
     - druid_shared:/opt/shared
-    - ./pipelines/silver/data:/opt/pipelines/silver/data
-    - ./pipelines/gold/data:/opt/pipelines/gold/data
+    - ./src/silver/data:/opt/src/silver/data
+    - ./src/silver/data:/opt/pipelines/silver/data
+    - ./src/gold/data:/opt/src/gold/data
+    - ./src/gold/data:/opt/pipelines/gold/data
     depends_on:
     - zookeeper-kafka
     - postgres
@@ -151,8 +155,10 @@ services:
     volumes:
     - druid_shared:/opt/shared
     - historical_var:/opt/druid/var
-    - ./pipelines/silver/data:/opt/pipelines/silver/data
-    - ./pipelines/gold/data:/opt/pipelines/gold/data
+    - ./src/silver/data:/opt/src/silver/data
+    - ./src/silver/data:/opt/pipelines/silver/data
+    - ./src/gold/data:/opt/src/gold/data
+    - ./src/gold/data:/opt/pipelines/gold/data
     depends_on:
     - zookeeper-kafka
     - postgres
@@ -189,8 +195,10 @@ services:
     volumes:
     - druid_shared:/opt/shared
     - middle_var:/opt/druid/var
-    - ./pipelines/silver/data:/opt/pipelines/silver/data
-    - ./pipelines/gold/data:/opt/pipelines/gold/data
+    - ./src/silver/data:/opt/src/silver/data
+    - ./src/silver/data:/opt/pipelines/silver/data
+    - ./src/gold/data:/opt/src/gold/data
+    - ./src/gold/data:/opt/pipelines/gold/data
     depends_on:
     - zookeeper-kafka
     - postgres
@@ -224,8 +232,10 @@ services:
     volumes:
     - router_var:/opt/druid/var
     - druid_shared:/opt/shared
-    - ./pipelines/silver/data:/opt/pipelines/silver/data
-    - ./pipelines/gold/data:/opt/pipelines/gold/data
+    - ./src/silver/data:/opt/src/silver/data
+    - ./src/silver/data:/opt/pipelines/silver/data
+    - ./src/gold/data:/opt/src/gold/data
+    - ./src/gold/data:/opt/pipelines/gold/data
     depends_on:
     - zookeeper-kafka
     - postgres
@@ -283,8 +293,8 @@ services:
     - ./pipelines:/opt/dagster/app/pipelines
     - ./config:/opt/dagster/app/config
     - dagster_data:/opt/dagster/dagster_home
-    - ./pipelines/silver/data:/opt/dagster/app/pipelines/silver/data
-    - ./pipelines/gold/data:/opt/dagster/app/pipelines/gold/data
+    - ./src/silver/data:/opt/dagster/app/src/silver/data
+    - ./src/gold/data:/opt/dagster/app/src/gold/data
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
       TZ: America/Sao_Paulo

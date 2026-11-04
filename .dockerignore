@@ -2,8 +2,12 @@
 
 !pyproject.toml
 !uv.lock
-!pipelines/
-!pipelines/**
+!src/
+!infra/
+!scripts/
+!src/
+!infra/
+!scripts/**
 !config/
 !config/**
 !scripts/

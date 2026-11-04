@@ -16,9 +16,9 @@ __pycache__/
 # 2. DADOS MASSIVOS E GEOGRÁFICOS (CRÍTICO)
 # ==========================================
 # Ignora todo o conteúdo das subpastas de dados (Medallion)
-pipelines/bronze/data/*
-pipelines/silver/data/*
-pipelines/gold/data/*
+src/bronze/data/*
+src/silver/data/*
+src/gold/data/*
 
 # Ignora extensões de arquivos de dados pesados e lixos em qualquer lugar
 *.csv
@@ -78,9 +78,9 @@ test_query.json
 # 6. EXCEÇÕES (O QUE DEVE SER VERSIONADO)
 # ==========================================
 # Mantém a estrutura de pastas de dados no Git (requer criar um arquivo .gitkeep vazio nelas)
-!pipelines/bronze/data/.gitkeep
-!pipelines/silver/data/.gitkeep
-!pipelines/gold/data/.gitkeep
+!src/bronze/data/.gitkeep
+!src/silver/data/.gitkeep
+!src/gold/data/.gitkeep
 
 # Força o Git a aceitar os arquivos JSON do Druid e exports atuais do Superset
 !infrastructure/druid/specs/*.json

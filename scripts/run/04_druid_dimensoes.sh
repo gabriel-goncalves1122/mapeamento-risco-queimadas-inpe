@@ -8,11 +8,11 @@ echo "=================================================="
 echo "📊 Etapa 4: Configuração de Dimensões no Druid (Lookups)"
 echo "=================================================="
 
-uv run python scripts/etapas/04_druid_lookups.py
+uv run python scripts/run/04_druid_lookups.py
 
 echo
 echo "🚀 Ingerindo tabelas dimensionais (Batch) no Druid..."
-SPECS_DIR="$PROJECT_ROOT/infrastructure/druid/specs"
+SPECS_DIR="$PROJECT_ROOT/infra/druid/specs"
 DRUID_OVERLORD_URL="${DRUID_OVERLORD_URL:-http://localhost:8081}"
 
 for spec_file in "$SPECS_DIR"/dim_*.json; do

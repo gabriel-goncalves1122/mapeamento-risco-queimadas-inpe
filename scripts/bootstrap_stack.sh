@@ -17,7 +17,7 @@ set -euo pipefail
 # ==================================================
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SPECS_DIR="$PROJECT_ROOT/infrastructure/druid/specs"
+SPECS_DIR="$PROJECT_ROOT/infra/druid/specs"
 
 KAFKA_CONTAINER="kafka"
 KAFKA_BOOTSTRAP_DOCKER="kafka:9092"

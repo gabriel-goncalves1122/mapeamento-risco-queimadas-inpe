@@ -3,7 +3,7 @@ set -euo pipefail
 # ==============================================================================
 # SCRIPT: Reinício Completo do Ambiente CCO-DataOps
 # ==============================================================================
-# Reutiliza os scripts existentes em scripts/etapas/.
+# Reutiliza os scripts existentes em scripts/run/.
 # Sequência:
 #   1. Exportar dashboards/datasources do Superset (backup)
 #   2. Derrubar TODOS os containers + volumes
@@ -16,7 +16,7 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-EXPORT_DIR="$PROJECT_ROOT/infrastructure/superset/exports"
+EXPORT_DIR="$PROJECT_ROOT/infra/superset/exports"
 
 echo "================================================================"
 echo "🔄 REINÍCIO COMPLETO — CCO-DataOps ($TIMESTAMP)"
@@ -68,27 +68,27 @@ echo "  ✅ Todos os containers e volumes removidos."
 # =========================================================================
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🐳 FASE 3: Executando scripts/etapas/03_docker_e_kafka.sh"
+echo "🐳 FASE 3: Executando scripts/run/03_docker_e_kafka.sh"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-bash scripts/etapas/03_docker_e_kafka.sh
+bash scripts/run/03_docker_e_kafka.sh
 
 # =========================================================================
 # FASE 4: ETAPA 04 — Dimensões + Lookups
 # =========================================================================
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📊 FASE 4: Executando scripts/etapas/04_druid_dimensoes.sh"
+echo "📊 FASE 4: Executando scripts/run/04_druid_dimensoes.sh"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-bash scripts/etapas/04_druid_dimensoes.sh
+bash scripts/run/04_druid_dimensoes.sh
 
 # =========================================================================
 # FASE 5: ETAPA 05 — Supervisores + Produtor (com sample_bucket)
 # =========================================================================
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "🔥 FASE 5: Executando scripts/etapas/05_streaming_eventos.sh"
+echo "🔥 FASE 5: Executando scripts/run/05_streaming_eventos.sh"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-bash scripts/etapas/05_streaming_eventos.sh
+bash scripts/run/05_streaming_eventos.sh

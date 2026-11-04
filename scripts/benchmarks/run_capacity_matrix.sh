@@ -2,7 +2,7 @@
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PROFILE_DIR="$PROJECT_ROOT/infrastructure/druid/profiles"
+PROFILE_DIR="$PROJECT_ROOT/infra/druid/profiles"
 RUN_ID="${RUN_ID:-$(date +%Y%m%d_%H%M%S)}"
 OUT_ROOT="$PROJECT_ROOT/data/results/performance/druid_capacity/$RUN_ID"
 BENCH_PROFILE="${BENCH_PROFILE:-baseline}"

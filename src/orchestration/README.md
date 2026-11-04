@@ -21,7 +21,8 @@ A pasta `src/orchestration/` centraliza a orquestração declarativa de dados do
 ```text
 src/orchestration/
 ├── README.md              # Este guia de orquestração
-├── repo.py                # Definição canônica de Assets, Definitions e despachante in-memory
+├── dagster/              # Módulo de orquestração do Apache Dagster
+│   └── repo.py            # Definição canônica de Assets, Definitions e despachante in-memory
 └── tests/                 # Testes unitários do orquestrador e dependências de DAG
 ```
 
@@ -29,7 +30,7 @@ src/orchestration/
 
 ## 3. Grafo de Dependências de Software-Defined Assets (SDA)
 
-O grafo abaixo reflete a linhagem exata declarada em [`src/orchestration/dagster/repo.py`](repo.py):
+O grafo abaixo reflete a linhagem exata declarada em [`src/orchestration/dagster/repo.py`](dagster/repo.py):
 
 ```mermaid
 flowchart TD

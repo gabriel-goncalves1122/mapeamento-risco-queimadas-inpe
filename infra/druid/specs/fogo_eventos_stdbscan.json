@@ -5,7 +5,7 @@
       "type": "index_parallel",
       "inputSource": {
         "type": "local",
-        "baseDir": "/opt/pipelines/gold/data/fatos",
+        "baseDir": "/opt/src/gold/data/fatos",
         "filter": "fogo_eventos_stdbscan.csv"
       },
       "inputFormat": {
