@@ -87,3 +87,4 @@ test_query.json
 !infrastructure/superset/*.zip
 !infrastructure/superset/exports/
 
+pipelines/

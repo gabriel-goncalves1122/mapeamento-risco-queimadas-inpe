@@ -1,164 +1,194 @@
-# Dicionário de Dados - Camada Bronze (Raw Ingestion)
+# Dicionário de Dados Estrutural: Camada Bronze (`src/bronze/data/`)
 
-Este documento descreve as estruturas de dados, nomes de atributos, tipos nativos e formatos brutos de todos os dados adquiridos e armazenados na **Camada Bronze**.
+> **Trilha Modular — Etapa 04 de 18 (Ciclo 1.3 — Dicionário de Dados Brutos (`src/bronze/`))**: [Anterior: Ciclo 1.2 — Fontes Governamentais e APIs (`src/bronze/`)](FONTES_E_APIS.md) | [Portal Geral (`docs/README.md`)](../../docs/README.md) | [Próximo: Ciclos 2 e 3 — Hub da Camada Silver (`src/silver/`)](../silver/README.md)
 
-Na Bronze, os dados são **representações literais da fonte**, preservando a nomenclatura original dos provedores antes de qualquer higienização, reprojeção para SIRGAS 2000 (`EPSG:5880`) ou cálculo espacial efetuado pela Camada Silver.
-
----
-
-## 1. Infraestrutura do Setor Elétrico (ANEEL / SIGEL MapServer)
-
-### 1.1 Linhas de Transmissão (`linhas_transmissao_ons.geojson`)
-- **Origem:** ANEEL MapServer Layer 1.
-- **Formato:** GeoJSON (`FeatureCollection`).
-- **Geometria Nativa:** `LineString` ou `MultiLineString` (WGS84 / `EPSG:4326`).
-
-| Campo Bruto (Property) | Tipo | Nullable | Descrição Original do Provedor |
-|---|---|:---:|---|
-| `OBJECTID` | Integer | Não | Identificador primário numérico interno do ArcGIS Server. |
-| `COD_LINHA` | String | Sim | Código operacional alfanumérico da linha de transmissão (ONS). |
-| `NOMELINHA` | String | Não | Denominação oficial da linha (ex: `LT 500 kV Xingu / Estreito`). |
-| `TENS_KV` | Float | Sim | Nível nominal de tensão operacional em quilovolts (ex: `230.0`, `500.0`, `800.0`). |
-| `CONCESSION` | String | Sim | Razão social ou sigla da concessionária titular da concessão (ex: `FURNAS`, `CHESF`, `TAESA`). |
-| `EXTENSAO` | Float | Sim | Comprimento linear do traçado em quilômetros (`km`). |
-| `DATA_ENTRADA` | String | Sim | Data formal de início da operação comercial do ativo. |
-| `geometry` | Geometry | Não | Vetor de coordenadas geográficas `[lon, lat]` em `EPSG:4326`. |
+Este documento especifica os esquemas exatos de todos os arquivos brutos (GeoJSON e CSV) armazenados na Camada Bronze (`src/bronze/data/`). Todos os nomes de campos, tipos nativos e exemplos refletem literalmente a estrutura física retornada pelas APIs e dumps governamentais antes do processamento pela Camada Silver.
 
 ---
 
-### 1.2 Subestações de Energia (`subestacoes_ons.geojson`)
-- **Origem:** ANEEL MapServer Layer 3.
-- **Formato:** GeoJSON (`FeatureCollection`).
-- **Geometria Nativa:** `Point` (WGS84 / `EPSG:4326`).
+## 1. Infraestrutura Elétrica — ANEEL / ONS (`src/bronze/data/aneel/`)
 
-| Campo Bruto (Property) | Tipo | Nullable | Descrição Original do Provedor |
-|---|---|:---:|---|
-| `OBJECTID` | Integer | Não | Identificador primário do ArcGIS Server. |
-| `COD_SUB` | String | Sim | Código mnemônico oficial da subestação no ONS (ex: `SE-EST`, `SE-XNG`). |
-| `NOMESUB` | String | Não | Nome por extenso da subestação de energia elétrica. |
-| `TENS_KV` | Float | Sim | Tensão máxima de transformação/barramento em quilovolts. |
-| `CONCESSION` | String | Sim | Concessionária de transmissão responsável pela subestação. |
-| `MUNICIPIO` | String | Sim | Nome descritivo do município de localização conforme cadastro ANEEL. |
-| `UF` | String | Sim | Sigla do Estado da Federação (ex: `SP`, `MG`, `PA`). |
-| `geometry` | Geometry | Não | Ponto geográfico `[lon, lat]` em `EPSG:4326`. |
+Os arquivos da ANEEL são objetos GeoJSON do tipo `FeatureCollection` extraídos do servidor ArcGIS REST MapServer (`outSR=4326`). Devido à origem KML/KMZ do banco do SIGEL, os atributos técnicos de engenharia encontram-se serializados em HTML dentro da propriedade `PopupInfo`.
 
----
+### 1.1 `linhas_transmissao_ons.geojson` (Layer 1 — 1.817 feições)
+* **Tipo Geométrico (`geometry.type`):** `LineString` / `MultiLineString` (`EPSG:4326`).
 
-### 1.3 Sistemas Elétricos Isolados (`sistemas_isolados_ons.geojson`)
-- **Origem:** ANEEL MapServer Layer 5.
-- **Formato:** GeoJSON (`FeatureCollection`).
-- **Geometria Nativa:** `Point` (WGS84 / `EPSG:4326`).
-
-| Campo Bruto (Property) | Tipo | Nullable | Descrição Original do Provedor |
-|---|---|:---:|---|
-| `OBJECTID` | Integer | Não | Identificador primário do ArcGIS Server. |
-| `COD_SIST` | String | Sim | Identificador cadastral da localidade isolada. |
-| `NOMELOCAL` | String | Não | Nome da comunidade, vila ou município não conectado ao SIN. |
-| `CONCESSION` | String | Sim | Concessionária de distribuição local (ex: `EQUATORIAL`, `ENERGISA`). |
-| `POPULACAO` | Integer | Sim | Estimativa de habitantes atendidos pela geração térmica local. |
-| `geometry` | Geometry | Não | Ponto geográfico `[lon, lat]` em `EPSG:4326`. |
+| Propriedade (`properties`) | Tipo Nativo | Nulável | Exemplo Real | Especificação e Uso no Pipeline |
+|:---|:---:|:---:|:---|:---|
+| `OID` | `int` | Não | `1` | Identificador sequencial único da feição no ArcGIS Server. Convertido para `id_linha_transmissao` (`str`). |
+| `Name` | `str` | Sim | `'Linha LT  230 kV SCHARLAU 2           / CHARQUEADAS          C 1  RS'` | Denominação da linha de transmissão, contendo nível de tensão, subestações terminais, circuito e sigla da UF no sufixo. Possui múltiplos espaços consecutivos que são colapsados por `limpar_codigo()`. |
+| `FolderPath` | `str` | Sim | `'Document/folderLTR1/Linha LT  230 kV...'` | Hierarquia de diretórios original do documento KML exportado pelo ONS. |
+| `PopupInfo` | `str` (HTML) | Sim | `'<b>Tensão: </b>230 Kv<br/><b>Extensão: </b>72,96 Km'` | String HTML semiestruturada. A Camada Silver extrai `tensao_kv` (rótulo `"Tensão"`) e `extensao_km` (rótulo `"Extensão"`) via `extrair_popup_valor()`. |
+| `Shape_Length` | `float` | Sim | `6.8985039` | Comprimento vetorial bruto em graus decimais calculado pelo banco Esri. |
+| `SymbolID`, `AltMode`, `Base`, `Clamped`, `Extruded` | `int` | Sim | `0`, `-1` | Metadados visuais de renderização 3D do formato KML (ignorados pelo ETL analítico). |
+| `Snippet` | `str` | Sim | `''` | Resumo textual KML (vazio na origem). |
 
 ---
 
-## 2. Detecções de Focos de Queimada (INPE / BDQueimadas)
+### 1.2 `subestacoes_ons.geojson` (Layer 3 — 627 feições)
+* **Tipo Geométrico (`geometry.type`):** `Point` (`EPSG:4326`).
 
-- **Origem:** Instituto Nacional de Pesquisas Espaciais (INPE).
-- **Formato:** Arquivo tabular CSV (`focos_*.csv`).
-- **Codificação:** UTF-8. Separador: Vírgula (`,`).
-
-| Coluna Bruta | Tipo | Nullable | Descrição da Variável Meteorológica / Orbital |
-|---|---|:---:|---|
-| `lat` | Float | Não | Latitude decimal do baricentro do pixel quente (WGS84). |
-| `lon` | Float | Não | Longitude decimal do baricentro do pixel quente (WGS84). |
-| `data_hora_gmt` | String | Não | Data e horário UTC no padrão ISO `YYYY-MM-DD HH:MM:SS`. |
-| `satelite` | String | Não | Identificação do satélite sensor (ex: `AQUA_M-T`, `NOAA-20`, `TERRA_M-T`). |
-| `pais` | String | Não | Nome do país (`Brasil`). |
-| `estado` | String | Não | Nome por extenso do estado de detecção informado pelo INPE. |
-| `municipio` | String | Não | Nome por extenso do município segundo referência geográfica do INPE. |
-| `bioma` | String | Não | Bioma de ocorrência (ex: `Cerrado`, `Amazonia`, `Mata Atlantica`, `Pantanal`). |
-| `dias_sem_chuva` | Float | Sim | Número estimado de dias consecutivos sem precipitação hídrica no pixel. |
-| `precipitacao` | Float | Sim | Volume de chuva acumulada recente em milímetros (`mm`). |
-| `risco_fogo` | Float | Sim | Índice contínuo de risco de fogo calculado pelo INPE (escala de 0.0 a 1.0). |
-| `frp` | Float | Sim | *Fire Radiative Power* em Megawatts (`MW`). Mede a energia térmica liberada instantaneamente pela combustão. |
+| Propriedade (`properties`) | Tipo Nativo | Nulável | Exemplo Real | Especificação e Uso no Pipeline |
+|:---|:---:|:---:|:---|:---|
+| `OID` | `int` | Não | `1` | Identificador único da subestação no MapServer (`id_subestacao`). |
+| `Name` | `str` | Sim | `'Subestação B. FLUMINENSE'` | Nome cadastral da subestação de energia elétrica. |
+| `PopupInfo` | `str` (HTML) | Sim | `'<b>Nome: </b>B. FLUMINENSE<br/><b>Capacidade: </b>0 MW<br/><b>Agente: </b>Furnas...'` | Contém as tags HTML `<b>Nome: </b>`, `<b>Capacidade: </b>` (potência instalada em MW) e `<b>Agente: </b>` (concessionária transmissora). |
+| `FolderPath` | `str` | Sim | `'Document/folderSUBR'` | Caminho de pasta KML de origem. |
+| `SymbolID`, `AltMode`, `Base`, `HasLabel`, `LabelID` | `int` | Sim | `0`, `-1` | Atributos gráficos de simbologia KML/Esri. |
+| `Snippet` | `str` | Sim | `''` | Resumo textual KML. |
 
 ---
 
-## 3. Terras Indígenas (FUNAI)
+### 1.3 `sistemas_isolados_ons.geojson` (Layer 5 — 120 feições)
+* **Tipo Geométrico (`geometry.type`):** `Point` (`EPSG:4326`).
 
-- **Origem:** Geoportal da Fundação Nacional dos Povos Indígenas.
-- **Formato:** Vetor GeoJSON (`mapa_terras_indigenas.geojson`) e Tabela CSV (`tis_poligonais.csv`).
-- **Geometria Nativa:** `Polygon` ou `MultiPolygon` (WGS84 / `EPSG:4326`).
-
-| Campo Bruto | Tipo | Nullable | Descrição Cadastral e Jurídica FUNAI |
-|---|---|:---:|---|
-| `cod_ti` / `codigo_ti` | String/Int | Não | Código oficial numérico de identificação da Terra Indígena perante a FUNAI. |
-| `nome_ti` | String | Não | Nome oficial demarcado da Terra Indígena (ex: `Parque do Araguaia`, `Yanomami`). |
-| `etnia_predominante`| String | Sim | Povos originários habitantes (ex: `Javaé`, `Karajá`, `Avá-Canoeiro`, `Kayapó`). |
-| `fase_ti` | String | Não | Situação jurídica formal (ex: `Regularizada`, `Homologada`, `Declarada`, `Delimitada`). |
-| `superficie_ha` | Float | Sim | Extensão territorial oficial calculada em hectares (`ha`). |
-| `geometry` | Geometry | Não | Polígono delimitador da reserva indígena. |
+| Propriedade (`properties`) | Tipo Nativo | Nulável | Exemplo Real | Especificação e Uso no Pipeline |
+|:---|:---:|:---:|:---|:---|
+| `OID` | `int` | Não | `1` | Identificador único do sistema isolado (`id_sistema_isolado`). |
+| `Name` | `str` | Sim | `'Afuá'` | Nome da localidade ou município atendido por geração isolada (não conectada ao SIN). |
+| `PopupInfo` | `str` | Sim | `'Afuá - PA'` | String no formato `'LOCALIDADE - UF'`, processada por `extrair_uf_popup()` para obter a sigla do estado. |
+| `FolderPath` | `str` | Sim | `'Document/Folder_SISOL'` | Diretório KML de origem. |
+| `SymbolID`, `AltMode`, `Base`, `HasLabel`, `LabelID` | `int` | Sim | `0`, `-1` | Atributos gráficos de simbologia KML/Esri. |
 
 ---
 
-## 4. Malha Municipal do Brasil (IBGE)
+## 2. Detecções Orbitais de Queimadas — INPE (`src/bronze/data/inpe/`)
 
-- **Origem:** Instituto Brasileiro de Geografia e Estatística (Malha Municipal 1:250.000).
-- **Formato:** GeoJSON (`municipios_br.geojson`).
-- **Geometria Nativa:** `Polygon` ou `MultiPolygon` (SIRGAS 2000 Geográfico / `EPSG:4674`).
+### 2.1 `focos_incendio_brutos.csv` / `focos_diario_br_*.csv`
+* **Formato:** CSV delimitado por vírgula (`,`), codificação `UTF-8`.
+* **Sistema de Coordenadas:** WGS84 (`EPSG:4326`).
 
-| Campo Bruto (Property) | Tipo | Nullable | Descrição Geopolítica IBGE |
-|---|---|:---:|---|
-| `CD_MUN` | String | Não | Código territorial oficial de 7 dígitos do município (Chave Primária Nacional). |
-| `NM_MUN` | String | Não | Nome formal do município (ex: `Formoso do Araguaia`, `São Paulo`). |
-| `SIGLA_UF` | String | Não | Sigla da Unidade Federativa de pertencimento (`TO`, `SP`, `MG`, etc.). |
-| `AREA_KM2` | Float | Sim | Área territorial calculada oficialmente pelo IBGE em quilômetros quadrados. |
-| `geometry` | Geometry | Não | Polígono ou multipolígono dos limites municipais. |
-
----
-
-## 5. Malha Rodoviária Nacional (DNIT - SNV)
-
-- **Origem:** Departamento Nacional de Infraestrutura de Transportes.
-- **Formato:** GeoJSON (`rodovias_federais.geojson`).
-- **Geometria Nativa:** `LineString` ou `MultiLineString` (WGS84 / `EPSG:4326`).
-
-| Campo Bruto (Property) | Tipo | Nullable | Descrição do Sistema Nacional de Viação |
-|---|---|:---:|---|
-| `id_trecho` | String/Int | Não | Identificador determinístico do segmento da malha rodoviária. |
-| `vl_br` | String | Não | Código de designação da rodovia federal (ex: `BR-116`, `BR-153`, `BR-242`). |
-| `sg_uf` | String | Não | Sigla da Unidade Federativa onde o trecho rodoviário está implantado. |
-| `vl_km_inicial` | Float | Sim | Quilômetro inicial do trecho rodoviário demarcado. |
-| `vl_km_final` | Float | Sim | Quilômetro final do trecho rodoviário demarcado. |
-| `geometry` | Geometry | Não | Traçado linear do trecho rodoviário. |
+| Coluna Nativa | Tipo Pandas | Nulável / Sentinela | Exemplo Real | Especificação Técnica e Tratamento |
+|:---|:---:|:---:|:---|:---|
+| `DataHora` | `object` (`str`) | Não | `'2025/01/01 00:00:00'` | Data e hora UTC da passagem do satélite (`YYYY/MM/DD HH:MM:SS` ou `YYYY-MM-DD HH:MM:SS`). Normalizada por `extrair_data()` para ISO `YYYY-MM-DD HH:MM:SS`. |
+| `Satelite` | `object` (`str`) | Não | `'GOES-16'` | Identificador do satélite/sensor (`AQUA_M-T`, `TERRA_M-T`, `NOAA-20`, `NPP-375`, `GOES-16`). Convertido em `fk_satelite_sensor`. |
+| `Pais` | `object` (`str`) | Não | `'Brasil'` | País de ocorrência reportado pelo INPE (`pais_origem`). |
+| `Estado` | `object` (`str`) | Não | `'MATO GROSSO'` | Nome por extenso da Unidade Federativa segundo a grade do INPE. |
+| `Municipio` | `object` (`str`) | Não | `'VILA BELA DA SANTÍSSIMA TRINDADE'` | Nome do município segundo o INPE. Concatenado com `Estado` para formar `fk_municipio` (`UF_MUNICIPIO`). |
+| `Bioma` | `object` (`str`) | Sim | `'Amazônia'` | Bioma brasileiro (`Amazônia`, `Cerrado`, `Mata Atlântica`, `Caatinga`, `Pampa`, `Pantanal`). Normalizado para `fk_bioma`. |
+| `DiaSemChuva` | `int64` / `float64` | Sim (`<= -900`) | `3` | Número de dias consecutivos sem precipitação no pixel. Valores `-999` indicam ausência de grade meteorológica e são convertidos em `None` por `limpar_valor_numerico_nullable()`. |
+| `Precipitacao` | `float64` | Sim (`<= -900`) | `1.97` | Precipitação acumulada no dia da detecção em milímetros (`mm`). |
+| `RiscoFogo` | `float64` | Sim (`-999.0`) | `0.63` | Índice de Risco de Fogo do INPE no intervalo $[0.0, 1.0]$. Recebe `-999.0` em corpos d'água ou áreas urbanas sem vegetação mapeada. |
+| `FRP` | `float64` | Sim (`NaN` / `<= -900`) | `84.8` | *Fire Radiative Power* (Potência Radiativa do Fogo) em Megawatts (`MW`). Mede a taxa de emissão de energia radiante térmica. |
+| `Latitude` | `float64` | Não | `-15.253` | Coordenada geográfica de latitude em graus decimais (`EPSG:4326`). |
+| `Longitude` | `float64` | Não | `-60.2095` | Coordenada geográfica de longitude em graus decimais (`EPSG:4326`). |
 
 ---
 
-## 6. Estabelecimentos e Capacidade Hospitalar (DATASUS / CNES)
+## 3. Terras Indígenas — FUNAI (`src/bronze/data/funai/`)
 
-- **Origem:** Ministério da Saúde / Cadastro Nacional de Estabelecimentos de Saúde.
-- **Formato:** Arquivos CSV tabulares em `src/bronze/data/datasus/cnes_aux/`.
-- **Codificação:** `latin-1`. Separador: Ponto e vírgula (`;`).
+A camada Bronze armazena duas representações complementares fornecidas pela FUNAI: a malha poligonal GeoJSON e o catálogo tabular CSV.
 
-### 6.1 `tbEstabelecimento*.csv` (Cadastro)
-| Coluna Bruta | Tipo | Nullable | Descrição Cadastral CNES |
-|---|---|:---:|---|
-| `CO_UNIDADE` | String | Não | Código nacional único de 7 dígitos do estabelecimento de saúde (CNES). |
-| `NO_FANTASIA` | String | Não | Nome de fachada comercial do hospital ou pronto-atendimento. |
-| `CO_MUNICIPIO_GESTOR` | String | Não | Código IBGE (6 dígitos na fonte, normalizado para 7 na Silver) do município sede. |
-| `TP_UNIDADE` | String | Não | Código numérico da tipologia da unidade de saúde. |
-| `LATITUDE_ESTABELECIMENTO` | Float | Sim | Coordenada Y de latitude do hospital. |
-| `LONGITUDE_ESTABELECIMENTO`| Float | Sim | Coordenada X de longitude do hospital. |
+### 3.1 `mapa_terras_indigenas.geojson` (650 feições)
+* **Tipo Geométrico (`geometry.type`):** `Polygon` / `MultiPolygon` (`EPSG:4326`).
 
-### 6.2 `tbLeito*.csv` (Capacidade de Internação)
-| Coluna Bruta | Tipo | Nullable | Descrição dos Leitos |
-|---|---|:---:|---|
-| `CO_UNIDADE` | String | Não | Código CNES correspondente. |
-| `TP_LEITO` | String | Não | Categoria do leito (clínico, cirúrgico, complementar). |
-| `QT_EXIST` | Integer | Não | Quantidade física de leitos existentes instalados. |
-| `QT_CONTR` | Integer | Sim | Quantidade de leitos conveniados ao Sistema Único de Saúde (SUS). |
+| Propriedade (`properties`) | Tipo Nativo | Nulável | Exemplo Real | Especificação Técnica |
+|:---|:---:|:---:|:---|:---|
+| `codigo_ti` | `int` | Não | `101` | Código numérico oficial da Terra Indígena na FUNAI (chave primária na dimensão Silver). |
+| `nome_terra_indigena` | `str` | Não | `'ACAPURI DE CIMA'` | Nome oficial da Terra Indígena. |
+| `etnia` | `str` | Sim | `'Kokama'` | Etnia ou povos originários habitantes da reserva. |
+| `municipios` | `str` | Sim | `'Fonte Boa'` | Lista de municípios abrangidos (separados por vírgula quando multimunicipal). |
+| `estado` | `str` | Sim | `'AM'` | Sigla(s) da(s) Unidade(s) Federativa(s) de localização. |
+| `area_hectares` | `float` | Sim | `18393.9411` | Superfície oficial demarcada em hectares (`ha`). |
+| `estagio_regularizacao` | `str` | Sim | `'Regularizada'` | Fase do procedimento demarcatório (`Em Estudo`, `Delimitada`, `Declarada`, `Homologada`, `Regularizada`, `Encaminhada RI`). |
+| `modalidade` | `str` | Sim | `'Tradicionalmente ocupada'` | Classificação jurídica da posse indígena. |
+| `em_faixa_fronteira` | `str` | Sim | `'Não'` | Indicador (`'Sim'` / `'Não'`) de inserção na faixa de fronteira internacional (150 km). |
 
-### 6.3 `tbTipoUnidade*.csv` (Classificação)
-| Coluna Bruta | Tipo | Nullable | Descrição da Tipologia |
-|---|---|:---:|---|
-| `TP_UNIDADE` | String | Não | Chave primária da tipologia. |
-| `DS_TIPO_UNIDADE` | String | Não | Descrição textual (ex: `HOSPITAL GERAL`, `HOSPITAL ESPECIALIZADO`, `PRONTO ATENDIMENTO`). |
+### 3.2 `tis_poligonais.csv` (Catálogo Administrativo — 20 colunas)
+* **Formato:** CSV delimitado por vírgula (`,`), codificação `UTF-8`.
+
+| Coluna Nativa | Tipo Pandas | Exemplo Real | Equivalência / Descrição |
+|:---|:---:|:---|:---|
+| `FID` / `gid` | `object` / `int64` | `'tis_poligonais.fid-...'` / `1` | Identificadores internos do servidor GeoServer da FUNAI. |
+| `terrai_codigo` | `int64` | `101` | Código oficial da Terra Indígena (equivalente a `codigo_ti`). |
+| `terrai_nome` | `object` | `'Acapuri de Cima'` | Nome oficial da Terra Indígena. |
+| `etnia_nome` | `object` | `'Kokama'` | Nome da(s) etnia(s). |
+| `municipio_nome` | `object` | `'Fonte Boa'` | Municípios interceptados. |
+| `uf_sigla` | `object` | `'AM'` | Sigla da UF. |
+| `superficie_perimetro_ha` | `float64` | `18393.9411` | Área oficial em hectares. |
+| `fase_ti` / `modalidade_ti` | `object` | `'Regularizada'` | Estágio demarcatório e modalidade jurídica. |
+| `reestudo_ti` | `float64` / `object` | `nan` | Indicador de procedimento de revisão de limites. |
+| `cr` / `undadm_codigo` / `undadm_nome` / `undadm_sigla` | `object` / `int64` | `'COORDENACAO REGIONAL DO ALTO SOLIMOES'` / `'CR-AS'` | Dados da Coordenação Regional da FUNAI responsável pela tutela administrativa. |
+| `faixa_fronteira` / `dominio_uniao` | `object` | `'Não'` / `'t'` | Indicadores booleanos de fronteira e patrimônio da União. |
+| `data_atualizacao` / `epsg` | `object` / `int64` | `'05/09/2023'` / `0` | Metadados de atualização cadastral. |
+| `the_geom` | `object` (`str`) | `'POLYGON ((-66.8835...))'` | Geometria do polígono serializada em *Well-Known Text* (WKT). |
+
+---
+
+## 4. Malha Municipal Brasileira — IBGE (`src/bronze/data/ibge/`)
+
+### 4.1 `municipios_br.geojson` (5.564 feições)
+* **Tipo Geométrico (`geometry.type`):** `Polygon` / `MultiPolygon` (`EPSG:4674` / `EPSG:4326`).
+
+| Propriedade (`properties`) | Tipo Nativo | Nulável | Exemplo Real | Especificação Técnica e Tratamento |
+|:---|:---:|:---:|:---|:---|
+| `id` | `str` | Não | `'1100015'` | Código IBGE completo de 7 dígitos. No ETL Silver (`ETLDimMunicipios`), os 2 primeiros dígitos determinam a UF (`11` $\rightarrow$ `RO`) e os 6 primeiros dígitos formam `codigo_ibge` (`'110001'`). |
+| `name` | `str` | Não | `"Alta Floresta D'Oeste"` | Nome oficial do município com acentuação e apóstrofos originais. |
+| `description` | `str` | Sim | `"Alta Floresta D'Oeste"` | Repetição descritiva do nome municipal no catálogo GeoData-BR. |
+
+---
+
+## 5. Malha Rodoviária Federal — DNIT (`src/bronze/data/dnit/`)
+
+### 5.1 `mapa_rodovias_federais.geojson` (14.255 feições)
+* **Tipo Geométrico (`geometry.type`):** `LineString` / `MultiLineString` (`EPSG:4326`).
+
+| Propriedade (`properties`) | Tipo Nativo | Nulável | Exemplo Real | Especificação Técnica |
+|:---|:---:|:---:|:---|:---|
+| `id_trecho_rodoviario` | `int` | Não | `28` | Identificador único do segmento no Sistema Nacional de Viação (SNV). |
+| `codigo_rodovia` | `str` | Não | `'BR-324'` | Designação oficial da rodovia federal (`BR-XXX`). |
+| `jurisdicao` | `str` | Sim | `'Federal'` | Esfera administrativa responsável (`Federal`, `Estadual`, `Distrital`). |
+| `revestimento` | `str` | Sim | `'Pavimentado'` | Condição macro da via (`Pavimentado`, `Não Pavimentado`, `Planejado`). |
+| `tipo_pavimento` | `str` | Sim | `'Desconhecido'` | Especificação do material de rolamento. |
+| `situacao_fisica` | `str` | Sim | `'Construída'` | Estado físico de implantação do segmento. |
+| `status_operacional` | `str` | Sim | `'Sim'` | Indicador de tráfego aberto (`'Sim'` / `'Não'`). |
+| `geometria_wkt` | `str` | Sim | `'LINESTRING (-42.8928 -8.2584, ...)'` | Representação WKT de backup da geometria linear do trecho. |
+
+---
+
+## 6. Estabelecimentos de Saúde — DATASUS / CNES (`src/bronze/data/datasus/cnes_aux/`)
+
+Todos os arquivos do CNES utilizam ponto e vírgula (`;`) como separador de colunas e aspas duplas (`"`) como delimitador de strings.
+
+### 6.1 `tbEstabelecimento202603.csv` (Tabela Principal — 55 colunas)
+Abaixo estão especificadas as colunas efetivamente consumidas pelo pipeline `ETLDimHospitais` ([`etl_dim_hospitais.py`](../silver/etl/etl_dim_hospitais.py)) dentre as 55 colunas do dump relacional do Ministério da Saúde:
+
+| Coluna Nativa | Tipo Pandas | Nulável | Exemplo Real | Especificação Técnica e Tratamento |
+|:---|:---:|:---:|:---|:---|
+| `CO_UNIDADE` | `object` (`str`) | Não | `'2609602569302'` | Identificador composto interno do DATASUS (código IBGE 6 dígitos + código CNES 7 dígitos). |
+| `CO_CNES` | `object` (`str`) | Não | `'2569302'` | Código Nacional de Estabelecimento de Saúde (7 dígitos). Chave primária na dimensão Silver (`codigo_cnes`). |
+| `NO_RAZAO_SOCIAL` | `object` (`str`) | Sim | `'PREFEITURA MUNICIPAL DE OLINDA'` | Razão social da entidade mantenedora ou hospital. |
+| `NO_FANTASIA` | `object` (`str`) | Sim | `'USF BULTRINS MONTE II'` | Nome público do estabelecimento (`nome_estabelecimento`). |
+| `NO_LOGRADOURO`, `NU_ENDERECO`, `NO_BAIRRO`, `CO_CEP` | `object` (`str`) | Sim | `'RUA DO SOL'`, `'120'`, `'CENTRO'`, `'53000000'` | Dados de endereço postal do estabelecimento. |
+| `TP_UNIDADE` / `CO_TIPO_UNIDADE` | `object` (`str`) | Sim | `'02'`, `'05'` | Código numérico da tipologia da unidade (chave estrangeira para `tbTipoUnidade`). |
+| `CO_ESTADO_GESTOR` | `object` (`str`) | Sim | `'26'` | Código numérico IBGE de 2 dígitos da Unidade Federativa gestora. |
+| `CO_MUNICIPIO_GESTOR` | `object` (`str`) | Não | `'260960'` | Código IBGE de **6 dígitos** (sem dígito verificador) do município gestor. |
+| `NU_LATITUDE` | `object` / `float64` | Sim (`NaN`) | `-8.0089` | Latitude cadastrada manualmente. Sujeita a inversão com longitude ou erro de sinal, tratada por `normalizar_par_coordenadas()`. |
+| `NU_LONGITUDE` | `object` / `float64` | Sim (`NaN`) | `-34.8553` | Longitude cadastrada manualmente. |
+| `TP_ESTAB_SEMPRE_ABERTO` | `object` (`str`) | Sim | `'S'` / `'N'` | Indica se o estabelecimento opera em regime ininterrupto de 24 horas (`funciona_24h`). |
+| `TP_GESTAO` | `object` (`str`) | Sim | `'M'` / `'E'` / `'D'` | Modalidade de gestão do SUS (`M` = Municipal, `E` = Estadual, `D` = Dupla). |
+| `CO_NATUREZA_JUR` | `object` (`str`) | Sim | `'1244'` | Código CONCLA da natureza jurídica da instituição (Pública, Privada, Filantrópica). |
+
+---
+
+### 6.2 `tbMunicipio202603.csv` (Tabela Auxiliar de Municípios — 13 colunas)
+
+| Coluna Nativa | Tipo Pandas | Nulável | Exemplo Real | Especificação Técnica |
+|:---|:---:|:---:|:---|:---|
+| `CO_MUNICIPIO` | `int64` | Não | `521971` | Código IBGE de 6 dígitos (chave de junção com `CO_MUNICIPIO_GESTOR` de `tbEstabelecimento`). |
+| `NO_MUNICIPIO` | `object` (`str`) | Não | `'SANTO ANTONIO DA BARRA'` | Nome do município no cadastro do Ministério da Saúde. |
+| `CO_SIGLA_ESTADO` | `object` (`str`) | Não | `'GO'` | Sigla de 2 letras da Unidade Federativa (`uf`). |
+| `NU_POPULACAO` | `float64` | Sim | `nan` | População estimada cadastrada na base do DATASUS. |
+
+---
+
+### 6.3 `tbTipoUnidade202603.csv` (Domínio de Tipologias — 2 colunas)
+
+| Coluna Nativa | Tipo Pandas | Nulável | Exemplo Real | Especificação Técnica |
+|:---|:---:|:---:|:---|:---|
+| `CO_TIPO_UNIDADE` | `int64` | Não | `5` / `69` | Código numérico da tipologia (ex.: `05` = Hospital Geral, `07` = Hospital Especializado, `73` = Pronto Atendimento). |
+| `DS_TIPO_UNIDADE` | `object` (`str`) | Não | `'HOSPITAL GERAL'` | Descrição textual da tipologia, utilizada por `classificar_categoria_unidade()` em `etl_dim_hospitais.py`. |
+
+---
+
+> **Trilha Modular — Etapa 04 de 18 (Ciclo 1.3 — Dicionário de Dados Brutos (`src/bronze/`))**: [Anterior: Ciclo 1.2 — Fontes Governamentais e APIs (`src/bronze/`)](FONTES_E_APIS.md) | [Portal Geral (`docs/README.md`)](../../docs/README.md) | [Próximo: Ciclos 2 e 3 — Hub da Camada Silver (`src/silver/`)](../silver/README.md)

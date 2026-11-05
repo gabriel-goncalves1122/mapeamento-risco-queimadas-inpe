@@ -1,18 +1,18 @@
-# Infraestrutura e Serviços Distribuídos (`infra/`) - CCO DataOps
+# Especificação Técnica: Infraestrutura Distribuída, Apache Druid e Apache Superset (`infra/`)
 
-Este diretório abriga as configurações, especificações de ingestão, perfis de dimensionamento de capacidade, scripts de testes e receitas de conteinerização do ecossistema distribuído **CCO-DataOps**.
+> **Trilha Modular — Etapa 17 de 18 (Ciclo 5.2 — Infraestrutura Apache Druid 34.0 e Superset (`infra/`))**: [Anterior: Ciclo 5.1 — Orquestração Apache Dagster (`src/orchestration/`)](../src/orchestration/README.md) | [Portal Geral (`docs/README.md`)](../docs/README.md) | [Próximo: Ciclo 5.3 — Scripts Operacionais, Manutenção e Benchmarks (`scripts/`)](../scripts/README.md)
 
-A arquitetura combina **Apache Druid** (banco OLAP colunar de baixa latência), **Apache Kafka / ZooKeeper** (buffer de streaming resiliente), **Apache Superset** (interface de visualização e exploração analítica) e **PostgreSQL** (metastore transacional das ferramentas).
+Este documento especifica a arquitetura de infraestrutura conteinerizada ([`infra/`](.)), as especificações de ingestão batch e streaming do **Apache Druid 34.0**, os perfis de dimensionamento de capacidade de hardware e o catálogo de consultas e dashboards do **Apache Superset**.
 
 ---
 
-## 🏗️ 1. Estrutura de Diretórios da Infraestrutura
+## 1. Estrutura de Diretórios
 
 ```text
 infra/
-├── README.md              # Este guia completo de infraestrutura
-├── druid/                 # Arquivos de configuração e specs do Apache Druid
-│   ├── specs/             # Especificações JSON de ingestão index_parallel e lookups
+├── README.md                              # Especificação técnica de infraestrutura OLAP e Superset
+├── druid/                                 # Configurações e especificações do Apache Druid
+│   ├── specs/                             # Especificações JSON de ingestão (Kafka e Batch)
 │   │   ├── dim_hospitais_cnes.json
 │   │   ├── dim_municipios_coordenadas.json
 │   │   ├── dim_ons_linhas_transmissao.json
@@ -20,128 +20,120 @@ infra/
 │   │   ├── dim_ons_subestacoes.json
 │   │   ├── dim_rodovias_federais.json
 │   │   ├── dim_terras_indigenas_funai.json
-│   │   ├── fato_focos_incendio.json
-│   │   ├── fato_eventos_incendio.json
-│   │   └── fogo_eventos_stdbscan.json
-│   └── profiles/          # Perfis de capacidade e dimensionamento de hardware do Druid
-│       ├── scenario_01_baseline.env     # Perfil 1.0 vCPU / 2GB RAM
-│       ├── scenario_02_balanced.env     # Perfil 2.0 vCPUs / 4GB RAM (Recomendado)
-│       └── scenario_03_query_heavy.env  # Perfil 4.0 vCPUs / 8GB RAM
-├── superset/              # Configuração e personalização do Apache Superset
-│   ├── Dockerfile         # Imagem personalizada com drivers sqlalchemy-druid
-│   ├── assets/            # Exportações de dashboards e datasources pré-configurados
-│   └── queries/           # Catálogo de consultas SQL especializadas por setor (ONS, FUNAI, Defesa Civil)
-└── tests/                 # Testes de contrato de specs e consultas SQL
-    ├── unit/
-    │   ├── test_druid_specs_contract.py  # Garante paridade entre specs JSON e CSVs Silver
-    │   └── test_superset_sql_contract.py # Valida sintaxe e conformidade das queries SQL do catálogo
-    └── integration/
-        └── test_data_integrity.py        # Testes end-to-end com contêineres Docker ativos
+│   │   ├── fato_focos_incendio.json       # Supervisor Kafka: streaming_focos_incendio
+│   │   ├── fato_eventos_incendio.json     # Supervisor Kafka: streaming_eventos_incendio
+│   │   └── fogo_eventos_stdbscan.json     # Ingestão batch alternativa de eventos
+│   └── profiles/                          # Perfis de capacidade de hardware e JVM
+│       ├── scenario_01_baseline.env       # 1.0 vCPU / 2.0 GB RAM total
+│       ├── scenario_02_balanced.env       # 2.0 vCPUs / 4.0 GB RAM total
+│       └── scenario_03_query_heavy.env    # 4.0 vCPUs / 8.0 GB RAM total
+└── superset/                              # Customização e ativos do Apache Superset
+    ├── Dockerfile                         # Imagem customizada com driver pydruid / sqlalchemy
+    ├── assets/                            # Exportações JSON/YAML de dashboards e charts
+    └── queries/                           # Catálogo de consultas SQL analíticas por domínio
 ```
 
 ---
 
-## 🗄️ 2. Topologia do Cluster Apache Druid 34.0
+## 2. Topologia do Cluster Apache Druid 34.0
 
-O Apache Druid foi escolhido como o coração analítico por sua capacidade de entregar agregações de streaming em **sub-segundos (~35ms)** utilizando formato colunar nativo e indexação compacta com **bitmaps Roaring**.
-
-A stack distribuída no `docker-compose.yaml` organiza o Druid nos seguintes processos especializados:
+A infraestrutura definida em [`docker-compose.yaml`](../docker-compose.yaml) separa o Apache Druid em 5 serviços especializados conectados ao **Apache Kafka** (porta `9092`), **PostgreSQL** (metadados) e **Apache Superset** (porta `8088`):
 
 ```mermaid
 flowchart TD
-    subgraph INGESTION [Plano de Ingestão]
-        kafka(Apache Kafka: 9092)
-        dims[(Arquivos CSV Silver: /opt/src/silver/data/dimensions)]
+    subgraph STREAM_SOURCE ["Ingestão e Arquivos Dimensionais"]
+        kafka(["Apache Kafka (9092)<br>Tópicos: streaming_focos_incendio / streaming_eventos_incendio"])
+        dims[("CSVs Silver Montados:<br>/opt/src/silver/data/dimensions/*.csv")]
     end
 
-    subgraph DRUID_CLUSTER [Cluster Apache Druid 34.0]
-        coord[Coordinator: 8081<br>Gestão de Segmentos e Lookups]
-        overlord[Overlord: 8081<br>Escalonamento de Tarefas]
-        mm[MiddleManager: 8091<br>Indexação Kafka Streaming e Batch]
-        hist[Historical: 8083<br>Servimento de Segmentos Imutáveis]
-        broker[Broker: 8082<br>Roteamento SQL e Resolução de Lookups]
-        router[Router: 8888<br>Console Web Unificado]
+    subgraph DRUID ["Cluster Apache Druid 34.0"]
+        coord["Coordinator & Overlord (8081)<br>Orquestração de Tasks e Lookups URI"]
+        mm["MiddleManager (8091)<br>Kafka Indexing Service (Peons) e Batch index_parallel"]
+        hist["Historical (8083)<br>Servimento de Segmentos Colunares Imutáveis (LZ4 + Roaring)"]
+        broker["Broker (8082)<br>Planejamento SQL, Scatter-Gather e Resolução de Lookups"]
+        router["Router (8888)<br>Gateway HTTP e Console de Governança"]
     end
 
-    subgraph CLIENTS [Consumidores e Visualização]
-        superset(Apache Superset: 8088)
-        analyst(Analistas via SQL / BI)
+    subgraph BI ["Visualização e Consultas"]
+        superset["Apache Superset (8088)<br>Dashboards Operacionais e Deck.gl"]
     end
 
-    kafka -->|Kafka Indexing Service| mm
-    dims -.->|cachedNamespace file://| coord
-    coord -->|Distribui Segmentos| hist
-    mm -->|Publica Segmentos| hist
-    broker -->|Consulta Paralela| hist
-    broker -->|Consulta Dados em Voo| mm
+    kafka -->|"Consumo Contínuo (KIS)"| mm
+    dims -.->|"Leitura URI file://"| coord
+    dims -.->|"Ingestão index_parallel"| mm
+    coord -->|"Sincroniza 23 Lookups cachedNamespace"| broker
+    coord -->|"Sincroniza 23 Lookups cachedNamespace"| hist
+    coord -->|"Sincroniza 23 Lookups cachedNamespace"| mm
+    mm -->|"Publica Segmentos Consolidados"| hist
+    broker -->|"Consulta Segmentos em Tempo Real"| mm
+    broker -->|"Consulta Segmentos Históricos"| hist
     router --> broker
-    superset --> broker
-    analyst --> router
+    superset -->|"druid://broker:8082/druid/v2/sql"| broker
 ```
 
-### Processos e Funções dos Nós:
-1. **Coordinator & Overlord (`port 8081`)**:
-   - O *Coordinator* gerencia o ciclo de vida dos segmentos em disco e sincroniza os mapas de *Lookup* (`cachedNamespace`).
-   - O *Overlord* orquestra os *Peons* (trabalhadores) de ingestão streaming do Kafka e indexação em lote.
-2. **MiddleManager (`port 8091`)**:
-   - Executa os trabalhadores que leem continuamente os tópicos `focos-incendio` e `eventos-incendio` do Kafka via *Kafka Indexing Service* (KIS).
-   - Mantém os dados recentes em memória (*real-time index*) imediatamente consultáveis antes de persistir segmentos no Deep Storage.
-3. **Historical (`port 8083`)**:
-   - Carrega e serve os segmentos colunares imutáveis com compressão LZ4 a partir do disco compartilhado (`/opt/shared`).
-4. **Broker (`port 8082`)**:
-   - Ponto de entrada das consultas SQL do Superset. Converte SQL em consultas analíticas nativas do Druid, distribui para os nós Historical e MiddleManager e faz a resolução de campos dimensionais via *Lookups*.
-5. **Router (`port 8888`)**:
-   - Interface Web de governança e console de administração.
+### Funções dos Nós no Cluster
+
+| Serviço | Porta | Responsabilidade Técnica |
+| :--- | :-: | :--- |
+| **Coordinator / Overlord** | `8081` | Gerencia o balanceamento de segmentos entre nós `Historical`, recebe o registro dos 23 mapas de Lookup via REST (`/druid/coordinator/v1/lookups/config`) e agenda tasks de ingestão (`index_parallel` e supervisores `kafka`). |
+| **MiddleManager** | `8091` | Executa processos trabalhadores (*Peons*) que consomem continuamente os tópicos Kafka (`streaming_focos_incendio` e `streaming_eventos_incendio`), mantendo buffers indexados em memória imediatamente consultáveis antes do *handoff* para o Deep Storage. |
+| **Historical** | `8083` | Carrega segmentos imutáveis do volume compartilhado (`/opt/shared`), utilizando compressão colunar `LZ4` e índices de bitmap `Roaring` para filtragem booleana de baixa latência. |
+| **Broker** | `8082` | Recebe consultas SQL nativas do Apache Superset (`/druid/v2/sql`), distribui subconsultas em paralelo para `MiddleManager` e `Historical` (*scatter-gather*) e resolve as funções `LOOKUP(fk, 'namespace')` em memória RAM. |
+| **Router** | `8888` | Roteador de API e interface web unificada de monitoramento de supervisores, tasks, segmentos e lookups. |
 
 ---
 
-## ⚙️ 3. Perfis de Dimensionamento e Gestão de Memória (`infra/druid/profiles/`)
+## 3. Especificações de Ingestão (`infra/druid/specs/`)
 
-Para testes de estresse e avaliação de desempenho, a pasta `infra/druid/profiles/` fornece 3 cenários de configuração de hardware parametrizáveis:
+### 3.1 Supervisores de Streaming Kafka (Tabelas Fato)
 
-| Perfil | Arquivo | Recursos vCPU / RAM | JVM Broker (`JAVA_OPTS`) | Uso Recomendado |
-|:---|:---|:---:|:---|:---|
-| **Baseline** | `scenario_01_baseline.env` | 1.0 vCPU / 2.0 GB | `-Xms128m -Xmx256m` | Ambiente de desenvolvimento leve com volume reduzido. |
-| **Balanced** | `scenario_02_balanced.env` | 2.0 vCPUs / 4.0 GB | `-Xms256m -Xmx512m -XX:MaxDirectMemorySize=512m` | **Padrão de Produção**: Suporta 16 clientes concorrentes com 0% de erro e 2.0 QPS. |
-| **Query-Heavy** | `scenario_03_query_heavy.env` | 4.0 vCPUs / 8.0 GB | `-Xms512m -Xmx1024m -XX:MaxDirectMemorySize=1024m` | Cargas densas de processamento com cache intensivo de consultas complexas. |
+As especificações [`fato_focos_incendio.json`](druid/specs/fato_focos_incendio.json) e [`fato_eventos_incendio.json`](druid/specs/fato_eventos_incendio.json) configuram supervisores nativos do tipo `"kafka"` com as seguintes regras técnicas:
 
----
+| Parâmetro da Spec | `fato_focos_incendio.json` | `fato_eventos_incendio.json` | Descrição e Regra de Engenharia |
+| :--- | :--- | :--- | :--- |
+| `ioConfig.topic` | `streaming_focos_incendio` | `streaming_eventos_incendio` | Tópico Kafka consumido pelo supervisor. |
+| `ioConfig.useEarliestOffset` | `true` | `true` | Inicia leitura desde o offset inicial da partição caso não haja checkpoint prévio. |
+| `ioConfig.taskDuration` | `"PT1H"` | `"PT15M"` | Duração máxima da task de indexação antes do *handoff* do segmento para o nó `Historical`. |
+| `tuningConfig.maxRowsInMemory` | `30000` | `30000` | Limite de linhas em heap antes do *spill* intermediário para disco (`intermediatePersistPeriod = PT5M`). |
+| `tuningConfig.maxRowsPerSegment` | `5000000` | `5000000` | Cardinalidade máxima por segmento colunar gerado. |
+| `timestampSpec.column` | `data_hora` | `data_inicio` | Coluna mapeada para a partição temporal primária `__time`. |
+| `granularitySpec` | `segmentGranularity: DAY`, `queryGranularity: NONE`, `rollup: false` | `segmentGranularity: DAY`, `queryGranularity: NONE`, `rollup: false` | Preserva cada foco/evento individual sem pré-agregação destrutiva (`rollup: false`), particionando segmentos por dia. |
+| `multiValueHandling` | — | `SORTED_SET` em `codigos_ibge_interceptados` e `codigos_ti_interceptadas` | Armazena listas JSON de municípios e Terras Indígenas atingidas como dimensões multivaloradas ordenadas sem duplicatas. |
 
-## 🗺️ 4. Mecanismo de Lookups URI em Memória
+#### Amostragem Determinística em Tempo de Ingestão (`sample_bucket`)
+Ambas as tabelas fato aplicam uma expressão nativa do Druid no bloco `transformSpec` para gerar a coluna inteira `sample_bucket` $\in [0, 99]$:
+```text
+abs(timestamp_extract(__time,'EPOCH') * 31 + cast(latitude * 1000, 'LONG') * 17 + cast(longitude * 1000, 'LONG') * 13) % 100
+```
+*(Em `fato_eventos_incendio.json`, utilizam-se `latitude_centroide` e `longitude_centroide`.)*
+Essa transformação permite que os mapas Deck.gl no Apache Superset apliquem downsampling espacialmente uniforme (`WHERE sample_bucket < 20`) usando índices nativos sem recorrer a `RAND()` em tempo de leitura.
 
-Em conformidade com a modelagem **Snowflake**, as tabelas fato (`FATO_FOCOS` e `FATO_EVENTOS`) contêm exclusivamente Foreign Keys numéricas. Para que o Apache Superset possa consultar nomes e atributos das infraestruturas em tempo real sem degradação de performance:
+### 3.2 Ingestão Batch de Dimensões (`index_parallel`)
 
-* Os arquivos CSV em `src/silver/data/dimensions` são montados no contêiner em `/opt/src/silver/data/dimensions`.
-* O serviço [`DruidLookupRegistrar`](file:///c:/Users/SEPLAN/Documents/UNIFEI/UNIVERSIDADE/mapeamento-risco-queimadas-inpe/src/silver/lookups/druid_lookup_registrar.py) despacha uma requisição HTTP REST para a API do Coordinator (`/druid/coordinator/v1/lookups/config`).
-* O Druid cria mapas `cachedNamespace` indexados por chave primária, mantidos em memória RAM.
-* **Consulta SQL Otimizada**:
-  ```sql
-  SELECT 
-    LOOKUP(fk_municipio_ibge, 'municipios_nome') AS municipio,
-    LOOKUP(fk_subestacao, 'subestacao_nome') AS subestacao,
-    LOOKUP(fk_subestacao, 'subestacao_risco_cascata') AS risco_cascata,
-    SUM(frp) AS total_frp
-  FROM fato_focos_incendio
-  GROUP BY 1, 2, 3
-  ```
-  A resolução ocorre em tempo $O(1)$, evitando *JOINs* relacionais que comprometeriam a latência sub-segundo do OLAP.
+Os 7 arquivos `dim_*.json` em [`infra/druid/specs/`](druid/specs/) utilizam tasks do tipo `index_parallel` com `inputSource.type = "local"` apontando para `/opt/src/silver/data/dimensions/*.csv`. Como dimensões estáticas não possuem série temporal natural, aplicam um timestamp constante (`1970-01-01T00:00:00Z`) e `segmentGranularity: ALL`, consolidando cada dimensão em um único segmento compacto para consultas geoespaciais de polígonos `path_json` no Superset.
 
 ---
 
-## 📊 5. Apache Superset e Dashboards Táticos
+## 4. Perfis de Dimensionamento de Capacidade (`infra/druid/profiles/`)
 
-O **Apache Superset** atua como camada de apresentação visual dos dados:
-* Conexão nativa com o Druid via conector SQLAlchemy `druid://broker:8082/druid/v2/sql`.
-* Os dashboards operacionais são inicializados automaticamente pelo script [`scripts/bootstrap_stack.sh`](file:///c:/Users/SEPLAN/Documents/UNIFEI/UNIVERSIDADE/mapeamento-risco-queimadas-inpe/scripts/bootstrap_stack.sh), que importa as definições de visualização de [`infra/superset/assets/`](file:///c:/Users/SEPLAN/Documents/UNIFEI/UNIVERSIDADE/mapeamento-risco-queimadas-inpe/infra/superset/assets/).
-* Renderização de camadas vetoriais espaciais (Linhas de Transmissão, Áreas de Desastre ST-DBSCAN e Terras Indígenas) através dos campos `path_json` usando o plugin Deck.gl integrado.
+Os arquivos `.env` em [`infra/druid/profiles/`](druid/profiles/) parametrizam os limites de cgroups do Docker (`CPUS`, `MEM_LIMIT`) e os argumentos da JVM (`JAVA_OPTS`) dos contêineres do Druid para os experimentos de avaliação de capacidade:
+
+| Perfil | Arquivo | Alocação Total (vCPU / RAM) | Heap / Direct Memory do Broker | Aplicação |
+| :--- | :--- | :-: | :--- | :--- |
+| **Cenário 01 — Baseline** | [`scenario_01_baseline.env`](druid/profiles/scenario_01_baseline.env) | `1.0 vCPU` / `2.0 GB` | `-Xms128m -Xmx256m` | Ambiente mínimo para validação funcional e testes de saturação precoce. |
+| **Cenário 02 — Balanced** | [`scenario_02_balanced.env`](druid/profiles/scenario_02_balanced.env) | `2.0 vCPUs` / `4.0 GB` | `-Xms256m -Xmx512m -XX:MaxDirectMemorySize=512m` | Perfil padrão de operação; sustenta até 16 clientes concorrentes sem erros HTTP. |
+| **Cenário 03 — Query-Heavy** | [`scenario_03_query_heavy.env`](druid/profiles/scenario_03_query_heavy.env) | `4.0 vCPUs` / `8.0 GB` | `-Xms512m -Xmx1024m -XX:MaxDirectMemorySize=1024m` | Perfil dimensionado para alta concorrência de agregações e varreduras temporais extensas. |
 
 ---
 
-## 🧪 6. Testes Automatizados da Infraestrutura
+## 5. Validação de Contratos de Infraestrutura
 
-Para verificar a conformidade das configurações e contratos de infraestrutura sem subir os contêineres:
+Os testes unitários em [`tests/unit/`](tests/unit/) validam estaticamente as especificações JSON do Druid e as consultas SQL do Apache Superset contra os dicionários de dados do projeto:
+
 ```bash
-uv run pytest infra/tests/unit/ -v
+uv run pytest infra/tests/unit/test_druid_specs_contract.py infra/tests/unit/test_superset_sql_contract.py
 ```
-* `test_druid_specs_contract.py`: Confirma que nenhum campo nas specs JSON está ausente nos CSVs Silver gerados.
-* `test_superset_sql_contract.py`: Valida a integridade semântica de todas as consultas do catálogo SQL contra o esquema colunar do Druid.
+
+---
+
+> **Trilha Modular — Etapa 17 de 18 (Ciclo 5.2 — Infraestrutura Apache Druid 34.0 e Superset (`infra/`))**: [Anterior: Ciclo 5.1 — Orquestração Apache Dagster (`src/orchestration/`)](../src/orchestration/README.md) | [Portal Geral (`docs/README.md`)](../docs/README.md) | [Próximo: Ciclo 5.3 — Scripts Operacionais, Manutenção e Benchmarks (`scripts/`)](../scripts/README.md)

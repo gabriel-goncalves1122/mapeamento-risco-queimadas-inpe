@@ -1,203 +1,140 @@
-# Camada Gold (Data Science & Streaming Serving) - CCO DataOps
+# Especificação Técnica: Camada Gold — Ciência de Dados e Publicação em Streaming (`src/gold/`)
 
-A **Camada Gold (Ouro)** representa o topo da arquitetura Medalhão. Sua finalidade é a geração de **Produtos de Dados Analíticos**, aplicação de **Modelos Científicos Avançados** (Machine Learning espaço-temporal e Teoria dos Grafos) e a entrega contínua de dados enriquecidos na **Última Milha de Streaming** (Kafka -> Apache Druid -> Apache Superset).
+> **Trilha Modular — Etapa 12 de 18 (Ciclo 4 — Hub da Camada Gold (`src/gold/`))**: [Anterior: Ciclo 3.2 — Enriquecimento e Índices Matemáticos (`src/silver/streaming_processing/`)](../silver/streaming_processing/README.md) | [Portal Geral (`docs/README.md`)](../../docs/README.md) | [Próximo: Ciclo 4.1 — Modelos Científicos ST-DBSCAN e Grafos SIN (`src/gold/science/`)](ARQUITETURA.md)
 
-Diferente das camadas anteriores (Bronze focada em ingestão pura e Silver focada em dimensões e cruzamentos geométricos), a Camada Gold é orientada a **valor de negócio e mitigação de desastres**.
+A camada Gold ([`src/gold/`](.)) consolida a modelagem analítica avançada e a publicação de mensagens em tempo real do pipeline **CCO DataOps**. Seus módulos transformam as detecções térmicas enriquecidas e as dimensões geoespaciais da camada Silver em dois produtos analíticos principais:
 
----
-
-## 1. Responsabilidades e Pilares da Camada Gold
-
-1. **Modelagem Científica e Inteligência Espaço-Temporal**:
-   - **ST-DBSCAN (*Spatio-Temporal Density-Based Clustering*)**: Agrupa anomalias térmicas atômicas em eventos contíguos de incêndio florestal no espaço e no tempo, delimitando o perímetro orgânico do fogo via envoltória convexa (*Convex Hull*).
-   - **Ciência de Redes (NetworkX)**: Constrói a topologia do Sistema Interligado Nacional (SIN) em grafos não orientados, computando métricas de *Betweenness Centrality* (Centralidade de Intermediação) e simulação de risco de contingência em cascata.
-2. **Streaming Dual-Branch (Última Milha)**:
-   - **Ramo Atômico (`focos-incendio`)**: Publicação contínua de detecções unitárias enriquecidas com Foreign Keys e distâncias euclidianas imediatas para monitoramento tático de sub-segundo.
-   - **Ramo Agregado (`eventos-incendio`)**: Micro-batching temporal que despacha os clusters de desastres consolidados, acompanhados de métricas de área ($km^2$), soma de FRP (MW) e polígonos `path_json`.
-3. **Preservação Rígida do Modelo Snowflake**:
-   - Respeita os contratos Pydantic [`FocoFatoPayload`](../../src/core/domain/foco_fato_payload.py) e [`EventoFatoPayload`](../../src/core/domain/evento_fato_payload.py).
-   - Não transita strings textuais decorativas no payload; todas as descrições são resolvidas via *Lookups* em tempo de consulta no Apache Druid.
+1. **Enriquecimento Topológico de Grafos (`SINNetworkCentralityModel`)**: constrói o grafo da malha de transmissão do Sistema Interligado Nacional (SIN) usando `cKDTree` e `NetworkX`, computa a centralidade de intermediação (*Betweenness Centrality*) ponderada por extensão de linha (`extensao_km`) e classifica o risco de queda em cascata (`risco_cascata`) em [`dim_ons_subestacoes.csv`](../silver/data/dimensions/dim_ons_subestacoes.csv).
+2. **Clusterização Espaço-Temporal (`EventizadorIncendios`) e Streaming Dual-Branch (`ProdutorFocosStreaming` / `ProdutorEventosStreaming`)**: agrupa focos de calor via algoritmo `ST-DBSCAN` em janelas temporais fechadas, constrói polígonos `convex_hull` / `buffer` em projeção métrica `EPSG:5880` e publica os payloads validados por contratos Pydantic nos tópicos `streaming_focos_incendio` e `streaming_eventos_incendio` do Apache Kafka.
 
 ---
 
-## 2. Estrutura de Diretórios da Camada
+## 1. Topologia de Diretórios e Módulos
 
 ```text
 src/gold/
-├── README.md              # Este guia geral da Camada Gold
-├── ARQUITETURA.md         # Documento arquitetural detalhado dos modelos POO e streaming
-├── DICIONARIO_DADOS.md    # Especificação das Tabelas Fato FATO_FOCOS e FATO_EVENTOS
-├── data/
-│   ├── fatos/             # Cache em disco das tabelas fato geradas
-│   └── results/           # Relatórios e benchmarks de ingestão
-├── science/               # Algoritmos avançados de Data Science
-│   ├── dbscan/            # Clusterização ST-DBSCAN segregada (SRP)
-│   │   ├── evento_config.py          # Dataclass imutável de hiperparâmetros
-│   │   ├── event_geometry_builder.py # Cálculo de Convex Hull e centroides
-│   │   └── eventizador.py            # Executável do algoritmo ST-DBSCAN
-│   └── networkx/          # Teoria dos Grafos da Rede Elétrica
-│       └── network_builder.py        # Modelo de Centralidade SIN (SINNetworkCentralityModel)
-├── streaming/             # Produtores de mensageria para o Apache Kafka
-│   ├── kafka_client.py               # Driver concreto KafkaEventProducer (StreamPublisherBase)
-│   ├── streaming_audit_logger.py     # Registro e auditoria de envio de mensagens
-│   ├── produtor_focos.py             # Publicador de streaming atômico
-│   └── produtor_eventos.py           # Publicador de streaming agregado
-└── tests/                 # Suíte de testes unitários e de contratos
+├── README.md                              # Hub arquitetural e operacional da Camada Gold
+├── ARQUITETURA.md                         # Especificação matemática e de classes de ST-DBSCAN e NetworkX
+├── DICIONARIO_DADOS.md                    # Esquema físico das tabelas fato FATO_FOCOS e FATO_EVENTOS
+├── data/                                  # Diretório de persistência de artefatos e telemetria Gold
+├── science/                               # Modelos científicos e topológicos
+│   ├── dbscan/                            # Agrupamento espaço-temporal ST-DBSCAN
+│   │   ├── evento_config.py               # Dataclass imutável EventoConfig
+│   │   ├── event_geometry_builder.py      # EventGeometryBuilder (Convex Hull, buffer EPSG:5880, path_json)
+│   │   └── eventizador.py                 # EventizadorIncendios (ST-DBSCAN 3D + enriquecimento espacial)
+│   └── networkx/                          # Teoria dos Grafos aplicada ao Setor Elétrico
+│       └── network_builder.py             # SINNetworkCentralityModel (cKDTree + Betweenness Centrality)
+└── streaming/                             # Clientes de rede e produtores Apache Kafka
+    ├── README.md                          # Especificação de rede, confiabilidade e produtores Kafka
+    ├── kafka_client.py                    # KafkaStreamClient (StreamPublisherBase + Context Manager)
+    ├── streaming_audit_logger.py          # StreamingAuditLogger (telemetria JSONL/CSV por chunk)
+    ├── produtor_focos.py                  # ProdutorFocosStreaming (publicador da FATO_FOCOS_INCENDIO)
+    └── produtor_eventos.py                # ProdutorEventosStreaming (publicador Dual-Branch em janela fechada)
 ```
 
 ---
 
-## 3. Arquitetura de Software e Classes (POO & SOLID)
-
-```mermaid
-classDiagram
-    direction TB
-
-    class ExecutablePipelineStep {
-        <<abstract>>
-        +step_name: str
-        +execute(*args, **kwargs) Any
-        #_run(*args, **kwargs)* Any
-    }
-
-    class StreamPublisherBase {
-        <<abstract>>
-        +enviar(topico: str, payload: dict)* Any
-        +flush()* void
-        +flush_and_close()* void
-        +__enter__() StreamPublisherBase
-        +__exit__(exc_type, exc_val, exc_tb) bool
-    }
-
-    class EventoConfig {
-        +eps_km: float
-        +eps_dias: float
-        +min_samples: int
-        +max_duration_days: float
-    }
-
-    class EventGeometryBuilder {
-        +area_buffer_km: float
-        +pontos_metricos(df: DataFrame) GeoSeries
-        +construir_geometria(grupo: DataFrame) tuple
-    }
-
-    class EventizadorIncendios {
-        -config: EventoConfig
-        -geometry_builder: EventGeometryBuilder
-        -spatial_engine: SpatialEngineProtocol
-        #_run(df_focos: DataFrame) DataFrame
-    }
-
-    class SINNetworkCentralityModel {
-        -subestacoes_csv: Path
-        -linhas_csv: Path
-        -tolerance_degrees: float
-        +construir_grafo(df_sub, df_lin) tuple
-        +calcular_centralidade(G, df_sub) DataFrame
-        #_run() DataFrame
-    }
-
-    class KafkaEventProducer {
-        -producer: KafkaProducer
-        +enviar(topico: str, payload: dict) Any
-        +flush() void
-        +flush_and_close() void
-    }
-
-    class ProdutorFocosGold {
-        -spatial_engine: SpatialEngineProtocol
-        -publisher: StreamPublisherBase
-        -audit_logger: StreamingAuditLogger
-        +processar_streaming() void
-    }
-
-    ExecutablePipelineStep <|-- EventizadorIncendios : LSP
-    ExecutablePipelineStep <|-- SINNetworkCentralityModel : LSP
-    StreamPublisherBase <|-- KafkaEventProducer : LSP / DIP
-
-    EventizadorIncendios --> EventoConfig : composição
-    EventizadorIncendios --> EventGeometryBuilder : composição
-    ProdutorFocosGold --> StreamPublisherBase : DIP
-```
-
----
-
-## 4. Diagrama de Fluxo: Processamento Científico e Publicação Kafka
+## 2. Diagrama de Fluxo Dual-Branch e Integração Medallion
 
 ```mermaid
 flowchart TD
-    subgraph INSUMOS [Insumos Silver & Focos]
-        focos[(Focos Enriquecidos)]
-        linhas[(dim_ons_linhas)]
-        subs[(dim_ons_subestacoes)]
+    subgraph SILVER ["Camada Silver (Dimensões e Motor Espacial)"]
+        raw_focos[("focos_brutos_*.csv (Bronze)")]
+        dim_sub[("dim_ons_subestacoes.csv")]
+        dim_lin[("dim_ons_linhas_transmissao.csv")]
+        motor["MotorEspacial (7 SpatialLayers STRtree)"]
+        proc["ProcessadorFocos.transformar()"]
     end
 
-    subgraph SCIENCE [Modelagem Científica Gold]
-        net[SINNetworkCentralityModel: Betweenness Centrality NetworkX]
-        dbscan[EventizadorIncendios: ST-DBSCAN Clusterizer]
-        hull[EventGeometryBuilder: Convex Hull & path_json]
-        
-        linhas --> net
-        subs --> net
-        focos --> dbscan
-        dbscan --> hull
+    subgraph GOLD_SCIENCE ["Camada Gold — Ciência de Dados (src/gold/science/)"]
+        nx_model["SINNetworkCentralityModel (network_builder.py)"]
+        evt_cfg["EventoConfig (eps_km=5, eps_dias=2, min_samples=3)"]
+        geom_builder["EventGeometryBuilder (EPSG:5880 Convex Hull + path_json)"]
+        eventizador["EventizadorIncendios (eventizador.py)"]
+
+        dim_sub --> nx_model
+        dim_lin --> nx_model
+        nx_model -->|"Atualiza betweenness_score_norm e risco_cascata"| dim_sub
+
+        evt_cfg --> eventizador
+        geom_builder --> eventizador
+        motor --> eventizador
+        motor --> proc
     end
 
-    subgraph STREAMING [Publicação de Streaming]
-        prod_focos[ProdutorFocosGold: Ramo Atômico]
-        prod_eventos[ProdutorEventosGold: Ramo Agregado]
-        kafka_client[KafkaEventProducer / StreamPublisherBase]
-        
-        focos --> prod_focos
-        hull --> prod_eventos
-        net -.->|pesos de centralidade| prod_focos
-        
-        prod_focos --> kafka_client
-        prod_eventos --> kafka_client
+    subgraph GOLD_STREAM ["Camada Gold — Streaming Kafka (src/gold/streaming/)"]
+        prod_focos["ProdutorFocosStreaming (produtor_focos.py)"]
+        prod_eventos["ProdutorEventosStreaming (produtor_eventos.py)"]
+        audit["StreamingAuditLogger (streaming_audit_logger.py)"]
+        kafka["KafkaStreamClient (kafka_client.py)"]
+
+        raw_focos --> prod_focos
+        raw_focos --> prod_eventos
+        proc --> prod_focos
+        proc --> prod_eventos
+        eventizador --> prod_eventos
+        prod_eventos --> audit
+        prod_focos --> kafka
+        prod_eventos --> kafka
     end
 
-    subgraph TOPICS [Tópicos Apache Kafka]
-        top_focos(focos-incendio)
-        top_eventos(eventos-incendio)
-        
-        kafka_client --> top_focos
-        kafka_client --> top_eventos
+    subgraph KAFKA_DRUID ["Mensageria e OLAP (Kafka -> Apache Druid)"]
+        top_focos(["Tópico: streaming_focos_incendio"])
+        top_eventos(["Tópico: streaming_eventos_incendio"])
+        ds_focos[("Datasource: fato_focos_incendio")]
+        ds_eventos[("Datasource: fato_eventos_incendio")]
+
+        kafka --> top_focos --> ds_focos
+        kafka --> top_eventos --> ds_eventos
     end
 ```
 
 ---
 
-## 5. Guia Operacional de Execução
+## 3. Índice de Especificações Técnicas da Camada Gold
 
-### 5.1 Execução do Modelo de Teoria dos Grafos (NetworkX)
-Para calcular a Centralidade de Intermediação e os índices de cascata da malha de transmissão:
+| Submódulo / Documento | Escopo Técnico | Classes e Contratos Documentados |
+| :--- | :--- | :--- |
+| [**`ARQUITETURA.md`**](ARQUITETURA.md) | Modelagem matemática e algorítmica de clusterização espaço-temporal ST-DBSCAN 3D e teoria dos grafos do SIN. | [`EventoConfig`](science/dbscan/evento_config.py), [`EventGeometryBuilder`](science/dbscan/event_geometry_builder.py), [`EventizadorIncendios`](science/dbscan/eventizador.py), [`SINNetworkCentralityModel`](science/networkx/network_builder.py) |
+| [**`streaming/README.md`**](streaming/README.md) | Parâmetros de socket do `KafkaProducer`, garantia de entrega (`acks="all"`), telemetria de throughput e algoritmo de janela temporal fechada. | [`KafkaStreamClient`](streaming/kafka_client.py), [`StreamingAuditLogger`](streaming/streaming_audit_logger.py), [`ProdutorFocosStreaming`](streaming/produtor_focos.py), [`ProdutorEventosStreaming`](streaming/produtor_eventos.py) |
+| [**`DICIONARIO_DADOS.md`**](DICIONARIO_DADOS.md) | Catálogo campo a campo das duas tabelas fato, tipos Python/Druid, chaves estrangeiras Snowflake e funções geradoras. | [`FocoFatoPayload`](../core/domain/foco_fato_payload.py) (`29` colunas) e [`EventoFatoPayload`](../core/domain/evento_fato_payload.py) (`52` colunas) |
+
+---
+
+## 4. Procedimentos Operacionais Padrão (CLI via `uv`)
+
+### 4.1 Modelagem Topológica e Centralidade do SIN
+Reconstrói o grafo entre subestações e linhas de transmissão da ONS e atualiza `dim_ons_subestacoes.csv`:
 ```bash
 uv run python src/gold/science/networkx/network_builder.py
 ```
 
-### 5.2 Execução da Clusterização Espaço-Temporal (ST-DBSCAN)
-Para agrupar anomalias térmicas em macroeventos poligonais de queimadas:
+### 4.2 Clusterização ST-DBSCAN em Lote de Amostra
+Executa a eventização sobre uma amostra de focos brutos (`nrows=5000` por padrão):
 ```bash
 uv run python src/gold/science/dbscan/eventizador.py
 ```
 
-### 5.3 Simulação de Ingestão em Streaming para o Apache Kafka
-Para despachar os focos enriquecidos e eventos para os tópicos do Kafka:
+### 4.3 Publicação em Streaming: Focos Atômicos (`streaming_focos_incendio`)
+Despacha continuamente registros validados por `FocoFatoPayload` para o Apache Kafka:
 ```bash
 uv run python src/gold/streaming/produtor_focos.py
 ```
 
-### 5.4 Testes Automatizados da Camada Gold
-Para validar contratos Pydantic, algoritmos de agrupamento e publicadores:
+### 4.4 Publicação Dual-Branch com Telemetria: Focos e Eventos (`streaming_eventos_incendio`)
+Executa o micro-batching em janelas fechadas, despachando focos atômicos e eventos consolidados com geração opcional de arquivos de auditoria e progresso:
 ```bash
-uv run pytest src/gold/tests
+uv run python src/gold/streaming/produtor_eventos.py \
+  --debug-jsonl src/gold/data/auditoria_eventos.jsonl \
+  --progress-jsonl src/gold/data/progresso_eventos.jsonl \
+  --progress-csv src/gold/data/progresso_eventos.csv
+```
+
+### 4.5 Execução da Suíte de Testes Unitários e de Contratos Gold
+```bash
+uv run pytest src/gold/tests/unit/
 ```
 
 ---
 
-## 6. Documentos Complementares da Camada Gold
-
-Para aprofundar na engenharia e modelagem da camada:
-- 🏛️ [**ARQUITETURA.md**](ARQUITETURA.md): Detalhamento dos princípios de engenharia de dados, contratos Pydantic e governança de micro-batching.
-- 📋 [**DICIONARIO_DADOS.md**](DICIONARIO_DADOS.md): Especificação completa dos campos das tabelas fato `FATO_FOCOS_INCENDIO` e `FATO_EVENTOS_INCENDIO`.
+> **Trilha Modular — Etapa 12 de 18 (Ciclo 4 — Hub da Camada Gold (`src/gold/`))**: [Anterior: Ciclo 3.2 — Enriquecimento e Índices Matemáticos (`src/silver/streaming_processing/`)](../silver/streaming_processing/README.md) | [Portal Geral (`docs/README.md`)](../../docs/README.md) | [Próximo: Ciclo 4.1 — Modelos Científicos ST-DBSCAN e Grafos SIN (`src/gold/science/`)](ARQUITETURA.md)

@@ -1,14 +1,14 @@
-# Motor Espacial de Alta Performance (`src/silver/spatial/`) - CCO DataOps
+# Especificação Técnica: Motor de Indexação e Consulta Espacial (`src/silver/spatial/`)
 
-O subpacote `src/silver/spatial/` abriga o **Motor Espacial Vetorial** (*Spatial Engine*) do projeto **CCO-DataOps**. Sua responsabilidade é fornecer cruzamentos geográficos de altíssima performance, consultas de proximidade a infraestruturas críticas e cálculo de índices de ameaça em **tempo sub-segundo ($< 2\text{ ms}$ por coordenada)** para alimentar o pipeline de streaming da Camada Gold.
+> **Trilha Modular — Etapa 10 de 18 (Ciclo 3.1 — Motor Espacial STRtree em Memória (`src/silver/spatial/`))**: [Anterior: Ciclo 2.4 — Validadores de Qualidade e 23 Lookups URI (`src/silver/validators/`)](../validators/README.md) | [Portal Geral (`docs/README.md`)](../../../docs/README.md) | [Próximo: Ciclo 3.2 — Enriquecimento e Índices Matemáticos (`src/silver/streaming_processing/`)](../streaming_processing/README.md)
 
-O motor adota estritamente os princípios **SOLID** e a separação entre **Núcleo Funcional** (cálculo puro de distâncias e faixas de risco) e **Casca Orientada a Objetos** (gerenciamento em memória de índices R-Tree e buffers vetoriais).
+O pacote `src/silver/spatial/` implementa o motor geoespacial em memória (`MotorEspacial`), responsável por resolver junções topológicas ponto-em-polígono (`intersects`) e consultas de vizinho mais próximo (`nearest`) com cálculo de distância euclidiana exata na projeção métrica **SIRGAS 2000 / Brazil Polyconic (`EPSG:5880`)**.
 
 ---
 
-## 🏗️ 1. Arquitetura de Classes e Componentes (SOLID)
+## 1. Arquitetura e Modulação do Pacote Espacial
 
-O motor espacial foi decomposto em componentes com responsabilidade única (SRP):
+O design segrega o carregamento de arquivos, a definição declarativa das camadas, a discretização de distâncias e a execução das consultas sobre árvores espaciais R-Tree (`shapely.STRtree` via `GeoDataFrame.sindex`):
 
 ```mermaid
 classDiagram
@@ -16,116 +16,139 @@ classDiagram
 
     class SpatialEngineProtocol {
         <<protocol>>
-        +analisar_todas_ameacas(lat: float, lon: float) dict
-        +intersecoes_camada(nome_camada: str, coords: list) list
+        +analisar_todas_ameacas(latitude: float, longitude: float) dict~str, Any~
+        +intersecoes_camada(nome_camada: str, coordenadas: Iterable~tuple~) list~str~
     }
 
     class SpatialLayerSpec {
+        <<dataclass frozen>>
+        +path: str
         +nome: str
-        +caminho_arquivo: Path
+        +col_id: str
+        +prefixo: str
+        +atributos_map: Mapping~str, str~
+        +projetar_metrico: bool
         +tipo_geometria: str
-        +crs_origem: str
-        +colunas_relevantes: list[str]
-        +buffer_distancia_m: float
-    }
-
-    class SpatialLayerLoader {
-        +carregar_geometria(spec: SpatialLayerSpec) GeoDataFrame
-        +reprojetar_metrico(gdf: GeoDataFrame) GeoDataFrame
+        +output_id_key: str | None
     }
 
     class SpatialLayerCatalog {
-        -camadas: dict[str, SpatialLayerSpec]
-        +register(spec: SpatialLayerSpec) void
-        +get(nome: str) SpatialLayerSpec
-        +listar_camadas() list[str]
+        +PROXIMITY_LAYER_KEYS: tuple~str~
+        +OUTPUT_ID_KEYS: dict~str, str~
+        +DISTANCE_PREFIXES: tuple~str~
+        +default_specs(settings_obj) dict~str, SpatialLayerSpec~
+        +build_layers(settings_obj, layer_cls) dict~str, SpatialLayer~
+        +criar_resultado_vazio(limites_km) dict~str, Any~
+    }
+
+    class SpatialLayerLoader {
+        +carregar(path, nome, tipo_geometria, projetar_metrico) tuple~GeoDataFrame, GeoDataFrame~
+        +path_json_para_geom(valor, tipo_geometria, nome) BaseGeometry | None
+        +wkt_para_geom(valor) BaseGeometry | None
+        +normalizar_coord(valor) float | None
     }
 
     class DistanceClassifier {
-        +classificar_faixa_linha(dist_km: float) str
-        +classificar_faixa_subestacao(dist_km: float) str
-        +classificar_faixa_hospital(dist_km: float) str
-        +calcular_score_ameaca(dist_km: float, peso: float) float
+        +limites_km: tuple~int~
+        +faixa_distancia(distancia_km: float | None) str
+        +flag_ate(distancia_km: float | None, limite_km: int) int
+        +flags_por_limite(prefixo: str, distancia_km: float | None) dict~str, int~
+        +extrair_atributos_intersecao(linha, atributos_map) dict~str, str~
+        +extrair_atributos_proximidade(linha, atributos_map) dict~str, Any~
+    }
+
+    class SpatialLayer {
+        +gdf_gps: GeoDataFrame | None
+        +gdf_metrico: GeoDataFrame | None
+        +intersecao(ponto_gps: Point) dict~str, Any~
+        +proximidade(ponto_metrico: Point) dict~str, Any~
     }
 
     class MotorEspacial {
-        -catalog: SpatialLayerCatalog
-        -loader: SpatialLayerLoader
-        -classifier: DistanceClassifier
-        -indices_strtree: dict[str, STRtree]
-        -geometrias_metricas: dict[str, GeoDataFrame]
-        +analisar_todas_ameacas(lat: float, lon: float) dict
-        +intersecoes_camada(nome_camada: str, coords: list) list
+        +camadas_proximidade: list~SpatialLayer~
+        +analisar_todas_ameacas(latitude: Any, longitude: Any) dict~str, Any~
+        +intersecoes_camada(nome_camada: str, coordenadas: Iterable) list~str~
     }
 
-    SpatialEngineProtocol <|.. MotorEspacial : implements (DIP / ISP)
-    MotorEspacial --> SpatialLayerCatalog : consulta (OCP)
-    MotorEspacial --> SpatialLayerLoader : delega I/O (SRP)
-    MotorEspacial --> DistanceClassifier : delega classificação pura (FCIS)
+    SpatialEngineProtocol <|.. MotorEspacial
+    MotorEspacial --> SpatialLayerCatalog : instancia via build_layers()
+    MotorEspacial *-- "7" SpatialLayer : agrega
+    SpatialLayerCatalog ..> SpatialLayerSpec : define 7 specs
+    SpatialLayer --> SpatialLayerLoader : delega I/O e CRS
+    SpatialLayer --> DistanceClassifier : delega faixas e coerção
 ```
 
-### 1.1 Responsabilidades dos Componentes
-1. **[`SpatialLayerSpec`](file:///c:/Users/SEPLAN/Documents/UNIFEI/UNIVERSIDADE/mapeamento-risco-queimadas-inpe/src/silver/spatial/spatial_layer_spec.py)**:
-   - Dataclass imutável que especifica os metadados de uma camada (caminho em disco, tipo primitivo `Point`, `LineString` ou `Polygon`, CRS de origem e regras de buffer).
-2. **[`SpatialLayerLoader`](file:///c:/Users/SEPLAN/Documents/UNIFEI/UNIVERSIDADE/mapeamento-risco-queimadas-inpe/src/silver/spatial/spatial_layer_loader.py)**:
-   - Responsável exclusivo pela leitura física (usando `pyogrio` para máxima velocidade) e reprojeção de `EPSG:4326` para o sistema métrico oficial brasileiro `EPSG:5880`.
-3. **[`SpatialLayerCatalog`](file:///c:/Users/SEPLAN/Documents/UNIFEI/UNIVERSIDADE/mapeamento-risco-queimadas-inpe/src/silver/spatial/spatial_layer_catalog.py)**:
-   - Catálogo desacoplado de infraestruturas (Open/Closed Principle - OCP). Novas camadas (ex: gasodutos ou ferrovias) podem ser registradas via `register()` sem modificar o motor.
-4. **[`DistanceClassifier`](file:///c:/Users/SEPLAN/Documents/UNIFEI/UNIVERSIDADE/mapeamento-risco-queimadas-inpe/src/silver/spatial/distance_classifier.py)**:
-   - Núcleo funcional puro que converte distâncias euclidianas em faixas operacionais (`IMEDIATA`, `PROXIMA`, `ALERTA`, `SEGURA`) e normaliza scores de ameaça de 0 a 100.
-5. **[`MotorEspacial`](file:///c:/Users/SEPLAN/Documents/UNIFEI/UNIVERSIDADE/mapeamento-risco-queimadas-inpe/src/silver/spatial/motor_espacial.py)**:
-   - Orquestrador em memória que constrói árvores espaciais STRtree e resolve consultas atômicas para os produtores Kafka.
-
 ---
 
-## 🗺️ 2. Sistemas de Coordenadas de Referência (CRS)
+## 2. Ciclo de Vida: Inicialização de Índices R-Tree e Consulta Runtime
 
-Para evitar erros clássicos de distorção de escala em análises geoespaciais, o motor adota uma regra rígida de dois níveis:
+### 2.1 Pré-Aquecimento da Árvore Espacial (`SpatialLayerLoader.carregar`)
+Para evitar que o custo de indexação ocorra durante o processamento de mensagens Kafka, o método `carregar()` reconstrói as geometrias a partir da coluna `path_json` (via `PathJsonCodec.path_json_para_geometry`), instancia o `GeoDataFrame` em `EPSG:4326` e acessa imediatamente a propriedade `_ = gdf_gps.sindex`, forçando a compilação em C (GEOS `STRtree`) da árvore espacial. Quando `projetar_metrico=True`, o `GeoDataFrame` é reprojetado para `EPSG:5880` (`gdf_gps.to_crs(epsg=5880)`) e sua árvore métrica `_ = gdf_metrico.sindex` também é pré-compilada em memória RAM.
 
-| Sistema de Coordenadas | Código EPSG | Finalidade no Ecossistema |
-|:---|:---:|:---|
-| **WGS84 Geográfico** | `EPSG:4326` | **Entrada e Saída**: Coordenadas brutas dos satélites orbitais (INPE), payloads JSON de mensageria Kafka e projeção de mapas táticos no Apache Superset (Deck.gl). |
-| **SIRGAS 2000 Brasil Policônica** | `EPSG:5880` | **Processamento Interno**: Projeção cartográfica plana métrica oficial. Utilizada exclusivamente para cálculo exato de distâncias euclidianas em quilômetros (`km`), áreas em $km^2$ e geração de buffers sem distorção angular. |
+### 2.2 Sequência de Consulta (`MotorEspacial.analisar_todas_ameacas`)
 
-> **Fluxo de Projeção**: O ponto $(lat, lon)$ chega em WGS84, é reprojetado pontualmente em memória para EPSG:5880, a distância em metros é extraída da árvore STRtree, convertida para quilômetros, e o resultado numérico é acoplado ao payload.
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as ProcessadorFocos / EventizadorIncendios
+    participant Engine as MotorEspacial
+    participant Mun as camada_municipios (EPSG:4326)
+    participant Funai as camada_funai (Híbrida 4326 + 5880)
+    participant Prox as 5 Camadas de Proximidade (EPSG:5880)
 
----
+    Caller->>Engine: analisar_todas_ameacas(latitude, longitude)
+    Engine->>Engine: _resultado_base() -> criar_resultado_vazio()
+    Engine->>Engine: Valida _coordenada_valida(lat, lon)
+    Engine->>Engine: Cria ponto_gps = Point(lon, lat) (EPSG:4326)<br>e reprojeta ponto_metrico para EPSG:5880
+    
+    Engine->>Mun: intersecao(ponto_gps) -> sindex.query(ponto_gps, predicate="intersects")
+    Mun-->>Engine: {id: codigo_ibge_espacial, flag: 1, attrs: {...}}
 
-## ⚡ 3. Aceleração Vetorial: STRtree ($O(\log N)$)
+    Engine->>Funai: intersecao(ponto_gps) -> sindex.query(ponto_gps, predicate="intersects")
+    Funai-->>Engine: {id: codigo_ti, flag: 0|1, attrs: {...}}
+    Engine->>Funai: proximidade(ponto_metrico) -> sindex.nearest(ponto_metrico)
+    Funai-->>Engine: {terra_indigena_id_proximo, distancia_terra_indigena_km, faixa, flags}
 
-Em pipelines de streaming com centenas de focos por segundo, calcular distâncias iterando linha a linha contra 5.564 municípios ou milhares de linhas elétricas teria custo linear $O(N)$, tornando o enriquecimento inviável.
+    loop Para cada camada em PROXIMITY_LAYER_KEYS (rodovias, linhas, subestacoes, sistemas, hospitais)
+        Engine->>Prox: proximidade(ponto_metrico) -> sindex.nearest(ponto_metrico)
+        Note over Prox: Calcula round(ponto_metrico.distance(geom) / 1000.0, 3)
+        Prox-->>Engine: {id_proximo, distancia_km, faixa_distancia, flags_ate_Nkm, attrs}
+    end
 
-O `MotorEspacial` utiliza o algoritmo **Sort-Tile-Recursive (STRtree)** da biblioteca Shapely (C/GEOS):
-* **Indexação Hierárquica em Memória**: Na inicialização (*cold start* de ~5 segundos), todas as geometrias de infraestruturas são organizadas em uma árvore R-Tree multidimensional balanceada.
-* **Busca do Vizinho Mais Próximo (*Nearest Neighbor*)**: A localização da subestação, hospital ou trecho rodoviário mais próximo de um foco é executada em **$O(\log N)$**.
-* **Interseção Ponto-Polígono (*Point-in-Polygon*)**: A determinação do município gestor e da Terra Indígena sobreposta utiliza a árvore como filtro de envoltória (*bounding box filter*), testando a geometria exata apenas para candidatos pré-filtrados.
-* **Performance Real**: Cada foco de incêndio tem suas 7 ameaças simultâneas calculadas em **$< 2\text{ milissegundos}$**.
-
----
-
-## 🔒 4. Preservação do Modelo Snowflake
-
-O método `MotorEspacial.analisar_todas_ameacas(lat, lon)` retorna **exclusivamente**:
-1. **Chaves Estrangeiras (FKs)**: `fk_municipio`, `fk_subestacao`, `fk_linha_transmissao`, `fk_terra_indigena`, `fk_hospital_proximo`, `fk_trecho_rodoviario`.
-2. **Métricas Físicas**: `distancia_linha_km`, `distancia_subestacao_km`, `distancia_hospital_km`, `distancia_ti_km`, `distancia_rodovia_km`.
-3. **Índices de Ameaça**: `indice_ameaca_linha`, `indice_ameaca_subestacao`, etc.
-
-Nenhum texto descritivo (nome do hospital, município ou etnia indígena) é gerado pelo motor, preservando a regra Snowflake do projeto.
-
----
-
-## 🧪 5. Testabilidade com Mocks (DIP)
-
-Por implementar [`SpatialEngineProtocol`](file:///c:/Users/SEPLAN/Documents/UNIFEI/UNIVERSIDADE/mapeamento-risco-queimadas-inpe/src/core/contracts/contracts.py), qualquer consumidor da Camada Gold pode ser testado unitariamente com um mock simples em memória sem instanciar árvores espaciais:
-
-```python
-class MockSpatialEngine(SpatialEngineProtocol):
-    def analisar_todas_ameacas(self, lat: float, lon: float) -> dict[str, Any]:
-        return {
-            "fk_municipio": "355030",
-            "distancia_linha_km": 1.5,
-            "indice_ameaca_linha": 90.0,
-            "fk_linha_transmissao": "LT_TESTE",
-        }
+    Engine-->>Caller: Dicionário consolidado (72 chaves)
 ```
-Isso permite que testes da Camada Gold rodem em $< 50\text{ ms}$ no pytest.
+
+---
+
+## 3. Especificação Declarativa das 7 Camadas (`SpatialLayerCatalog.default_specs`)
+
+Definidas em [`spatial_layer_catalog.py`](spatial_layer_catalog.py), as 7 instâncias de [`SpatialLayerSpec`](spatial_layer_spec.py) configuram o comportamento de cada dimensão no motor:
+
+| Chave da Camada | CSV Fonte (`settings`) | `col_id` (PK) | `prefixo` | `tipo_geometria` | `projetar_metrico` | `output_id_key` | Atributos Mapeados (`atributos_map`) |
+|:---|:---|:---|:---|:---:|:---:|:---|:---|
+| `camada_municipios` | `dim_municipios_coordenadas.csv` | `codigo_ibge` | `municipio_espacial` | `"polygon"` | `False` (apenas `intersects` em 4326) | `codigo_ibge_espacial` | `municipio_espacial_nome` $\leftarrow$ `municipios_nome`<br>`municipio_espacial_estado` $\leftarrow$ `estado_sigla`<br>`municipio_espacial_regiao` $\leftarrow$ `regiao_brasil` |
+| `camada_funai` | `dim_terras_indigenas.csv` | `codigo_ti` | `terra_indigena` | `"polygon"` | `True` (`intersects` + `nearest`) | `codigo_ti_proxima` | `terra_indigena_nome` $\leftarrow$ `nome_terra_indigena`<br>`terra_indigena_prioridade` $\leftarrow$ `prioridade_funai`<br>`terra_indigena_classe_area` $\leftarrow$ `classe_area_ti` |
+| `camada_rodovias` | `dim_rodovias_federais.csv` | `id_trecho_rodoviario` | `rodovia` | `"line"` | `True` (`nearest` em 5880) | `id_trecho_rodoviario` | `rodovia_codigo` $\leftarrow$ `codigo_rodovia`<br>`rodovia_criticidade` $\leftarrow$ `criticidade_rodovia`<br>`rodovia_classe_revestimento` $\leftarrow$ `classe_revestimento` |
+| `camada_linhas` | `dim_ons_linhas_transmissao.csv` | `id_linha_transmissao` | `linha` | `"line"` | `True` (`nearest` em 5880) | `id_linha_transmissao` | `linha_nome` $\leftarrow$ `nome_linha`<br>`linha_tensao_kv` $\leftarrow$ `tensao_kv` (`float`)<br>`linha_classe_tensao` $\leftarrow$ `classe_tensao`<br>`linha_criticidade` $\leftarrow$ `classe_criticidade_linha` |
+| `camada_subestacoes` | `dim_ons_subestacoes.csv` | `id_subestacao` | `subestacao` | `"point"` | `True` (`nearest` em 5880) | `id_subestacao` | `subestacao_nome` $\leftarrow$ `nome_subestacao`<br>`subestacao_capacidade_mw` $\leftarrow$ `capacidade_mw` (`float`)<br>`subestacao_criticidade` $\leftarrow$ `criticidade_subestacao` |
+| `camada_sistemas` | `dim_ons_sistemas_isolados.csv` | `id_sistema_isolado` | `sistema_isolado` | `"point"` | `True` (`nearest` em 5880) | `id_sistema_isolado` | `sistema_isolado_nome` $\leftarrow$ `nome_sistema_isolado`<br>`sistema_isolado_prioridade` $\leftarrow$ `prioridade_sistema_isolado` |
+| `camada_hospitais` | `dim_hospitais_cnes.csv` | `codigo_cnes` | `hospital` | `"point"` | `True` (`nearest` em 5880) | `codigo_cnes_prox` | `hospital_nome` $\leftarrow$ `nome_hospital`<br>`hospital_categoria` $\leftarrow$ `categoria_unidade`<br>`hospital_critico` $\leftarrow$ `tipo_unidade_critica`<br>`hospital_funciona_24h` $\leftarrow$ `funciona_24h`<br>`hospital_capacidade_classe` $\leftarrow$ `categoria_atendimento` |
+
+---
+
+## 4. Catálogo de Métodos e Funções do Pacote `src/silver/spatial/`
+
+| Classe / Método | Assinatura | Especificação e Complexidade |
+|:---|:---|:---|
+| `SpatialLayerLoader.carregar` | `(self, path: str \| Path, nome: str, tipo_geometria: str = "point", projetar_metrico: bool = False) -> tuple[GeoDataFrame \| None, GeoDataFrame \| None]` | Lê o CSV dimensional com `dtype=str` e reconstrói a coluna `geometry` seguindo a ordem de precedência: 1º `path_json` via `PathJsonCodec`, 2º `geometria_wkt` via `shapely.wkt.loads`, 3º `points_from_xy(longitude, latitude)`. Compila `gdf_gps.sindex` (`EPSG:4326`) e opcionalmente `gdf_metrico.sindex` (`EPSG:5880`). |
+| `DistanceClassifier.faixa_distancia` | `(distancia_km: float \| None) -> str` | Discretiza a distância métrica em 7 categorias:<br>• `None` ou `< 0`: `"SEM_DISTANCIA"`<br>• `<= 1`: `"ATE_1KM"`<br>• `<= 3`: `"ATE_3KM"`<br>• `<= 7`: `"ATE_7KM"`<br>• `<= 15`: `"ATE_15KM"`<br>• `<= 50`: `"ATE_50KM"`<br>• `> 50`: `"ACIMA_50KM"` |
+| `DistanceClassifier.flags_por_limite` | `(self, prefixo: str, distancia_km: float \| None) -> dict[str, int]` | Para cada limite $L \in (1, 3, 7, 15, 50)$, gera a chave `f"{prefixo}_ate_{L}km"` com valor `1` se $0 \le \text{distancia\_km} \le L$, ou `0` caso contrário. |
+| `DistanceClassifier.extrair_atributos_proximidade` | `(cls, linha: Mapping, atributos_map: Mapping[str, str]) -> dict[str, Any]` | Extrai os atributos da feição mais próxima. Se o nome da chave de saída terminar em `"_kv"` (`linha_tensao_kv`) ou `"_mw"` (`subestacao_capacidade_mw`), converte o valor para `float | None` via `normalizar_float()`; para os demais campos, aplica `normalizar_texto()`. |
+| `SpatialLayer.intersecao` | `(self, ponto_gps: Point) -> dict[str, Any]` | Executa `self.gdf_gps.sindex.query(ponto_gps, predicate="intersects")` em complexidade $O(\log N)$. Se houver colisão, retorna `{"id": PK, "flag": 1, "attrs": {...}}`; caso contrário, retorna `{"id": "NAO INFORMADO", "flag": 0, "attrs": {}}`. |
+| `SpatialLayer.proximidade` | `(self, ponto_metrico: Point) -> dict[str, Any]` | Executa `gdf_alvo.sindex.nearest(ponto_metrico)[1][0]` em complexidade $O(\log N)$ sobre as geometrias em `EPSG:5880` e calcula a distância exata `round(ponto_metrico.distance(linha_alvo.geometry) / 1000.0, 3)`. |
+| `MotorEspacial.intersecoes_camada` | `(self, nome_camada: str, coordenadas: Iterable[tuple[float, float]]) -> list[str]` | Itera sobre uma sequência de pares `(lat, lon)`, consulta `camada.intersecao(Point(lon, lat))` e retorna a lista de chaves primárias válidas interceptadas (utilizado pelo `EventizadorIncendios` para identificar todos os municípios e TIs cobertos por um cluster ST-DBSCAN). |
+| `MotorEspacial.analisar_todas_ameacas` | `(self, latitude: Any, longitude: Any) -> dict[str, Any]` | Executa a varredura completa das 7 camadas para um ponto `(latitude, longitude)`, retornando um dicionário padronizado de 72 chaves (chaves estrangeiras, distâncias em km, faixas categóricas, 30 flags binárias `_ate_Nkm` e atributos técnicos como `linha_tensao_kv` e `subestacao_capacidade_mw`). |
+
+---
+
+> **Trilha Modular — Etapa 10 de 18 (Ciclo 3.1 — Motor Espacial STRtree em Memória (`src/silver/spatial/`))**: [Anterior: Ciclo 2.4 — Validadores de Qualidade e 23 Lookups URI (`src/silver/validators/`)](../validators/README.md) | [Portal Geral (`docs/README.md`)](../../../docs/README.md) | [Próximo: Ciclo 3.2 — Enriquecimento e Índices Matemáticos (`src/silver/streaming_processing/`)](../streaming_processing/README.md)

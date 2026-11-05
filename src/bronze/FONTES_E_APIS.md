@@ -1,120 +1,148 @@
-# Catálogo Técnico de Fontes e APIs - Camada Bronze
+# Especificação Técnica: Fontes de Dados, APIs e Particularidades Operacionais (`src/bronze/`)
 
-Este documento consolida as especificações técnicas, métodos de coleta, endpoints de APIs governamentais, limitações de taxa (*rate limiting*), frequências de atualização e formatos de entrega de todos os dados consumidos na **Camada Bronze**.
+> **Trilha Modular — Etapa 03 de 18 (Ciclo 1.2 — Fontes Governamentais e APIs (`src/bronze/`))**: [Anterior: Ciclo 1.1 — Hub da Camada Bronze e Extratores (`src/bronze/`)](README.md) | [Portal Geral (`docs/README.md`)](../../docs/README.md) | [Próximo: Ciclo 1.3 — Dicionário de Dados Brutos (`src/bronze/`)](DICIONARIO_DADOS.md)
 
-As referências bibliográficas oficiais dos provedores governamentais estão alinhadas com o referencial teórico e a bibliografia do Relatório Final de Iniciação Científica ([`docs/academic/relatorio_final/referencias.bib`](../../docs/academic/relatorio_final/referencias.bib)).
-
----
-
-## 1. ANEEL / ONS (Sistema de Informações Geográficas do Setor Elétrico - SIGEL)
-
-A infraestrutura de transmissão de energia do Sistema Interligado Nacional (SIN) é extraída de forma automatizada através da API ArcGIS Server REST mantida pela Agência Nacional de Energia Elétrica (ANEEL).
-
-* **Órgão Responsável:** Agência Nacional de Energia Elétrica (ANEEL) / Operador Nacional do Sistema Elétrico (ONS).
-* **Referência Oficial:** `aneel_sigel_2026` ([SIGEL ANEEL Portal](https://sigel.aneel.gov.br/arcgis/rest/services/PORTAL/)) e `ons_mapa_2026` ([Mapas do SIN - ONS](http://www.ons.org.br/paginas/sobre-o-sin/mapas)).
-* **Tipo de Acesso:** API REST pública (serviço ESRI ArcGIS Server MapServer).
-* **URL Base do Serviço:**
-  ```text
-  https://sigel.aneel.gov.br/arcgis/rest/services/PORTAL/Transmiss%C3%A3o/MapServer/{id}/query
-  ```
-* **Camadas Mapeadas ({id}):**
-  - **Layer `1`**: Linhas de Transmissão (`linhas_transmissao_ons.geojson`).
-  - **Layer `3`**: Subestações de Energia Elétrica (`subestacoes_ons.geojson`).
-  - **Layer `5`**: Sistemas Elétricos Isolados da Amazônia Legal (`sistemas_isolados_ons.geojson`).
-
-### 1.1 Parâmetros Técnicos da Consulta HTTP GET
-
-| Parâmetro | Valor Configurado | Justificativa Técnica |
-|---|---|---|
-| `where` | `1=1` | Cláusula SQL para retornar todo o conjunto de feições sem filtro preliminar de atributos. |
-| `outFields` | `*` | Retorna todos os atributos originais do MapServer (código, tensão, concessionária, extensão). |
-| `f` | `geojson` | Serializa o resultado no formato GeoJSON padrão IETF RFC 7946. |
-| `resultOffset` | Variável (0, 1000, 2000...) | Ponteiro de paginação para varredura do cursor de feições. |
-| `resultRecordCount` | `1000` | Limite máximo de registros permitidos por requisição pelo ArcGIS Server da ANEEL. |
-| `outSR` | `4326` | Força a reprojeção na origem do servidor para coordenadas geográficas WGS84 (`EPSG:4326`). |
-
-### 1.2 Regras de Resiliência e Throttling
-- **Rate Limiting:** A classe [`AneelArcGisExtractor`](src/ingestao_aneel.py) introduz uma pausa configurável (`rate_limit_s = 1.0` segundo) entre requisições consecutivas para mitigar bloqueios de IP (*HTTP 429 Too Many Requests*).
-- **Validação de Payload:** Caso o serviço retorne código HTTP diferente de 200 ou uma lista vazia de *features*, a iteração é interrompida com log explícito.
-- **Formato Final em Disco:** `src/bronze/data/aneel/{camada}_ons.geojson`.
+Este documento especifica os protocolos de comunicação, parâmetros de requisição HTTP, mecanismos de paginação, codificações de caracteres e particularidades técnicas de cada provedor governamental integrado à Camada Bronze.
 
 ---
 
-## 2. INPE / NASA (BDQueimadas - Programa Queimadas)
+## 1. Visão Comparativa dos Provedores e Protocolos
 
-O monitoramento de focos de incêndio e anomalias térmicas é fornecido pelo Instituto Nacional de Pesquisas Espaciais (INPE) através do banco de dados BDQueimadas, consolidando detecções de sensores orbitais óticos e infravermelhos termais.
-
-* **Órgão Responsável:** Instituto Nacional de Pesquisas Espaciais (INPE) e NASA.
-* **Referência Oficial:** `inpe_bdqueimadas_2026` ([BDQueimadas - Dados Abertos](https://data.inpe.br/queimadas/bdqueimadas/)) e `inpe_queimadas` ([Portal do Programa Queimadas](http://queimadas.dgi.inpe.br/queimadas/portal)).
-* **Algoritmo de Sensoriamento:** Giglio et al. (2016) - *Collection 6 MODIS Active Fire Detection Algorithm* ([DOI: 10.1016/j.rse.2016.02.054](https://doi.org/10.1016/j.rse.2016.02.054)).
-* **Satélites e Sensores Utilizados:**
-  - `AQUA_M-T` e `TERRA_M-T` (Sensor MODIS): Satélites de referência histórica para contagem estatística oficial.
-  - `NOAA-20` e `S-NPP` (Sensor VIIRS): Resolução espacial aprimorada (pixels de 375 m).
-  - Satélites geoestacionários (`GOES-16`): Monitoramento contínuo em alta frequência temporal.
-* **Formato de Entrega:** Arquivos tabulares CSV (estruturados por dia ou mês) e Web Service de dados abertos.
-* **Frequência de Atualização:**
-  - *Quase Tempo Real (NRT):* Pacotes incrementais atualizados a cada 3 horas.
-  - *Consolidação Diária:* Fechamento com aplicação de filtros de qualidade e cálculo retroativo de FRP (*Fire Radiative Power*).
-* **Destino na Bronze:** `src/bronze/data/inpe/focos_*.csv`.
+| Provedor / Sistema | Domínio | Protocolo / Formato de Origem | Modo de Coleta | Codificação / Separador | Projeção Nativa |
+|:---|:---|:---|:---|:---|:---|
+| **ANEEL / ONS (SIGEL)** | Infraestrutura Elétrica (SIN) | API REST Esri ArcGIS MapServer (`GeoJSON`) | Automatizado (`AneelArcGisExtractor`) | `UTF-8` (JSON RFC 7946) | `EPSG:4326` (forçado via `outSR`) |
+| **INPE (BDQueimadas / COIDS)** | Detecções Orbitais de Focos de Calor | HTTP File Server (`CSV` tabular) | Automatizado (`InpeQueimadasExtractor`) / Batch | `UTF-8`, separador `,` | `EPSG:4326` (WGS84) |
+| **FUNAI (Geoportal)** | Terras Indígenas Demarcadas | Geoportal WFS / Dump Estático (`GeoJSON` + `CSV`) | Periódico (Sob atualização de portarias) | `UTF-8`, separador `,` | `EPSG:4674` / `EPSG:4326` |
+| **IBGE (Malha Territorial)** | Limites Político-Administrativos Municipais | Repositório Geodésico (`GeoJSON`) | Anual (Malha Municipal 1:250.000) | `UTF-8` (JSON) | `EPSG:4674` (SIRGAS 2000) |
+| **DNIT (SNV / BIT)** | Malha Rodoviária Federal | Banco de Informações de Transportes (`GeoJSON` / `Shapefile`) | Periódico (Revisões do SNV) | `UTF-8` (JSON) | `EPSG:4326` (WGS84) |
+| **DATASUS (CNES)** | Estabelecimentos e Leitos de Saúde | FTP / OpenDataSUS (`CSV` relacional) | Mensal (Competência CNES `YYYYMM`) | `UTF-8` / `Latin-1`, separador `;`, quoting `"` | Coordenadas escalares (`NU_LATITUDE`, `NU_LONGITUDE`) |
 
 ---
 
-## 3. FUNAI (Fundação Nacional dos Povos Indígenas)
+## 2. API ArcGIS REST — ANEEL / ONS (SIGEL)
 
-Informações de delimitação, situação jurídica e caracterização demográfica das Terras Indígenas no Brasil.
+O Sistema de Informações Geográficas do Setor Elétrico (SIGEL), mantido pela ANEEL em conjunto com o Operador Nacional do Sistema Elétrico (ONS), expõe a malha do Sistema Interligado Nacional por meio de um servidor Esri ArcGIS MapServer.
 
-* **Órgão Responsável:** Fundação Nacional dos Povos Indígenas (FUNAI) / Ministério dos Povos Indígenas.
-* **Referência Oficial:** `funai_terras_2026` ([FUNAI: Geoprocessamento e Mapas](https://www.gov.br/funai/pt-br/atuacao/terras-indigenas/geoprocessamento-e-mapas)).
-* **Portal de Origem:** Geoportal da FUNAI e Catálogo de Dados Abertos Governamentais.
-* **Arquivos Ingeridos na Camada Bronze:**
-  - `mapa_terras_indigenas.geojson`: Vetores poligonais georreferenciados de todas as TIs em projeção WGS84.
-  - `tis_poligonais.csv`: Tabela complementar com atributos de fase de demarcação (*Homologada*, *Regularizada*, *Delimitada*, *Em Estudo*), superfície em hectares e etnias predominantes.
-* **Frequência de Atualização:** Atualizações sob emissão de Decretos Presidenciais e Portarias Declaratórias do Ministério da Justiça / FUNAI.
-* **Destino na Bronze:** `src/bronze/data/funai/`.
+### 2.1 Endpoint e Identificadores de Camada (`layer_id`)
+
+```text
+GET https://sigel.aneel.gov.br/arcgis/rest/services/PORTAL/Transmiss%C3%A3o/MapServer/{layer_id}/query
+```
+
+| `layer_id` | Nome da Camada no Servidor | Tipo Geométrico | Arquivo de Saída na Bronze | Volume de Referência |
+|:---:|:---|:---:|:---|:---:|
+| `1` | Linhas de Transmissão | `LineString` / `MultiLineString` | `src/bronze/data/aneel/linhas_transmissao_ons.geojson` | 1.817 feições |
+| `3` | Subestações de Energia | `Point` | `src/bronze/data/aneel/subestacoes_ons.geojson` | 627 feições |
+| `5` | Sistemas Isolados | `Point` | `src/bronze/data/aneel/sistemas_isolados_ons.geojson` | 120 feições |
+
+### 2.2 Parâmetros de Query String (`params`)
+
+O método [`AneelArcGisExtractor.extrair_camada`](extractors/ingestao_aneel.py) envia os seguintes parâmetros em cada requisição HTTP GET:
+
+| Parâmetro | Tipo | Valor Enviado | Comportamento no Servidor ArcGIS |
+|:---|:---:|:---|:---|
+| `where` | `str` | `"1=1"` | Predicado SQL avaliado pelo banco geográfico da ANEEL para selecionar 100% dos registros ativos da camada. |
+| `outFields` | `str` | `"*"` | Solicita a inclusão de todas as colunas da tabela de atributos dentro do objeto `properties` de cada feição. |
+| `f` | `str` | `"geojson"` | Determina a serialização de saída no padrão aberto GeoJSON (em substituição ao formato proprietário Esri JSON). |
+| `resultOffset` | `int` | `0, 1000, 2000, ...` | Índice do primeiro registro a ser retornado na página atual (incrementado em blocos de `page_size`). |
+| `resultRecordCount` | `int` | `1000` | Quantidade máxima de feições por página (`MaxRecordCount` configurado no MapServer da ANEEL). |
+| `outSR` | `str` | `"4326"` | Instrui o motor do ArcGIS a reprojetar as coordenadas para o datum WGS84 (`EPSG:4326`) antes de transmitir o payload. |
+
+### 2.3 Particularidades Técnicas e Anomalias da Fonte ANEEL
+
+1. **Encapsulamento de Atributos em HTML (`PopupInfo`)**:
+   - O MapServer do SIGEL/ANEEL foi originalmente povoado a partir de arquivos KML/KMZ. Como consequência, variáveis de engenharia (tensão nominal em kV, extensão em km, potência instalada em MW e concessionária) **não estão expostas como campos JSON tipados**, mas concatenadas em uma string HTML dentro da propriedade `PopupInfo` (ex.: `<b>Tensão: </b>230 Kv<br/><b>Extensão: </b>72,96 Km`).
+   - O parsing desses atributos ocorre na Camada Silver por meio da função [`extrair_popup_valor`](../silver/utils/string_helpers.py).
+2. **Grafia Não-Padrão de Casas Decimais (`"13P8"`)**:
+   - Nos campos `Name` e `PopupInfo` de linhas e subestações, tensões fracionárias como `13,8 kV` ou `34,5 kV` são frequentemente grafadas com a letra `P` no lugar do separador decimal (ex.: `"13P8 KV"`). Os extratores numéricos da Camada Silver aplicam a substituição via expressão regular `re.sub(r"(\d+)P(\d+)", r"\1.\2", t)` antes da conversão para `float`.
+3. **Vértices Duplicados e Ciclos Periódicos em `LineString`**:
+   - A conversão interna KML $\rightarrow$ GeoJSON da ANEEL duplica sequências inteiras de coordenadas (ida e volta sobre o mesmo traçado). A função [`GeometryService.remover_repeticoes_periodicas`](../silver/utils/geo_helpers.py) detecta e elimina esses ciclos na Camada Silver.
+4. **Controle de Throttling (`rate_limit_s`)**:
+   - Requisições sequenciais sem intervalo podem acionar bloqueios temporários de firewall ou respostas HTTP 429/503. O extrator aplica `time.sleep(1.0)` entre páginas consecutivas.
 
 ---
 
-## 4. IBGE (Instituto Brasileiro de Geografia e Estatística)
+## 3. Dataserver COIDS — INPE (Programa Queimadas / BDQueimadas)
 
-Malha político-administrativa de referência de todos os 5.564 municípios da Federação Brasileira.
+As detecções de focos ativos de fogo geradas por satélites polares (`AQUA`, `TERRA`, `NOAA-20`, `NPP-375`) e geoestacionários (`GOES-16`) são distribuídas pelo Centro de Dados do Programa Queimadas (COIDS/INPE).
 
-* **Órgão Responsável:** Instituto Brasileiro de Geografia e Estatística (IBGE) - Diretoria de Geociências.
-* **Referência Oficial:** `ibge_malha_2022` ([IBGE: Malha Territorial Brasileira](https://www.ibge.gov.br/geociencias/organizacao-do-territorio/malhas-territoriais/)) e `brugz_geodata_2026` ([GeoData-BR](https://github.com/tbrugz/geodata-br)).
-* **Fonte de Origem:** Malha Municipal Digital do Brasil (escala 1:250.000).
-* **Formato do Arquivo:** `municipios_br.geojson`.
-* **Características Geodésicas:**
-  - Projeção nativa oficial: SIRGAS 2000 Geográfico (`EPSG:4674`), compatível com WGS84 (`EPSG:4326`) para efeitos de cálculo planar.
-  - Chave Primária Oficial: Código IBGE de 7 dígitos (`CD_MUN`), indispensável para a modelagem relacional Snowflake do ecossistema.
-* **Destino na Bronze:** `src/bronze/data/ibge/`.
+### 3.1 Estrutura de URLs do Dataserver
+
+ implementada em [`InpeQueimadasExtractor`](extractors/inpe_queimadas_extractor.py):
+
+```text
+Base URL: https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv
+```
+
+| Modo (`modo`) | Padrão de Endpoint Relativo | Formato de `data_ref` | Exemplo de Arquivo Remoto |
+|:---:|:---|:---:|:---|
+| `"diario"` | `/diario/Brasil/focos_diario_br_{YYYYMMDD}.csv` | `YYYYMMDD` | `focos_diario_br_20260818.csv` |
+| `"mensal"` | `/mensal/Brasil/focos_mensal_br_{YYYYMM}.csv` | `YYYYMM` | `focos_mensal_br_202608.csv` |
+| `"10min"` | `/10min/focos_10min_{YYYYMMDD_HHMM}.csv` | `YYYYMMDD_HHMM` | `focos_10min_20260818_1400.csv` |
+
+### 3.2 Parâmetros de Transporte e Particularidades do INPE
+
+1. **Streaming HTTP em Blocos (`chunk_size = 65536`)**:
+   - A requisição utiliza `requests.get(url, stream=True, timeout=30.0)`, lendo o corpo da resposta em blocos de 64 KB via `resp.iter_content(chunk_size=65536)`.
+2. **Valores Sentinela (`-999` e `<= -900`)**:
+   - Quando um sensor orbital (como o GOES-16) não consegue estimar a Potência Radiativa do Fogo (`FRP`) ou quando a grade meteorológica não dispõe de leitura para `DiaSemChuva` / `RiscoFogo`, o INPE preenche o campo numérico com `-999.0` ou deixa a célula vazia.
+   - As funções [`limpar_valor_numerico`](../silver/utils/cleaners.py) e [`limpar_valor_numerico_nullable`](../silver/utils/cleaners.py) interceptam qualquer valor $\le -900$, convertendo-o respectivamente para `0.0` ou `None`.
+3. **Divergência Nominal de Municípios**:
+   - O atributo `Municipio` reportado no CSV do INPE pode divergir da grafia oficial atualizada do IBGE ou apresentar variações de acentuação. Por esse motivo, o pipeline mantém tanto a chave nominal normalizada (`fk_municipio`) quanto a chave obtida por geocodificação reversa ponto-em-polígono sobre a malha oficial do IBGE (`fk_municipio_espacial`).
 
 ---
 
-## 5. DNIT / SNV (Sistema Nacional de Viação)
+## 4. Geoportal FUNAI — Terras Indígenas
 
-Mapeamento geométrico e cadastral da malha viária brasileira.
+Fornece os limites territoriais e o estágio administrativo das áreas indígenas demarcadas no Brasil.
 
-* **Órgão Responsável:** Departamento Nacional de Infraestrutura de Transportes (DNIT) / Ministério dos Transportes.
-* **Referência Oficial:** SNV - Sistema Nacional de Viação do DNIT e repositório `brugz_geodata_2026` ([GeoData-BR Rodovias](https://github.com/tbrugz/geodata-br)).
-* **Fonte de Origem:** Portal de Dados Abertos de Transportes do DNIT (Camada de Rodovias Federais e Coincidentes).
-* **Formato do Arquivo:** `rodovias_federais.geojson`.
-* **Estrutura Geométrica:** Feições do tipo `LineString` e `MultiLineString` segmentadas por marcos quilométricos (`km_inicial` a `km_final`) e código de rodovia federal (`vl_br`, ex: `BR-116`, `BR-101`, `BR-153`).
-* **Destino na Bronze:** `src/bronze/data/dnit/`.
+* **URL de Referência:** `https://www.gov.br/funai/pt-br/atuacao/terras-indigenas/geoprocessamento-e-mapas`
+* **Artefatos na Camada Bronze (`src/bronze/data/funai/`):**
+  1. `mapa_terras_indigenas.geojson`: Malha poligonal contendo 650 feições georreferenciadas.
+  2. `tis_poligonais.csv`: Catálogo estendido com 20 atributos administrativos e geometria em formato WKT (`the_geom`).
+* **Particularidades Técnicas:**
+  - **Fragmentação de Reservas em Múltiplas Feições**: Uma mesma Terra Indígena (mesmo `codigo_ti`) pode aparecer dividida em múltiplos polígonos no GeoJSON. Na Camada Silver, os polígonos de mesmo `codigo_ti` são consolidados via `shapely.ops.unary_union`.
+  - **Atributo `municipios` / `estados` Multivalorado**: Terras indígenas extensas abrangem múltiplos municípios concatenados por vírgula (ex.: `"Formoso do Araguaia, Lagoa da Confusão, Pium"`). O relacionamento exato com municípios na modelagem analítica é resolvido por intersecção geométrica espacial (`STRtree`), e não por split textual.
 
 ---
 
-## 6. DATASUS / CNES (Cadastro Nacional de Estabelecimentos de Saúde)
+## 5. Malha Municipal Digital — IBGE
 
-Infraestrutura hospitalar e capacidade assistencial de saúde pública e privada no território nacional.
+Base cartográfica oficial dos 5.564 municípios brasileiros utilizada para geocodificação reversa e agregação regional.
 
-* **Órgão Responsável:** Ministério da Saúde / Departamento de Informática do SUS (DATASUS).
-* **Referência Oficial:** `datasus_cnes_2026` ([Portal CNES - DATASUS](https://cnes.datasus.gov.br/)).
-* **Fonte de Origem:** OpenDataSUS / Base de Dados Disseminável do CNES.
-* **Arquivos Auxiliares Ingeridos em `cnes_aux/`:**
-  - `tbEstabelecimento*.csv`: Dados cadastrais da unidade (Código CNES, Nome Fantasia, Razão Social, Latitude, Longitude, Município Gestor).
-  - `tbLeito*.csv`: Contagem física de leitos operacionais de internação clínica, cirúrgica e leitos complementares.
-  - `tbTipoUnidade*.csv`: Classificação da tipologia do estabelecimento (Hospital Geral, Hospital Especializado, Pronto-Socorro).
-* **Especificações Técnicas de Leitura:**
-  - Codificação de Caracteres: `latin-1` (ISO-8859-1).
-  - Delimitador de Colunas: Ponto e vírgula (`;`).
-  - Coordenadas Geográficas: Extraídas com tratamento de separador decimal e validação de quadrante brasileiro.
-* **Destino na Bronze:** `src/bronze/data/datasus/cnes_aux/`.
+* **URL de Referência:** `https://www.ibge.gov.br/geociencias/organizacao-do-territorio/malhas-territoriais/` e repositório derivado `geodata-br`.
+* **Artefato na Camada Bronze:** `src/bronze/data/ibge/municipios_br.geojson` (5.564 feições `Polygon`/`MultiPolygon`).
+* **Particularidades Técnicas:**
+  - **Omissão da UF nas Propriedades Nativas**: O arquivo `municipios_br.geojson` contém apenas os atributos `id` (código IBGE de 7 dígitos, ex.: `"1100015"`), `name` e `description`, sem coluna explícita de UF. O ETL da Camada Silver deriva a sigla da Unidade Federativa a partir dos **2 primeiros dígitos** do código IBGE (ex.: `11` $\rightarrow$ `RO`, `17` $\rightarrow$ `TO`, `31` $\rightarrow$ `MG`).
+  - **Compatibilidade de Chaves 6 vs. 7 Dígitos**: Enquanto o IBGE adota 7 dígitos (incluindo dígito verificador), o Ministério da Saúde (DATASUS/CNES) indexa municípios com apenas 6 dígitos. A dimensão Silver armazena o código normalizado de 6 dígitos (`codigo_ibge`) para permitir junção direta com `dim_hospitais_cnes`.
+
+---
+
+## 6. Sistema Nacional de Viação (SNV) — DNIT
+
+Fornece o traçado linear das rodovias federais brasileiras para avaliação de risco de interdição viária por fumaça ou fogo na faixa de domínio.
+
+* **URL de Referência:** `https://www.gov.br/transportes/pt-br/assuntos/dados-de-transportes/bit/bit-mapas`
+* **Artefato na Camada Bronze:** `src/bronze/data/dnit/mapa_rodovias_federais.geojson` (14.255 feições `LineString`).
+* **Particularidades Técnicas:**
+  - **Redundância Geométrica (`geometry` + `geometria_wkt`)**: Cada feição possui tanto o objeto GeoJSON `geometry` quanto a propriedade textual `geometria_wkt`, permitindo fallback caso uma geometria necessite de reconstrução via `shapely.wkt.loads`.
+  - **Segmentação Quilométrica**: Uma mesma rodovia (ex.: `BR-153` ou `BR-116`) é dividida em centenas de trechos contíguos identificados por `id_trecho_rodoviario`, variando conforme `revestimento`, `tipo_pavimento` e `situacao_fisica`.
+
+---
+
+## 7. Cadastro Nacional de Estabelecimentos de Saúde (CNES) — DATASUS
+
+Base relacional oficial do Ministério da Saúde contendo o cadastro, endereço, localização geográfica e tipologia de todas as unidades de saúde do território nacional.
+
+* **URL de Referência:** `https://cnes.datasus.gov.br/` e `ftp://ftp.datasus.gov.br/cnes/`
+* **Artefatos na Camada Bronze (`src/bronze/data/datasus/cnes_aux/`):**
+  1. `tbEstabelecimento202603.csv` (~288 MB, 55 colunas).
+  2. `tbMunicipio202603.csv` (13 colunas).
+  3. `tbTipoUnidade202603.csv` (2 colunas).
+* **Particularidades Técnicas:**
+  - **Formatação CSV Estrita do DATASUS**: Os arquivos utilizam ponto e vírgula (`;`) como delimitador de colunas e envolvem todos os valores alfanuméricos em aspas duplas (`"`). Além disso, cabeçalhos de colunas de data possuem parênteses e vírgulas internas geradas por dumps Oracle do DATASUS, como `TO_CHAR(DT_ATUALIZACAO,'DD/MM/YYYY')` — o que exige leitura obrigatória com `sep=";"` e `low_memory=False`.
+  - **Erros Cadastrais de Coordenadas (`NU_LATITUDE` e `NU_LONGITUDE`)**: Por serem preenchidas manualmente pelos gestores municipais de saúde, as coordenadas apresentam valores ausentes (`NaN`), coordenadas zeradas `(0, 0)`, sinais positivos no hemisfério sul/oeste ou inversão entre latitude e longitude. O pipeline Silver higieniza esses registros por meio de [`GeometryService.normalizar_par_coordenadas`](../silver/utils/geo_helpers.py) e realiza fallback para o centroide do município gestor quando a coordenada do estabelecimento é irrecuperável.
+
+---
+
+> **Trilha Modular — Etapa 03 de 18 (Ciclo 1.2 — Fontes Governamentais e APIs (`src/bronze/`))**: [Anterior: Ciclo 1.1 — Hub da Camada Bronze e Extratores (`src/bronze/`)](README.md) | [Portal Geral (`docs/README.md`)](../../docs/README.md) | [Próximo: Ciclo 1.3 — Dicionário de Dados Brutos (`src/bronze/`)](DICIONARIO_DADOS.md)

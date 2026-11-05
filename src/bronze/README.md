@@ -1,131 +1,161 @@
-# Camada Bronze (Raw Ingestion) - CCO DataOps
+# Especificação Técnica: Camada Bronze — Ciclo de Ingestão Bruta (`src/bronze/`)
 
-A **Camada Bronze** constitui o estágio inicial de ingestão da arquitetura Medalhão do projeto. Sua responsabilidade fundamental é a extração e persistência **fiel e imutável** de dados provenientes de fontes governamentais externas, sem transformações de negócio, filtragens agressivas ou limpezas sintéticas que descaracterizem o dado bruto original.
+> **Trilha Modular — Etapa 02 de 18 (Ciclo 1.1 — Hub da Camada Bronze e Extratores (`src/bronze/`))**: [Anterior: Ciclo 0 — Núcleo e Contratos (`src/core/`)](../core/README.md) | [Portal Geral (`docs/README.md`)](../../docs/README.md) | [Próximo: Ciclo 1.2 — Fontes Governamentais e APIs (`src/bronze/`)](FONTES_E_APIS.md)
 
----
+A Camada Bronze constitui o estágio inicial do pipeline de dados. Sua responsabilidade é realizar a coleta, paginação e persistência em disco dos dados brutos (*raw data*) provenientes de APIs e repositórios governamentais externos, preservando a estrutura nativa dos provedores sem aplicação de filtros destrutivos ou transformações de regra de negócio.
 
-## 1. Princípios e Governança da Camada Bronze
-
-1. **Imutabilidade e Fidelidade na Origem (*Raw Representation*)**:
-   - Os dados são armazenados exatamente como fornecidos pelos provedores (APIs REST, portais de dados abertos e FTPs governamentais).
-   - Nenhuma geometria é simplificada ou reprojetada na Bronze. Sistemas de coordenadas nativos (como `EPSG:4326` WGS84 ou SIRGAS 2000 geográfico) e metadados de cabeçalho são preservados na íntegra.
-2. **Tolerância a Falhas e Paginação Robusta**:
-   - Serviços de terceiros impõem limites de consulta (ex: paginação máxima de 1.000 feições no ArcGIS Server da ANEEL). A ingestão automatizada controla cursores de deslocamento (`resultOffset`) e intervalos de espera (*rate limiting*) para mitigar bloqueios por *throttling* ou *HTTP 429/503*.
-3. **Desacoplamento e Testabilidade (POO / SOLID)**:
-   - A extração é encapsulada em classes com responsabilidade única ([`AneelArcGisExtractor`](extractors/ingestao_aneel.py)), implementando o contrato [`ExecutablePipelineStep`](../../src/core/contracts/contracts.py) (LSP).
-   - Permite a injeção de clientes HTTP simulados (`http_client`) e diretórios temporários para validação determinística em suítes de testes unitários sem chamadas de rede externas.
+Para especificações de protocolo de rede e esquemas tabulares/vetoriais de cada provedor, consulte os documentos complementares:
+- [**Especificação de APIs, Parâmetros e Particularidades (`FONTES_E_APIS.md`)**](FONTES_E_APIS.md)
+- [**Dicionário de Dados Brutos e Esquemas de Retorno (`DICIONARIO_DADOS.md`)**](DICIONARIO_DADOS.md)
 
 ---
 
-## 2. Estrutura de Diretórios da Camada
-
-```text
-src/bronze/
-├── README.md              # Este guia geral da Camada Bronze
-├── FONTES_E_APIS.md       # Especificação técnica profunda de todas as APIs e fontes de dados
-├── DICIONARIO_DADOS.md    # Dicionário e esquema estrutural dos dados brutos retornados
-├── extractors/            # Extratores POO com responsabilidade única (SRP)
-│   ├── __init__.py
-│   └── ingestao_aneel.py  # Extrator POO da API ArcGIS REST da ANEEL/ONS
-├── tests/                 # Testes unitários co-localizados da Camada Bronze
-│   └── test_aneel_extractor.py
-└── data/                  # Diretório de persistência dos arquivos brutos (Raw Data)
-    ├── aneel/             # GeoJSONs brutos da malha do SIN (linhas, subestações, sistemas isolados)
-    ├── inpe/              # CSVs brutos de focos de calor do BDQueimadas
-    ├── funai/             # Arquivos vetoriais e tabulares de Terras Indígenas
-    ├── ibge/              # Malha vetorial oficial dos 5.564 municípios
-    ├── dnit/              # Malha de rodovias federais e estaduais do SNV
-    └── datasus/           # Cadastros hospitalares brutos do CNES (leitos, UTI, tipos)
-```
-
----
-
-## 3. Arquitetura de Software e Classes
-
-### 3.1 Diagrama de Classes (POO & Injeção de Dependência)
+## 1. Arquitetura e Modulação do Ciclo de Ingestão
 
 ```mermaid
-classDiagram
-    direction TB
+flowchart TB
+    subgraph External ["Provedores Externos (APIs / Repositórios)"]
+        API_ANEEL["SIGEL / ANEEL<br>ArcGIS REST MapServer"]
+        API_INPE["INPE / COIDS<br>Dataserver HTTP CSV"]
+        STATIC_GOV["Repositórios Governamentais<br>(FUNAI, IBGE, DNIT, DATASUS/CNES)"]
+    end
 
-    class ExecutablePipelineStep {
-        <<abstract>>
-        +step_name: str
-        +execute(*args, **kwargs) dict
-        #_run(*args, **kwargs)* dict
-    }
+    subgraph BronzeCode ["Módulos de Extração (src/bronze/extractors/)"]
+        EXT_ANEEL["ingestao_aneel.py<br>AneelArcGisExtractor(ExecutablePipelineStep)"]
+        EXT_INPE["inpe_queimadas_extractor.py<br>InpeQueimadasExtractor(ExecutablePipelineStep)"]
+    end
 
-    class AneelArcGisExtractor {
-        -output_dir: Path
-        -camadas: dict[str, int]
-        -url_base: str
-        -page_size: int
-        -rate_limit_s: float
-        -_http_client: Any
-        +extrair_camada(nome_arquivo: str, layer_id: int) Path
-        +baixar_toda_infraestrutura() dict[str, Path]
-        #_run(*args, **kwargs) dict[str, Path]
-    }
+    subgraph BronzeStorage ["Persistência Física (src/bronze/data/)"]
+        DIR_ANEEL["aneel/<br>linhas_transmissao_ons.geojson<br>subestacoes_ons.geojson<br>sistemas_isolados_ons.geojson"]
+        DIR_INPE["inpe/<br>focos_incendio_brutos.csv<br>focos_diario_br_*.csv"]
+        DIR_STATIC["funai/ | ibge/ | dnit/ | datasus/cnes_aux/"]
+    end
 
-    ExecutablePipelineStep <|-- AneelArcGisExtractor : Herança / LSP
+    API_ANEEL -- "GET paginado (resultOffset)" --> EXT_ANEEL
+    API_INPE -- "GET stream (chunks 64 KB)" --> EXT_INPE
+    STATIC_GOV -- "Arquivos de referência" --> DIR_STATIC
+    EXT_ANEEL -- "json.dump (UTF-8)" --> DIR_ANEEL
+    EXT_INPE -- "Escrita .tmp + replace() atômico" --> DIR_INPE
 ```
 
-### 3.2 Diagrama de Sequência: Paginação e Rate Limiting no ArcGIS REST
+---
 
-O processo de ingestão automatizada da ANEEL/ONS varre as camadas do MapServer em blocos de 1.000 registros com pausa controlada:
+## 2. Extrator Geoespacial ANEEL/ONS ([`ingestao_aneel.py`](extractors/ingestao_aneel.py))
+
+O módulo `ingestao_aneel.py` implementa a classe `AneelArcGisExtractor`, responsável por extrair as feições geográficas do Sistema Interligado Nacional (SIN) a partir do servidor Esri ArcGIS REST do SIGEL/ANEEL.
+
+### 2.1 Fluxo de Paginação e Controle de Taxa
+
+O servidor ArcGIS da ANEEL impõe um limite estrito de `1000` feições por resposta HTTP. O extrator utiliza um laço de paginação controlado por deslocamento (`resultOffset`) até que a quantidade de registros retornados na página corrente seja inferior a `page_size`:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor CLI as Orquestrador / Dagster / CLI
+    participant Caller as Orquestrador / CLI
     participant Extractor as AneelArcGisExtractor
-    participant Session as HTTP Client (requests)
-    participant ArcGIS as API SIGEL / ANEEL MapServer
-    participant Storage as Disco (src/bronze/data/aneel/)
+    participant HTTP as requests (HTTP Client)
+    participant Server as SIGEL ANEEL MapServer
+    participant Disk as Disco (src/bronze/data/aneel/)
 
-    CLI ->> Extractor: execute()
-    activate Extractor
-    Note over Extractor: Inicia Template Method e telemetria
-    Extractor ->> Extractor: _run() -> baixar_toda_infraestrutura()
-
-    loop Para cada camada (Linhas = 1, Subestações = 3, Sistemas Isolados = 5)
-        loop Enquanto len(features) == page_size (offset += 1000)
-            Extractor ->> Session: get(url, params={resultOffset, resultRecordCount: 1000, f: "geojson"})
-            Session ->> ArcGIS: GET /MapServer/{id}/query
-            ArcGIS -->> Session: Retorna GeoJSON FeatureCollection (HTTP 200)
-            Session -->> Extractor: JSON carregado
-            Note over Extractor: Pausa de segurança (rate_limit_s = 1.0s)
+    Caller->>Extractor: execute()
+    Extractor->>Extractor: _run() -> baixar_toda_infraestrutura()
+    loop Para cada (nome_arquivo, layer_id) em CAMADAS (1, 3, 5)
+        Extractor->>Extractor: extrair_camada(nome_arquivo, layer_id)
+        Note over Extractor: Inicializa offset = 0, todas_as_features = []
+        loop Enquanto houver páginas (len(features) == page_size)
+            Extractor->>HTTP: get(url, params={where: "1=1", outFields: "*", f: "geojson", resultOffset: offset, resultRecordCount: 1000, outSR: "4326"})
+            HTTP->>Server: HTTP GET /MapServer/{layer_id}/query
+            Server-->>HTTP: HTTP 200 (GeoJSON FeatureCollection)
+            HTTP-->>Extractor: response.json()
+            Extractor->>Extractor: todas_as_features.extend(features), offset += 1000
+            Extractor->>Extractor: time.sleep(rate_limit_s)
         end
-        Extractor ->> Storage: json.dump(FeatureCollection, fp)
-        Storage -->> Extractor: Arquivo GeoJSON persistido
+        Extractor->>Disk: Grava {nome_arquivo}_ons.geojson (UTF-8)
     end
+    Extractor-->>Caller: dict[str, Path] (arquivos gerados)
+```
 
-    Extractor -->> CLI: Retorna dict com paths gerados
-    deactivate Extractor
+### 2.2 Catálogo de Classes, Métodos e Funções de `ingestao_aneel.py`
+
+| Símbolo | Assinatura | Especificação Técnica |
+|:---|:---|:---|
+| `URL_BASE` | `str` | `"https://sigel.aneel.gov.br/arcgis/rest/services/PORTAL/Transmiss%C3%A3o/MapServer/{id}/query"` |
+| `CAMADAS` | `dict[str, int]` | Mapeamento entre o prefixo do arquivo de saída e o identificador numérico da camada no MapServer: `{"linhas_transmissao": 1, "subestacoes": 3, "sistemas_isolados": 5}`. |
+| `AneelArcGisExtractor.__init__` | `(self, output_dir: str \| Path = ANEEL_DIR, camadas: Mapping[str, int] \| None = None, url_base: str = URL_BASE, page_size: int = 1000, rate_limit_s: float = 1.0, http_client: Any \| None = None) -> None` | Inicializa o extrator permitindo injeção do cliente HTTP (`http_client`) e do diretório de saída para testes unitários isolados de rede. |
+| `AneelArcGisExtractor.extrair_camada` | `(self, nome_arquivo: str, layer_id: int) -> Path \| None` | Executa a paginação completa de uma camada ArcGIS, consolida a lista `features` em um único objeto `{"type": "FeatureCollection", "features": todas_as_features}` e persiste o arquivo `{nome_arquivo}_ons.geojson`. Retorna `None` se a resposta HTTP for diferente de `200` ou se a camada não retornar feições. |
+| `AneelArcGisExtractor.baixar_toda_infraestrutura` | `(self) -> dict[str, Path]` | Itera sobre todas as entradas de `self.camadas`, invoca `extrair_camada` e retorna o dicionário com os caminhos absolutos dos arquivos GeoJSON gravados. |
+| `extrair_camada` / `baixar_toda_infraestrutura` | Funções de módulo | Wrappers procedurais de compatibilidade para execução direta via linha de comando (`uv run python src/bronze/extractors/ingestao_aneel.py`). |
+
+---
+
+## 3. Extrator de Focos de Queimada do INPE ([`inpe_queimadas_extractor.py`](extractors/inpe_queimadas_extractor.py))
+
+O módulo `inpe_queimadas_extractor.py` implementa a classe `InpeQueimadasExtractor`, projetada para realizar o download de arquivos CSV de detecções termais do servidor de dados abertos COIDS/INPE com consumo constante de memória RAM e garantia de atomicidade em disco.
+
+### 3.1 Fluxo de Download em Streaming e Escrita Atômica
+
+Arquivos consolidados de focos de calor podem atingir centenas de megabytes. Para evitar alocação integral do payload em memória e impedir que leitores concorrentes (como o produtor Kafka ou o Dagster) consumam um arquivo truncado em caso de falha de rede, o extrator grava os blocos recebidos em um arquivo temporário (`.tmp`) e executa a operação `Path.replace()` (renomeação atômica POSIX) somente após o término completo do fluxo:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as Orquestrador / Dagster
+    participant Extractor as InpeQueimadasExtractor
+    participant HTTP as requests (stream=True)
+    participant Server as Dataserver COIDS / INPE
+    participant Disk as Disco (src/bronze/data/inpe/)
+
+    Caller->>Extractor: execute()
+    Extractor->>Extractor: construir_url() -> resolver_nome_arquivo()
+    Extractor->>HTTP: get(url, stream=True, timeout=30.0)
+    HTTP->>Server: HTTP GET /queimadas/focos/csv/{modo}/{arquivo}.csv
+    Server-->>HTTP: HTTP 200 (Stream binário)
+    Extractor->>Disk: Abre {nome_arquivo}.csv.tmp ("wb")
+    loop Para cada chunk em resp.iter_content(chunk_size=65536)
+        Extractor->>Disk: fp.write(chunk)
+    end
+    Extractor->>Disk: Fecha arquivo .tmp
+    Extractor->>Disk: destino_tmp.replace(destino) (Substituição Atômica)
+    Extractor-->>Caller: Path do arquivo CSV final
+```
+
+### 3.2 Catálogo de Métodos e Parâmetros de `InpeQueimadasExtractor`
+
+| Símbolo | Assinatura | Especificação Técnica |
+|:---|:---|:---|
+| `URL_BASE_INPE` | `str` | `"https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv"` |
+| `InpeQueimadasExtractor.__init__` | `(self, output_dir: str \| Path = INPE_DIR, modo: str = "diario", data_ref: str \| None = None, satelite_filtro: str \| None = None, url_base: str = URL_BASE_INPE, timeout_s: float = 30.0, chunk_size: int = 65536, http_client: Any \| None = None) -> None` | Configura a periodicidade de coleta (`"diario"`, `"mensal"` ou `"10min"`), a data de referência opcional, o timeout de socket (`30.0` s) e o tamanho do buffer de leitura (`64 KB`). |
+| `resolver_nome_arquivo` | `(self) -> str` | Determina o nome do arquivo remoto segundo a convenção do COIDS/INPE:<br>• `modo == "diario"`: `focos_diario_br_{YYYYMMDD}.csv`<br>• `modo == "mensal"`: `focos_mensal_br_{YYYYMM}.csv`<br>• `modo == "10min"`: `focos_10min_{YYYYMMDD_HHMM}.csv`<br>Lança `ValueError` caso `modo` não pertença ao conjunto válido. |
+| `construir_url` | `(self) -> str` | Concatena `self.url_base`, o subdiretório correspondente ao modo (`/diario/Brasil/`, `/mensal/Brasil/` ou `/10min/`) e o nome do arquivo resolvido. |
+| `_run` | `(self, *args: Any, **kwargs: Any) -> Path` | Executa a requisição HTTP com `stream=True`, lança `RuntimeError` se `status_code != 200`, descarrega o conteúdo em blocos de `65536` bytes para `{nome_arquivo}.tmp` e promove o arquivo para o caminho definitivo via `destino_tmp.replace(destino)`. |
+
+---
+
+## 4. Organização Física do Diretório de Dados (`src/bronze/data/`)
+
+```text
+src/bronze/data/
+├── aneel/
+│   ├── linhas_transmissao_ons.geojson   # 1.817 feições LineString (Layer 1)
+│   ├── subestacoes_ons.geojson          # 627 feições Point (Layer 3)
+│   └── sistemas_isolados_ons.geojson    # 120 feições Point (Layer 5)
+├── inpe/
+│   └── focos_incendio_brutos.csv        # Série consolidada de detecções satelitais
+├── funai/
+│   ├── mapa_terras_indigenas.geojson    # 650 polígonos de Terras Indígenas
+│   └── tis_poligonais.csv               # Catálogo administrativo complementar (20 colunas)
+├── ibge/
+│   └── municipios_br.geojson            # 5.564 polígonos municipais (escala 1:250.000)
+├── dnit/
+│   ├── mapa_rodovias_federais.geojson   # 14.255 segmentos rodoviários LineString
+│   └── rodovia-federal/                 # Shapefile original (.shp, .dbf, .prj, .shx)
+└── datasus/
+    └── cnes_aux/
+        ├── tbEstabelecimento202603.csv  # Cadastro nacional de unidades de saúde (sep ';')
+        ├── tbMunicipio202603.csv        # Tabela auxiliar de municípios gestores (sep ';')
+        └── tbTipoUnidade202603.csv      # Domínio de códigos de tipo de unidade (sep ';')
 ```
 
 ---
 
-## 4. Guia Operacional de Execução
-
-Todos os comandos devem ser executados através do gerenciador ultrarrápido `uv`:
-
-### 4.1 Ingestão Automatizada da ANEEL/ONS
-Para baixar ou atualizar a malha vetorial do setor elétrico nacional diretamente da API oficial do SIGEL/ANEEL:
-```bash
-uv run python src/bronze/extractors/ingestao_aneel.py
-```
-
-### 4.2 Execução via Orquestrador Dagster
-A etapa de ingestão está mapeada como o Software-Defined Asset `aneel_ons_data` no Dagster:
-```bash
-uv run dagster asset materialize --select aneel_ons_data -f src/orchestration/dagster/repo.py
-```
-
----
-
-## 5. Documentos Complementares da Camada Bronze
-
-Para obter os detalhes técnicos de cada fonte de dados e os esquemas estruturais retornados, consulte:
-- 🌐 [**FONTES_E_APIS.md**](FONTES_E_APIS.md): Endpoints das APIs, periodicidade de atualização, limitações de requisição e protocolos de coleta para ANEEL, INPE, FUNAI, IBGE, DNIT e DATASUS.
-- 📋 [**DICIONARIO_DADOS.md**](DICIONARIO_DADOS.md): Especificação dos campos originais e tipos de dados de cada arquivo bruto ingerido na Bronze.
+> **Trilha Modular — Etapa 02 de 18 (Ciclo 1.1 — Hub da Camada Bronze e Extratores (`src/bronze/`))**: [Anterior: Ciclo 0 — Núcleo e Contratos (`src/core/`)](../core/README.md) | [Portal Geral (`docs/README.md`)](../../docs/README.md) | [Próximo: Ciclo 1.2 — Fontes Governamentais e APIs (`src/bronze/`)](FONTES_E_APIS.md)
