@@ -1,6 +1,6 @@
 \section*{RESULTADOS E DISCUSSÕES}
 
-A avaliação em escala nacional ao longo do ano de 2025 integrou 4,05 milhões de registros provenientes de 7 bases governamentais, alocados em $\sim$850 MB no \textbf{\textit{Apache Druid}} em 695 segmentos compactados.
+A avaliação em escala nacional ao longo do ano de 2025 integrou 4,05 milhões de registros provenientes de 7 bases governamentais, alocados em $\sim$850 MB no banco colunar analítico em 695 segmentos compactados.
 
 \begin{center}
 \vspace{-0.10cm}
@@ -17,7 +17,7 @@ Linhas e Subestações de Energia & MME / ANEEL / ONS & 2.564 \\
 Municípios Brasileiros & IBGE (Malha Geodados) & 5.564 \\
 Terras Indígenas Demarcadas & MJSP / FUNAI & 650 \\
 \hline
-\textbf{Total Analítico Consolidado} & \textbf{Armazenamento nos Nós Druid} & \textbf{4.056.673 ($\sim$850 MB)} \\
+\textbf{Total Analítico Consolidado} & \textbf{Armazenamento nos Nós Analíticos} & \textbf{4.056.673 ($\sim$850 MB)} \\
 \hline
 \end{tabular}
 }
@@ -30,8 +30,8 @@ Terras Indígenas Demarcadas & MJSP / FUNAI & 650 \\
 
 A avaliação de desempenho submeteu o sistema a 29 consultas SQL analíticas em três topologias com restrição de processamento (1,0 vCPU \textit{Baseline}, 1,5 vCPU \textit{Balanced} e 2,0 vCPU \textit{Query Heavy}), variando de 1 a 16 operadores concorrentes:
 \begin{itemize}[leftmargin=1.0cm, itemsep=0.06cm, topsep=0.04cm]
-    \item \textbf{Vazão Analítica (QPS):} Com 1 vCPU, a vazão satura precocemente em 0,89 QPS com 42,7\% de requisições descartadas por falta de processamento. Com 2 vCPU, o nó atinge patamar de $\sim$2,0 QPS com 0\% de erro sob concorrência de 16 operadores (Fig. 3a).
-    \item \textbf{Latência P95:} Com 1 vCPU, o tempo P95 ultrapassa 20.000 ms sob 4 conexões simultâneas. Com 2 vCPU, a resposta mantém-se estável próximo de zero até 8 conexões e contém a degradação em patamares viáveis para triagem operacional (Fig. 3b).
+    \item \textbf{Vazão Analítica (QPS):} Com 1 vCPU, a vazão satura precocemente em 0,89 QPS com 42,7\% de requisições descartadas por esgotamento de CPU. Com 2 vCPU, o nó sustenta $\sim$2,0 QPS com 0\% de erro mesmo sob concorrência de 16 operadores (Fig. 3a).
+    \item \textbf{Latência P95:} Com 1 vCPU, a latência P95 ultrapassa 20.000 ms a partir de 4 conexões simultâneas. Com 2 vCPU, a resposta mantém-se em sub-segundos até 8 conexões, viabilizando consultas interativas em situações de emergência (Fig. 3b).
 \end{itemize}
 
 \vspace{-0.10cm}
@@ -44,13 +44,15 @@ A avaliação de desempenho submeteu o sistema a 29 consultas SQL analíticas em
     \includegraphics[width=0.47\linewidth]{fig_dashboard_superset.png} &
     \includegraphics[width=0.47\linewidth]{fig_pressao_indigena.png} \\
     {\fontsize{13}{16}\selectfont (c) Painel tático geral (\textbf{\textit{Superset}})} &
-    {\fontsize{13}{16}\selectfont (d) Pressão sobre Terras Indígenas (\textbf{\textit{Bubble Chart}})} \\
+    {\fontsize{13}{16}\selectfont (d) Pressão sobre Terras Indígenas (\textbf{\textit{Ranking}})} \\
 \end{tabular}
 \vspace{0.08cm}
 \captionof{figure}{Evidências empíricas de desempenho analítico e inteligência tática no Brasil.}
 \label{fig:grid_resultados}
 \end{center}
 
-Na camada de visualização, os painéis operacionais no \textbf{\textit{Apache Superset}} consolidam o fluxo analítico contínuo para subsidiar a tomada de decisão das equipes de emergência e Defesa Civil. A interface gerencial centraliza a contagem de focos ativos e a severidade térmica (FRP), oferecendo filtros dinâmicos por bioma e horizonte temporal para triagens rápidas (Fig. 3c). 
+No \textbf{\textit{Apache Superset}}, os painéis operacionais consolidam os indicadores em tempo real. A interface gerencial unifica contagem de focos ativos e severidade térmica (FRP), com filtros por bioma e horizonte temporal para triagens táticas (Fig. 3c). 
 
-Para além da contagem volumétrica bruta de detecções, a plataforma calcula a pressão contínua exercida sobre áreas protegidas, ponderando a potência radiativa do fogo, o risco meteorológico e o decaimento com a distância: \textbf{\textit{($\boldsymbol{I_{\text{pressão}} = \frac{\text{FRP} \times (1 + \text{risco})}{\max(d_{\text{km}},\, 0{,}1)}}$)}}. Na série temporal avaliada (2025), os dados apontam para uma concentração sazonal de eventos na transição agropecuária, com a Terra Indígena Parque do Araguaia (TO) registrando o maior acumulado de pressão no período seco (Fig. 3d). A correlação entre esses índices e a vulnerabilidade local encontra correspondência empírica no incêndio que atingiu dezenas de moradias na Aldeia Canoanã em Formoso do Araguaia (G1 TOCANTINS, 2026), sinalizando o potencial do cruzamento de dados para apoiar ações preventivas em campo.
+Além da contagem bruta, a plataforma quantifica a pressão contínua sobre áreas protegidas, ponderando energia radiativa, risco meteorológico e decaimento com a distância: \textbf{\textit{($\boldsymbol{I_{\text{pressão}} = \frac{\text{FRP} \times (1 + \text{risco})}{\max(d_{\text{km}},\, 0{,}1)}}$)}}. Na série avaliada (2025), o ranking de pressão territorial evidencia severa assimetria, com a TI Parque do Araguaia (TO) acumulando 32,2M de pressão, mais que o triplo da segunda colocada (Fig. 3d). Esse comportamento reflete a sazonalidade crítica da região e pode sinalizar eventos cíclicos de alto risco, a exemplo do incêndio que destruiu 38 moradias na Aldeia Canoanã em Formoso do Araguaia (G1 TOCANTINS, 2026), reforçando a aplicação do índice para subsidiar o planejamento preventivo.
+
+

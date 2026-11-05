@@ -1,8 +1,8 @@
 \section*{METODOLOGIA}
 
-O pipeline analítico inicia-se pelo saneamento contínuo dos dados brutos do INPE, aplicando validações de esquema, descarte de leituras duplicadas e eliminação de inconsistências na telemetria satelital. Para reduzir o tempo de processamento espacial em comparação a bancos relacionais convencionais, o cálculo de distâncias relativas às malhas territoriais (rodovias do DNIT, hospitais do CNES, terras da FUNAI e municípios do IBGE) é antecipado diretamente em memória durante a etapa de ingestão.
+O pipeline analítico inicia-se pelo saneamento contínuo dos dados brutos do INPE, aplicando validação de esquema, descarte de duplicatas e correção de inconsistências na telemetria satelital. Para eliminar gargalos espaciais típicos de bancos relacionais, o cálculo de distâncias às malhas territoriais (DNIT, CNES, FUNAI e IBGE) é pré-computado em memória durante a ingestão.
 
-Para estruturar os dados pontuais, empregam-se algoritmos espaciais específicos: o \textbf{\textit{DBSCAN}} agrupa focos contíguos no espaço e no tempo para delimitar perímetros de queima, enquanto grafos no \textbf{\textit{NetworkX}} representam a malha elétrica do SIN (ONS), estimando o risco de desligamentos e falhas em cascata em linhas e subestações.
+Para estruturar leituras atômicas, algoritmos dedicados operam em tempo real: o \textbf{\textit{DBSCAN}} agrupa focos contíguos no espaço-tempo para delimitar perímetros de queima, enquanto grafos no \textbf{\textit{NetworkX}} modelam a malha elétrica do SIN (ONS), estimando riscos de falhas em cascata em linhas e subestações.
 
 \begin{center}
     \vspace{-0.10cm}
@@ -11,9 +11,9 @@ Para estruturar os dados pontuais, empregam-se algoritmos espaciais específicos
     \vspace{-0.10cm}
 \end{center}
 
-Os eventos enriquecidos alimentam o \textbf{\textit{Apache Kafka}}, que organiza o fluxo de dados entre o registro individual de focos e o encaminhamento de polígonos agregados para a camada analítica.
+Os eventos enriquecidos alimentam tópicos no \textbf{\textit{Apache Kafka}}, que desacopla o fluxo contínuo entre registros atômicos e polígonos agregados.
 
-Na etapa de armazenamento, as mensagens são consumidas pelo banco colunar distribuído \textbf{\textit{Apache Druid}} (YANG et al., 2014). O modelo dimensional adota identificadores numéricos e tabelas de consulta rápida em memória, viabilizando agregações geográficas com menor tempo de resposta (Fig. 2).
+Na camada de persistência, as mensagens são consumidas pelo banco colunar distribuído \textbf{\textit{Apache Druid}} (YANG et al., 2014). O modelo adota chaves inteiras (Snowflake) e tabelas de lookup em memória, acelerando agregações geográficas complexas em sub-segundos (Fig. 2).
 
 \begin{center}
     \vspace{-0.10cm}
@@ -22,4 +22,5 @@ Na etapa de armazenamento, as mensagens são consumidas pelo banco colunar distr
     \vspace{-0.10cm}
 \end{center}
 
-A camada de visualização no \textbf{\textit{Apache Superset}} organiza as métricas em painéis temáticos (visão geral, saúde, terras indígenas e energia), estruturando os dados para suporte à tomada de decisão operacional.
+No \textbf{\textit{Apache Superset}}, painéis temáticos interativos (visão geral, saúde, terras indígenas e energia) traduzem as métricas para a tomada de decisão operacional.
+

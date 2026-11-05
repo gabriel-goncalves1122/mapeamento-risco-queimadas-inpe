@@ -7,8 +7,16 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[portuguese]{babel}
-% Bera Sans family supplied by the TeX distribution.
-\usepackage[scaled]{berasans}
+% Fonte Sans-serif (Bera Sans com fallback transparente para Helvet/Arial)
+\IfFileExists{berasans.sty}{%
+  \usepackage[scaled]{berasans}%
+  \newcommand{\posterbody}{\fontfamily{fvs}\selectfont}%
+  \newcommand{\posterheading}{\fontfamily{fvs}\selectfont}%
+}{%
+  \usepackage[scaled=0.92]{helvet}%
+  \newcommand{\posterbody}{\fontfamily{phv}\selectfont}%
+  \newcommand{\posterheading}{\fontfamily{phv}\selectfont}%
+}
 \renewcommand{\familydefault}{\sfdefault}
 \usepackage[paperwidth=90cm, paperheight=120cm, left=6.7cm, right=6.7cm, top=15.5cm, bottom=11.5cm]{geometry}
 
@@ -26,11 +34,6 @@
 \usepackage{url}
 \usepackage{enumitem}
 
-% ------------------------------------------------------------
-% FONTES -- versão compatível com pdfLaTeX
-% ------------------------------------------------------------
-\newcommand{\posterbody}{\fontfamily{fvs}\selectfont}
-\newcommand{\posterheading}{\fontfamily{fvs}\selectfont}
 
 % ------------------------------------------------------------
 % CABEÇALHO E RODAPÉ OFICIAIS UNIFEI
@@ -123,11 +126,11 @@
 
 \vspace{0.70cm}
 
-\posterauthors{Gabriel Gonçalves Sampaio, Barbara Pimenta Caetano}
+\posterauthors{Gabriel Gonçalves Sampaio; Barbara Pimenta Caetano}
 
 \vspace{-0.90cm}
 
-\posterinstitution{INSTITUTO DE ENGENHARIA DE SISTEMAS E TECNOLOGIA DA INFORMAÇÃO -- UNIFEI}
+\posterinstitution{UNIVERSIDADE FEDERAL DE ITAJUBÁ (UNIFEI)\\Instituto de Engenharia de Sistemas e Tecnologia da Informação -- Campus Itajubá}
 
 \vspace{0.70cm}
 
