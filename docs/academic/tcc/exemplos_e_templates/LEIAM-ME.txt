@@ -1,0 +1,7 @@
+Prezados discentes,
+seguem algumas orientações para copilar corretamente os documentos fornecidos pela coordenação de TCC.
+
+1. A apresentação em Beamer dever ser compilado com pdfaltex.
+2. A monografia para TFG deve ser compilada com pdflatex.
+3. O plano de trabalho para o TCC01 deve ser compilado com xelatex.
+4. O artigo para o TCC02 deve ser compilado com 

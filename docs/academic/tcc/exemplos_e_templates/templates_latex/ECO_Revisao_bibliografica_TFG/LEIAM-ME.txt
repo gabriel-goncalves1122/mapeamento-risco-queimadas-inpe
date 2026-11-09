@@ -1,0 +1,20 @@
+Prezados discentes,
+seguem algumas orientações para copilar corretamente os documentos fornecidos pela coordenação de TCC.
+
+1. Apresentação Beamer
+1.1. O arquivo slide.tex dever ser editado e compilado com pdfaltex.
+1.2. O uso do modelo Beamer para apresentações NÃO é obrigatório, apenas uma sugestão para quem deseja utilizar LaTex.
+
+2. Monografia para TFG 
+2.1. O arquivo abntex2-modelo-trabalho-academico.tx deve ser editado e compilado com pdflatex.
+
+3. Revisão bibliográfica para o TFG
+3.1. O arquivo main.tex não deve ser alterado, mas deve ser compilado com xelatex.
+3.2. Os arquivo presentes na pasta sections devem ser editados.
+
+4. Plano de trabalho para o TCC01
+3.1. O arquivo main.tex não deve ser alterado, mas deve ser compilado com xelatex.
+3.2. Os arquivo presentes na pasta sections devem ser editados.
+
+5. Artigo para o TCC02 
+4.1. O arquivo access.tex deve ser editado e compilado com pdflatex.

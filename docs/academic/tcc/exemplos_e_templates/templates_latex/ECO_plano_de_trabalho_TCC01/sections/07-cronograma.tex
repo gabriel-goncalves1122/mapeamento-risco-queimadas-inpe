@@ -1,0 +1,70 @@
+\newpage
+\section{Cronograma de atividades do TCC02}
+\label{sc:cronograma}
+
+\begin{longtable}{p{\textwidth}}
+% pairs: absolute number (percentage)
+\toprule%
+\myrowcolour%
+\bfseries F.0: Título da Fase 0 \\ %Alterar o título da fase
+\midrule
+Breve descrição da fase 0
+\\
+\midrule
+\myrowcolour%
+\bfseries Atividades planejadas para a fase 0 \\
+\midrule
+A.0.1 Atividade 01 \\
+A.0.2 Atividades 02 \\
+\midrule
+\myrowcolour%
+\bfseries Resultados esperados para a fase 0\\
+\midrule
+%\lipsum[2] \\
+Descrição dos resultados esperados para a fase 0. 
+Esses resultados demarcam o fim da fase.\\
+\toprule%
+\myrowcolour%
+\bfseries F.0: Título da Fase 1 \\
+\midrule
+Breve descrição da fase 0
+\\
+\midrule
+\myrowcolour%
+\bfseries Atividades planejadas para a fase 1 \\
+\midrule
+A.1.1 Atividade 01 \\
+A.1.2 Atividades 02 \\
+\midrule
+\myrowcolour%
+\bfseries Resultados esperados para a fase 1 \\
+\midrule
+%\lipsum[2] \\
+Descrição dos resultados esperados para a fase 0.
+Esses resultados demarcam o fim da fase.\\
+
+\bottomrule
+\end{longtable}
+
+
+
+\begin{ganttchart}[
+y unit title=.6cm,
+y unit chart=.6cm,
+x unit = 2.8cm,
+hgrid,
+vgrid,
+time slot format=isodate-yearmonth,
+time slot unit=month,
+inline,
+bar height=0.7,
+bar/.append style={fill=gray!50, inner sep=0pt}
+]{2025-01}{2025-06}
+\gantttitlecalendar{year, month} \\
+  %\ganttgroup{\textbf{F.0}}{2016-07}{2018-06} \\
+  \ganttbar{F.0: A.0.1}{2025-03}{2025-05} \\
+  \ganttbar{F.0: A.0.2}{2025-05}{2025-06} \\
+  
+  %\ganttmilestone{F.6: A.6.4}{2025-06} \\
+
+\end{ganttchart}
