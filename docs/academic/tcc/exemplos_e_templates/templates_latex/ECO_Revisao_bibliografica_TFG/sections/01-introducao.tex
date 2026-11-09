@@ -2,14 +2,86 @@
 \section{Introdução}
 \label{sc:introducao}
 
-A introdução de uma revisão bibliográfica deve fornecer uma visão geral clara do tema abordado, estabelecendo sua relevância e contextualizando o leitor sobre o problema de pesquisa. Para preenchê-la:
+\subsection{Contextualização Geral e Relevância Socioambiental}
+\label{sbc:contextualizacao}
+
+A intensificação de eventos climáticos extremos e a frequência alarmante de queimadas e incêndios florestais têm se estabelecido como um dos maiores desafios contemporâneos para a governança ambiental, a segurança pública e a resiliência das infraestruturas estratégicas no Brasil. A degradação acelerada de biomas como o Cerrado, o Pantanal e a Amazônia Legal — impulsionada pela combinação de estiagens prolongadas, baixos índices de umidade relativa do ar e anomalias térmicas severas — gera impactos que transcendem a perda inestimável de biodiversidade e a emissão massiva de gases de efeito estufa. Esses episódios ameaçam diretamente o bem-estar de comunidades tradicionais e povos originários, bem como a integridade física de redes de transporte de energia e logística de alcance continental.
+
+Dentre os ativos de utilidade pública mais suscetíveis aos incêndios, ganha destaque o Sistema Interligado Nacional (SIN), cuja malha física é composta por mais de 182 mil quilômetros de linhas de transmissão em alta e extra-alta tensão ($\ge 230\text{ kV}$) e milhares de subestações distribuídas por todo o território nacional. As extensas faixas de servidão dessas linhas cortam áreas rurais contínuas e biomas savânicos onde a vegetação rasteira desseca rapidamente na estação seca. A passagem do fogo sob ou nas imediações dos condutores elétricos deflagra o fenômeno do \textit{flashover}: o calor extremo da frente de chamas e a densa pluma de fuligem ionizada reduzem criticamente a rigidez dielétrica do ar ao redor dos cabos condutores, provocando descargas elétricas fase-terra que forçam o desligamento intempestivo de circuitos de alta capacidade. Tais desligamentos sobrecarregam subestações vizinhas, desestabilizam o equilíbrio eletromecânico do SIN e podem induzir apagões generalizados de grande impacto econômico e social.
+
+Historicamente, o monitoramento geoespacial de queimadas no Brasil consolidou-se em torno de iniciativas pioneiras de sensoriamento remoto espacial, sob liderança do Instituto Nacional de Pesquisas Espaciais (INPE) \cite{inpe2025bdqueimadas}. Contudo, a evolução exponencial da geração de dados orbitais, meteorológicos e de telemetria industrial nas últimas décadas evidenciou uma defasagem nos métodos tradicionais de processamento: os Sistemas de Informação Geográfica (SIG) legados, frequentemente operados em ambientes locais de bancada (\textit{desktop GIS}) ou sob arquiteturas de banco de dados relacionais executando rotinas em lote (\textit{batch}), revelam-se incapazes de processar fluxos massivos de dados espaciotemporais em tempo quase real. Nesse cenário, a Engenharia de Computação e as práticas modernas de Engenharia de Dados (\textit{DataOps}) tornam-se ferramentas indispensáveis para projetar ecossistemas de alta vazão, baixa latência e elevada escalabilidade voltados à mitigação preditiva de desastres.
+
+\subsection{O Ponto de Partida: A Iniciação Científica e a Plataforma SIRDA 1.0}
+\label{sbc:ponto_partida_ic}
+
+Este Trabalho de Fim de Graduação (TFG) não parte de uma formulação abstrata desprovida de validação experimental prévia. Ele representa a continuidade, expansão e evolução científica de uma pesquisa de Iniciação Científica (IC) desenvolvida na Universidade Federal de Itajubá (UNIFEI), na qual se idealizou, construiu e homologou a arquitetura base da plataforma SIRDA 1.0 (\textit{Sistema Integrado de Risco e Detecção de Queimadas}).
+
+Durante a etapa de IC, o foco primordial concentrou-se na superação da fragmentação de dados públicos governamentais e na construção de um arcabouço de Engenharia de Dados resiliente. A plataforma unificou com sucesso 7 bases geoespaciais e tabulares abertas, compreendendo: (i) anomalias térmicas diárias do INPE/BDQueimadas \cite{inpe2025bdqueimadas}; (ii) traçados lineares da Rede Básica do Operador Nacional do Sistema Elétrico (ONS) \cite{ons2026dadosabertos}; (iii) polígonos de Terras Indígenas da FUNAI; (iv) estabelecimentos assistenciais de saúde do CNES/DATASUS; (v) rodovias federais do DNIT; (vi) municípios e perímetros urbanos do IBGE; e (vii) instalações elétricas georreferenciadas da ANEEL. Ao todo, a base consolidada totalizou mais de 4,05 milhões de feições espaciais rigorosamente padronizadas sob o referencial geodésico SIRGAS 2000 (EPSG:4674).
+
+Para orquestrar essa volumetria sem incorrer em gargalos de concorrência ou custos proibitivos de infraestrutura, a arquitetura foi desenhada sob o padrão arquitetural \textbf{FCIS (\textit{Functional Core, Imperative/OO Shell})}:
+\begin{itemize}
+    \item \textbf{Núcleo Funcional (Functional Core)}: Todas as rotinas de enriquecimento, sanitização geométrica, cálculo de distâncias euclidianas e engenharia de atributos foram estruturadas como funções puras, sem estado e totalmente vetorizadas em memória (\textit{DataFrame $\rightarrow$ DataFrame}), garantindo determinismo, idempotência e execução em milissegundos.
+    \item \textbf{Casca Imperativa (OO Shell)}: Classes e gerenciadores de contexto (\textit{Context Managers}) foram reservados estritamente para conexões de rede, persistência e interfaces externas, isolando os efeitos colaterais.
+\end{itemize}
+
+O fluxo de dados foi orquestrado pelo Dagster e estruturado segundo a Arquitetura Medalhão: a camada \textbf{Bronze} persistiu os dados brutos e imutáveis; a camada \textbf{Silver} processou as geometrias das dimensões estáticas e calculou árvores de busca espacial; e a camada \textbf{Gold} construiu a tabela Fato e agrupamentos espaciotemporais via algoritmo ST-DBSCAN \cite{ester1996density}, além de modelar a rede de transmissão como um grafo conexo em NetworkX \cite{hagberg2008exploring} para avaliação de impacto de contingência $N-1$. A sustentação analítica foi viabilizada pelo ecossistema de streaming Apache Kafka \cite{kreps2011kafka} e pelo banco de dados analítico colunar Apache Druid \cite{yang2014druid}, permitindo consultas OLAP multidimensionais em subsegundo servidas a painéis visuais interativos construídos no Apache Superset.
+
+\subsection{Problema de Pesquisa e Lacunas Estruturais}
+\label{sbc:problema_pesquisa}
+
+Não obstante a robustez da infraestrutura computacional estabelecida no SIRDA 1.0, a análise crítica dos resultados operacionais e as simulações de estresse em episódios reais de estiagem revelaram limitações estruturais que delimitam com clareza o problema científico a ser investigado neste Trabalho de Graduação:
 
 \begin{enumerate}
-    \item \textbf{Contextualize o tema}: Apresente informações gerais sobre o tópico, explicando por que ele é importante e destacando sua relevância acadêmica, social ou prática.
-    \item \textbf{Delimite o escopo}: Explique quais aspectos específicos do tema serão abordados na revisão, justificando a escolha desses recortes.
-    \item \textbf{Defina objetivos}: Indique de forma clara o propósito da revisão bibliográfica, por exemplo, identificar lacunas, sintetizar o estado atual do conhecimento ou propor novas perspectivas.
-    \item \textbf{Apresente a metodologia}: Brevemente, explique os critérios usados para selecionar os estudos revisados (se aplicável), como bases de dados, palavras-chave e período de publicação.
-    \item \textbf{Antecipe a organização (opcional)}: Descreva como o restante do texto está estruturado, preparando o leitor para a sequência da discussão.
+    \item \textbf{Passividade dos Painéis e Sobrecarga Cognitiva}: A camada de consumo analítico atual opera estritamente no modelo de \textit{Passive Analytics}. O sistema depende de que operadores humanos acessem os painéis do Superset, filtrem manualmente atributos geográficos e interpretem centenas de marcadores luminosos concorrentes no mapa. Conforme sistematizado pela teoria de Consciência Situacional de Endsley \cite{endsley1995toward}, a proliferação excessiva de estímulos visuais desprovidos de priorização automatizada induz fadiga operacional, atrasando drasticamente a percepção (nível 1) e a projeção de ameaças (nível 3). Em situações de crise, a elaboração manual de relatórios de situação (SitRep) para órgãos da Defesa Civil e brigadas de combate consome de dezenas de minutos a horas.
+    \item \textbf{Isotropia Fictícia dos Modelos de Buffer}: As análises geoespaciais clássicas de risco de queimadas utilizam buffers circulares equidistantes ao redor dos focos detectados. Essa modelagem ignora princípios fundamentais da física da combustão florestal e da aerodinâmica: na presença de vento, a frente de fogo se deforma assimetricamente em elipses alongadas. Buffers circulares estáticos geram graves alarmes falsos a barlavento (contra a direção do vento) e, criticamente, subestimam o perigo iminente a sotavento, onde rajadas de vento projetam o fogo em direção às torres de transmissão a velocidades até dez vezes superiores à expansão em calmaria.
+    \item \textbf{Gargalos Algorítmicos em Junções Espaciais Tradicionais}: Plataformas consolidadas como o TerraMA2 e módulos espaciais baseados em árvores $R$ (como PostGIS GiST ou bibliotecas Python baseadas em \texttt{STRtree}) exibem complexidade de busca $O(N \log M)$. Em cenários de alta vazão de streaming com milhares de focos térmicos sendo cruzados contra dezenas de milhares de vértices de linhas de transmissão, o custo trigonométrico iterativo de cálculo de distância ponto-a-segmento eleva o uso de CPU e degrada o throughput da arquitetura. Além disso, a discretização em grades regulares quadradas impõe distorções angulares artificiais nas diagonais ($\sqrt{2} \cdot L \approx 1,414\,L$).
 \end{enumerate}
 
-Lembre-se de manter a escrita objetiva e de direcionar o foco para o tema central da revisão.
+\subsection{Hipótese e Contribuições do Trabalho de Graduação (SIRDA 2.0)}
+\label{sbc:hipotese_e_proposta}
+
+Diante das lacunas identificadas, formula-se a seguinte \textbf{questão central de pesquisa}:
+
+\begin{quote}
+\textit{Como a integração harmônica entre Sistemas de Grade Global Hexagonal Discreta (DGGS), modelagem física anisotrópica orientada por vetores meteorológicos e agentes inteligentes fundamentados no Model Context Protocol (FastMCP) pode converter uma arquitetura de dados geoespaciais passiva em um ecossistema de inteligência ativa (Actionable GeoAI DataOps), assegurando redução do tempo de resposta a incidentes para menos de 30 segundos com rigor factual determinístico?}
+\end{quote}
+
+A hipótese investigada neste trabalho postula que a substituição de buffers circulares por formulações elípticas de propagação acopladas à velocidade do vento elimina falsos positivos a barlavento; que a indexação hexagonal inteira (Uber H3) substitui junções geométricas onerosas por \textit{hash joins} em tempo constante $O(1)$ sem distorção diagonal; e que o emprego de agentes de IA operando exclusivamente sobre consultas validadas (\textit{golden queries}) erradica o risco de alucinação sintática ou semântica, democratizando o acesso aos dados em linguagem natural e automatizando a geração de boletins operacionais padronizados.
+
+As contribuições originais deste trabalho estruturam-se em:
+\begin{enumerate}
+    \item \textbf{Modelagem Física Anisotrópica}: Acoplamento de vetores horários de velocidade e azimute de vento (reanálise ECMWF ERA5 \cite{hersbach2020era5} e estações do INMET) à formulação clássica de avanço de fogo de Rothermel \cite{rothermel1972mathematical} e Van Wagner \cite{vanwagner1969combined}, parametrizada pelas classes de biomassa vegetal da Coleção 5.1 do MapBiomas Fogo \cite{mapbiomas2026fogo};
+    \item \textbf{Aceleração Algorítmica Geoespacial (Uber H3)}: Implementação de Sistema de Grade Global Discreta Hexagonal \cite{uber_h3_2018} nas resoluções 7 e 9 com identificadores inteiros não assinados (\texttt{uint64}), convertendo cruzamentos espaciais em operações relacionais de conjuntos em $O(1)$;
+    \item \textbf{Motor de Alarmes Proativos e Mensageria}: Implementação de despachante assíncrono de Webhooks (Telegram e endpoints HTTP/REST) acoplado a uma máquina de estados de histerese (\textit{cooldown}) que previne saturação de alertas para o mesmo evento físico em janelas de 6 horas;
+    \item \textbf{Agente de IA e Servidor FastMCP}: Desenvolvimento de um servidor compatível com a especificação \textit{Model Context Protocol} (FastMCP) \cite{anthropic2024mcp}, fornecendo ferramentas para tradução determinística de linguagem natural em SQL colunar (\textit{Text-to-DruidSQL}) e geração automática de relatórios situacionais no padrão ICS-209 \cite{fema2020ics209} em formato Markdown e PDF.
+\end{enumerate}
+
+\subsection{Procedimentos Metodológicos da Revisão Bibliográfica}
+\label{sbc:metodologia_revisao}
+
+Para fundamentar as decisões de engenharia e subsidiar a modelagem matemática e arquitetural do projeto, realizou-se uma revisão bibliográfica sistemática e multidisciplinar, estruturada segundo critérios rigorosos de levantamento e triagem:
+
+\begin{itemize}
+    \item \textbf{Fontes de Informação e Bases Indexadas}: A busca de literatura acadêmica concentrou-se nas principais plataformas científicas mundiais: IEEE Xplore, ACM Digital Library, Elsevier/ScienceDirect, SpringerLink e periódicos da American Meteorological Society (AMS). Complementarmente, foram consultados relatórios técnicos, regulatórios e normas operacionais do Operador Nacional do Sistema Elétrico (ONS), Agência Nacional de Energia Elétrica (ANEEL), Instituto Nacional de Pesquisas Espaciais (INPE), NASA Earth Science Division e Federal Emergency Management Agency (FEMA).
+    \item \textbf{Estratégia de Busca e Combinações Booleanas}: Foram empregadas expressões de busca combinando operadores booleanos (\texttt{AND}, \texttt{OR}) nas línguas inglesa e portuguesa, abrangendo três eixos temáticos complementares:
+    \begin{enumerate}
+        \item \textit{Eixo Elétrico-Florestal}: (\textit{``transmission line''} OR \textit{``power grid''}) \textbf{AND} (\textit{``wildfire''} OR \textit{``forest fire''}) \textbf{AND} (\textit{``flashover''} OR \textit{``dielectric breakdown''} OR \textit{``smoke ionization''});
+        \item \textit{Eixo Geoespacial e Algorítmico}: (\textit{``fire spread model''} OR \textit{``Rothermel''} OR \textit{``Van Wagner''}) \textbf{AND} (\textit{``discrete global grid''} OR \textit{``DGGS''} OR \textit{``H3''} OR \textit{``hexagonal grid''}) \textbf{AND} (\textit{``spatial join''} OR \textit{``real-time streaming''});
+        \item \textit{Eixo de Ciência de Dados e IA}: (\textit{``real-time OLAP''} OR \textit{``Druid''} OR \textit{``Kafka''}) \textbf{AND} (\textit{``situation awareness''} OR \textit{``incident command system''} OR \textit{``ICS-209''}) \textbf{AND} (\textit{``model context protocol''} OR \textit{``text-to-sql''} OR \textit{``AI agent''}).
+    \end{enumerate}
+    \item \textbf{Critérios de Inclusão e Amplitude Temporal}: A seleção priorizou dois recortes temporais essenciais: (i) trabalhos seminais e marcos teóricos consolidados (tais como Rothermel em 1972, Van Wagner em 1969 e Endsley em 1995), indispensáveis para assegurar o rigor físico e conceitual; e (ii) artigos, frameworks e avanços tecnológicos contemporâneos publicados entre 2014 e 2026, com foco nas inovações de grandes volumes de dados (Kafka, Druid), arquiteturas hexagonais (Uber H3 a partir de 2018) e paradigmas de agentes de inteligência artificial generativa e protocolar (2024--2026).
+\end{itemize}
+
+\subsection{Organização do Documento}
+\label{sbc:organizacao_documento}
+
+O presente documento de Revisão Bibliográfica e Plano de Trabalho estrutura-se em 7 seções interdependentes:
+\begin{itemize}
+    \item \textbf{Seção 1 (Introdução)}: Contextualiza a relevância socioambiental, resume o legado da Iniciação Científica, define o problema de pesquisa, explicita as hipóteses e contribuições, descreve a metodologia de revisão e estabelece o roteiro do trabalho.
+    \item \textbf{Seção 2 (Motivação)}: Justifica empiricamente a criticidade do projeto por meio do histórico estatístico de interrupções de carga do ONS, discute a vulnerabilidade territorial e de campo da malha do SIN e evidencia as deficiências operacionais de sistemas tradicionais.
+    \item \textbf{Seção 3 (Revisão Bibliográfica)}: Aprofunda o estado da arte e fundamenta formalmente os 6 domínios do projeto: dinâmica de flashover elétrico, modelagem física elíptica de vento, sensoriamento orbital LEO vs. GEO, inflamabilidade de combustíveis do MapBiomas, sistemas de grade hexagonal Uber H3 e arquiteturas de IA agêntica baseadas em FastMCP.
+    \item \textbf{Seção 4 (Objetivos)}: Apresenta formalmente o objetivo geral e detalha os objetivos específicos necessários à concretização do SIRDA 2.0.
+    \item \textbf{Seção 5 (Materiais e Métodos)}: Especifica a arquitetura de software sob o paradigma FCIS, descreve o stack computacional e delineia as cinco etapas metodológicas de desenvolvimento e testes.
+    \item \textbf{Seção 6 (Resultados)}: Consolida os resultados preliminares obtidos na IC e projeta os resultados esperados para o TCC02 em termos de acurácia, latência, performance e transferência tecnológica.
+    \item \textbf{Seção 7 (Cronograma de Atividades)}: Detalha o plano de execução temporal do TCC02 dividido em cinco fases em gráfico de Gantt.
+\end{itemize}
