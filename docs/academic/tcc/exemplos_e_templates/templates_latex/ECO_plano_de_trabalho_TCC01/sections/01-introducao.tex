@@ -1,15 +1,10 @@
-\newpage
 \section{Introdução}
 \label{sc:introducao}
 
-A introdução de uma revisão bibliográfica deve fornecer uma visão geral clara do tema abordado, estabelecendo sua relevância e contextualizando o leitor sobre o problema de pesquisa. Para preenchê-la:
+A recorrência de queimadas florestais no Brasil compromete a estabilidade de infraestruturas estratégicas, com ênfase nas linhas de transmissão do Sistema Interligado Nacional (SIN). As faixas de servidão atravessam biomas de alta combustibilidade (como o Cerrado), onde a elevação térmica e a fuligem ionizada provocam arcos elétricos (\textit{flashover}) e desligamentos em cascata.
 
-\begin{enumerate}
-    \item \textbf{Contextualize o tema}: Apresente informações gerais sobre o tópico, explicando por que ele é importante e destacando sua relevância acadêmica, social ou prática.
-    \item \textbf{Delimite o escopo}: Explique quais aspectos específicos do tema serão abordados na revisão, justificando a escolha desses recortes.
-    \item \textbf{Defina objetivos}: Indique de forma clara o propósito da revisão bibliográfica, por exemplo, identificar lacunas, sintetizar o estado atual do conhecimento ou propor novas perspectivas.
-    \item \textbf{Apresente a metodologia}: Brevemente, explique os critérios usados para selecionar os estudos revisados (se aplicável), como bases de dados, palavras-chave e período de publicação.
-    \item \textbf{Antecipe a organização (opcional)}: Descreva como o restante do texto está estruturado, preparando o leitor para a sequência da discussão.
-\end{enumerate}
+Na Iniciação Científica (IC) que precede este trabalho, consolidou-se a infraestrutura analítica base: uma arquitetura Medalhão (Bronze, Silver e Gold) orquestrada por Dagster sob o padrão FCIS (\textit{Functional Core, Imperative/OO Shell}), unificando dados geoespaciais de 7 bases públicas (INPE, ONS, FUNAI, CNES, DNIT, IBGE) com 4,05 milhões de registros. A plataforma implementou agrupamento espaço-temporal por ST-DBSCAN, modelagem em grafos da malha elétrica (NetworkX) e ingestão contínua em streaming via Apache Kafka e banco colunar Apache Druid com consultas analíticas subsegundo no Apache Superset \cite{yang2014druid}.
 
-Lembre-se de manter a escrita objetiva e de direcionar o foco para o tema central da revisão.
+Apesar da alta vazão, o sistema opera sob \textbf{monitoramento passivo}: a identificação de anomalias depende da inspeção visual humana nos painéis do Superset. Em crises de estiagem com múltiplos focos simultâneos, ocorre sobrecarga cognitiva \cite{endsley1995toward} e atrasos na emissão de relatórios operacionais. Além disso, o cálculo de risco atual assume buffers circulares isotrópicos, desconsiderando a velocidade e o azimute do vento e a inflamabilidade da vegetação. 
+
+Este Trabalho de Conclusão de Curso (TCC) propõe a evolução da plataforma para inteligência ativa (\textit{Actionable GeoAI DataOps}), incorporando: (i) modelagem física anisotrópica por vento (Rothermel / ERA5); (ii) indexação hexagonal discreta (Uber H3); (iii) motor de alarmes proativos via Webhooks com controle de reincidência (\textit{cooldown}); e (iv) servidor \textit{Model Context Protocol} (FastMCP) para consultas determinísticas em linguagem natural (\textit{Text-to-SQL}) e geração automática de relatórios situacionais (SitRep padronizado em ICS-209).

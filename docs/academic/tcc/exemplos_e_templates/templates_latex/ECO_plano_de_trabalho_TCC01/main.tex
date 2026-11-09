@@ -32,11 +32,11 @@
 \usepackage{setspace}\onehalfspacing
 \usepackage{titlesec}
 \titleformat*{\section}{\large\bfseries}
-\titleformat*{\subsection}{\large\bfseries}
-\titleformat*{\subsubsection}{\large\bfseries}
-\titleformat*{\paragraph}{\large\bfseries}
-\titleformat*{\subparagraph}{\large\bfseries}
-\setlength{\parskip}{0.6em}
+\titleformat*{\subsection}{\normalsize\bfseries}
+\titleformat*{\subsubsection}{\normalsize\bfseries}
+\titlespacing*{\section}{0pt}{8pt}{3pt}
+\titlespacing*{\subsection}{0pt}{6pt}{2pt}
+\setlength{\parskip}{5pt}
 
 \newif\ifblackandwhite
 \blackandwhitetrue
@@ -99,7 +99,7 @@
 
 \input{sections/title.tex}
 \newpage
-\tableofcontents
+%\tableofcontents
 \input{sections/01-introducao.tex}
 \input{sections/02-motivacao.tex}
 \input{sections/03-revisao.tex}
@@ -108,7 +108,12 @@
 \input{sections/06-resultados.tex}
 \input{sections/07-cronograma.tex}
 \renewcommand\refname{Referências Bibliográficas}
-%\bibliographystyle{abntex2-alf}
+\let\oldthebibliography\thebibliography
+\renewcommand{\thebibliography}[1]{%
+  \oldthebibliography{#1}%
+  \setlength{\itemsep}{0pt}%
+  \setlength{\parskip}{0pt}%
+}
 \bibliographystyle{IEEEtran}
 \bibliography{referencias.bib}
 %\listoftodos

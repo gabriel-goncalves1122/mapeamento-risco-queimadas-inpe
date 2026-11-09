@@ -1,16 +1,18 @@
-\newpage
-\section{Materiais e métodos}
-\label{sc:materias_e_metodos}
+\section{Materiais e Métodos}
+\label{sc:materiais_e_metodos}
 
-A seção de materiais e métodos descreve de forma detalhada os procedimentos adotados para a realização da pesquisa ou revisão, garantindo a transparência e a reprodutibilidade. Para preenchê-la:
+\subsection{Padrão Arquitetural e Stack Tecnológico}
+O sistema adota o padrão \textbf{FCIS (\textit{Functional Core, Imperative/OO Shell})}. As transformações matemáticas, sanitizações e cálculos de elipse são modelados como funções puras, sem estado e vetorizadas (\textit{DataFrame $\rightarrow$ DataFrame}). A casca orientada a objetos é restrita ao gerenciamento determinístico de conexões e soquetes (Kafka, Druid, FastMCP) via \textit{Context Managers} com injeção de dependência. O ecossistema é operado em Python 3.12 sob governança do gerenciador Astral \texttt{uv}.
 
+A infraestrutura tecnológica integra: (i) Dagster para orquestração; (ii) Apache Kafka para mensageria; (iii) Apache Druid (OLAP colunar particionado por tempo) e DuckDB (\textit{spatial} e \textit{h3}) para persistência em GeoParquet; (iv) Apache Superset com camadas H3 (\textit{deck.gl}) e biblioteca \texttt{h3-py} para indexação em \texttt{uint64}; (v) Servidor FastMCP para interface LLM determinística, templates WeasyPrint/Markdown e despachante assíncrono de Webhooks; e (vi) Bases de dados: INPE VIIRS (375 m) e GOES-19 (10 min), reanálise horária ERA5, dados abertos ONS e MapBiomas Fogo.
+
+\subsection{Procedimentos Metodológicos}
+A metodologia estrutura-se em cinco etapas sequenciais:
 \begin{enumerate}
-    \item \textbf{Descreva os materiais utilizados}: Liste os materiais, instrumentos ou recursos necessários para a execução da pesquisa, como equipamentos, softwares, reagentes, entre outros. Inclua informações detalhadas sobre as características e especificações, quando relevante.
-    \item \textbf{Explique a metodologia de forma clara}: Detalhe os métodos e procedimentos adotados para coletar, analisar e interpretar os dados ou informações, incluindo abordagens qualitativas ou quantitativas.
-    \item \textbf{Justifique as escolhas metodológicas}: Explique por que determinadas técnicas ou abordagens foram escolhidas, levando em consideração a natureza do estudo e os objetivos da pesquisa.
-    \item \textbf{Descreva a amostra ou população}: Caso relevante, forneça detalhes sobre a amostra ou população estudada, como tamanho, características demográficas ou critérios de inclusão/exclusão.
-    \item \textbf{Apresente os instrumentos de coleta e análise}: Caso a pesquisa envolva questionários, entrevistas ou outros instrumentos, descreva-os de forma detalhada, explicando como foram aplicados e analisados.
-    \item \textbf{Inclua informações sobre o procedimento e cronograma}: Descreva como a pesquisa foi conduzida ao longo do tempo, incluindo os principais estágios e cronogramas, se aplicável.
+    \setlength\itemsep{0em}
+    \item \textbf{Ingestão Contratual (Bronze):} Coleta de anomalias térmicas e séries climáticas com validação via Pydantic;
+    \item \textbf{Indexação H3 e Modelagem Anisotrópica (Silver):} Discretização das feições de interesse nas resoluções H3 7 ($\sim 5\text{ km}^2$) e 9 ($\sim 0,1\text{ km}^2$). Cálculo dos semieixos ($a, b$) e azimute da elipse acoplados ao vetor de vento e à carga combustível local;
+    \item \textbf{Agregação e Carga Analítica (Gold):} Cruzamento das células H3 ativas contra a infraestrutura via \textit{hash joins} $O(1)$. Carga da tabela Fato no Druid no modelo analítico Snowflake (estritamente FKs numéricas, métricas e timestamps);
+    \item \textbf{Inteligência Ativa (MCP e Webhooks):} Avaliação periódica de limiares críticos com máquina de \textit{cooldown} (janela de 6h). Ativação do FastMCP para executar \textit{golden queries} no Druid, disparando o boletim SitRep (ICS-209);
+    \item \textbf{Validação Experimental:} Comparação de falsos positivos entre buffers circulares e elípticos, auditoria de latência de ponta a ponta ($< 30\text{ s}$) e teste de consistência factual das respostas do agente de IA.
 \end{enumerate}
-
-Esta seção deve ser o mais detalhada possível, de forma a permitir que outros pesquisadores possam replicar o estudo com base nas informações fornecidas. Lembre-se de que a clareza e a precisão são essenciais nesta parte do trabalho.

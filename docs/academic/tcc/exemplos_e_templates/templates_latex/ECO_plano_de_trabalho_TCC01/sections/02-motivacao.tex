@@ -1,16 +1,8 @@
-\newpage
 \section{Motivação}
 \label{sc:motivacao}
 
+A motivação deste trabalho apoia-se na vulnerabilidade do suprimento elétrico e de territórios protegidos aos incêndios sazonais. Registros históricos abertos do Operador Nacional do Sistema Elétrico (ONS) catalogam mais de 8.390 eventos de corte de carga entre 2000 e 2026, totalizando mais de 717 gigawatts acumulados de potência interrompida no SIN \cite{ons2026dadosabertos}. Essa série comprova forte sazonalidade concentrada no trimestre de agosto a outubro, coincidindo com o período de estiagem crítica monitorado pelo INPE \cite{inpe2025bdqueimadas}.
 
-A seção de motivação tem o papel de justificar a realização da revisão, destacando por que o tema é relevante e merece atenção. Para preenchê-la:
+Essa suscetibilidade é agravada por condições meteorológicas extremas em corredores de vegetação rasteira. No caso de validação de campo da Aldeia Canoanã (TI Parque do Araguaia / Ilha do Bananal) em agosto de 2026, dados horários de reanálise física ECMWF ERA5 indicaram umidade relativa de 19\% e rajadas de vento de até 46,4 km/h, favorecendo o avanço veloz da linha de fogo em direção às instalações.
 
-\begin{enumerate}
-    \item \textbf{Explique o contexto e relevância}: Aborde os desafios, problemas ou lacunas no tema que demandam maior entendimento ou investigação.
-    \item \textbf{Justifique a escolha do tema}: Argumente sobre a importância do assunto para a área de estudo, sociedade ou aplicação prática, usando exemplos ou dados concretos, se possível.
-    \item \textbf{Conecte com objetivos maiores}: Relacione o tema a objetivos mais amplos, como avanços científicos, solução de problemas críticos ou melhoria em processos existentes.
-    \item \textbf{Incorpore dados ou tendências}: Apresente dados estatísticos, mudanças tecnológicas ou tendências recentes que reforcem a urgência de explorar o tema.
-    \item \textbf{Estabeleça relevância pessoal ou acadêmica (opcional)}: Indique se a motivação surge de um interesse particular, lacunas em pesquisas anteriores ou demandas do campo.
-\end{enumerate}
-
-Mantenha um tom envolvente, mas objetivo, enfatizando a importância do tema para captar o interesse do leitor.
+No âmbito de software e tomada de decisão, a ausência de despachos automatizados impõe triagem manual em painéis gráficos. A compilação de relatórios de situação (SitRep) para coordenações de operação demanda dezenas de minutos a horas. A automação da triagem via agentes de inteligência artificial determinísticos e webhooks proativos reduz o tempo de resposta para menos de 30 segundos, transformando telemetria em ações defensivas antes da ocorrência de desligamentos forçados.

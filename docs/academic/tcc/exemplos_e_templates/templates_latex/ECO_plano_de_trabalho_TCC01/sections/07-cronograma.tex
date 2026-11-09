@@ -1,70 +1,36 @@
-\newpage
-\section{Cronograma de atividades do TCC02}
+\section{Cronograma de Atividades do TCC02}
 \label{sc:cronograma}
 
-\begin{longtable}{p{\textwidth}}
-% pairs: absolute number (percentage)
-\toprule%
-\myrowcolour%
-\bfseries F.0: Título da Fase 0 \\ %Alterar o título da fase
-\midrule
-Breve descrição da fase 0
-\\
-\midrule
-\myrowcolour%
-\bfseries Atividades planejadas para a fase 0 \\
-\midrule
-A.0.1 Atividade 01 \\
-A.0.2 Atividades 02 \\
-\midrule
-\myrowcolour%
-\bfseries Resultados esperados para a fase 0\\
-\midrule
-%\lipsum[2] \\
-Descrição dos resultados esperados para a fase 0. 
-Esses resultados demarcam o fim da fase.\\
-\toprule%
-\myrowcolour%
-\bfseries F.0: Título da Fase 1 \\
-\midrule
-Breve descrição da fase 0
-\\
-\midrule
-\myrowcolour%
-\bfseries Atividades planejadas para a fase 1 \\
-\midrule
-A.1.1 Atividade 01 \\
-A.1.2 Atividades 02 \\
-\midrule
-\myrowcolour%
-\bfseries Resultados esperados para a fase 1 \\
-\midrule
-%\lipsum[2] \\
-Descrição dos resultados esperados para a fase 0.
-Esses resultados demarcam o fim da fase.\\
+As atividades planejadas para o TCC02 estruturam-se em cinco fases:
+\begin{itemize}
+    \setlength\itemsep{0em}
+    \item \textbf{F.1 -- Modelagem Anisotrópica e Clima:} Ingestão ERA5/INMET e calibração da elipse de vento (Rothermel).
+    \item \textbf{F.2 -- Indexação Hexagonal H3:} Implementação da grade Uber H3 (\texttt{uint64}) e \textit{hash joins} em $O(1)$.
+    \item \textbf{F.3 -- Motor de Alarmes e Webhooks:} Máquina de estados de \textit{cooldown} e despacho assíncrono para Telegram/HTTP.
+    \item \textbf{F.4 -- Servidor FastMCP e SitRep:} Servidor MCP (\textit{Text-to-SQL} no Druid) e gerador de PDF (ICS-209).
+    \item \textbf{F.5 -- Validação Experimental e Monografia:} Testes de latência, análise comparativa e redação final.
+\end{itemize}
 
-\bottomrule
-\end{longtable}
-
-
-
+\begin{center}
+\small
 \begin{ganttchart}[
-y unit title=.6cm,
-y unit chart=.6cm,
-x unit = 2.8cm,
-hgrid,
-vgrid,
-time slot format=isodate-yearmonth,
-time slot unit=month,
-inline,
-bar height=0.7,
-bar/.append style={fill=gray!50, inner sep=0pt}
-]{2025-01}{2025-06}
+    y unit title=.34cm,
+    y unit chart=.32cm,
+    x unit=1.6cm,
+    hgrid,
+    vgrid,
+    time slot format=isodate-yearmonth,
+    time slot unit=month,
+    inline,
+    bar height=0.55,
+    bar/.append style={fill=gray!40, inner sep=0pt},
+    bar label font=\scriptsize\bfseries
+]{2027-03}{2027-07}
 \gantttitlecalendar{year, month} \\
-  %\ganttgroup{\textbf{F.0}}{2016-07}{2018-06} \\
-  \ganttbar{F.0: A.0.1}{2025-03}{2025-05} \\
-  \ganttbar{F.0: A.0.2}{2025-05}{2025-06} \\
-  
-  %\ganttmilestone{F.6: A.6.4}{2025-06} \\
-
+\ganttbar{F.1: Clima e Elipses}{2027-03}{2027-04} \\
+\ganttbar{F.2: Uber H3 O(1)}{2027-04}{2027-05} \\
+\ganttbar{F.3: Webhooks/Alarmes}{2027-04}{2027-05} \\
+\ganttbar{F.4: FastMCP e SitRep}{2027-05}{2027-06} \\
+\ganttbar{F.5: Testes e Monografia}{2027-06}{2027-07}
 \end{ganttchart}
+\end{center}
