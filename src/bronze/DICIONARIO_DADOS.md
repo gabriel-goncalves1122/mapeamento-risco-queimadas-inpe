@@ -2,7 +2,7 @@
 
 > **Trilha Modular — Etapa 04 de 18 (Ciclo 1.3 — Dicionário de Dados Brutos (`src/bronze/`))**: [Anterior: Ciclo 1.2 — Fontes Governamentais e APIs (`src/bronze/`)](FONTES_E_APIS.md) | [Portal Geral (`docs/README.md`)](../../docs/README.md) | [Próximo: Ciclos 2 e 3 — Hub da Camada Silver (`src/silver/`)](../silver/README.md)
 
-Este documento especifica os esquemas exatos de todos os arquivos brutos (GeoJSON e CSV) armazenados na Camada Bronze (`src/bronze/data/`). Todos os nomes de campos, tipos nativos e exemplos refletem literalmente a estrutura física retornada pelas APIs e dumps governamentais antes do processamento pela Camada Silver.
+Este documento especifica os esquemas exatos de todos os arquivos brutos (GeoJSON, CSV e Parquet) armazenados ou consumidos pela Camada Bronze (`src/bronze/data/`). Todos os nomes de campos, tipos nativos e exemplos refletem literalmente a estrutura física retornada pelas APIs e dumps governamentais antes do processamento pela Camada Silver.
 
 ---
 
@@ -77,8 +77,6 @@ Os arquivos da ANEEL são objetos GeoJSON do tipo `FeatureCollection` extraídos
 
 ## 3. Terras Indígenas — FUNAI (`src/bronze/data/funai/`)
 
-A camada Bronze armazena duas representações complementares fornecidas pela FUNAI: a malha poligonal GeoJSON e o catálogo tabular CSV.
-
 ### 3.1 `mapa_terras_indigenas.geojson` (650 feições)
 * **Tipo Geométrico (`geometry.type`):** `Polygon` / `MultiPolygon` (`EPSG:4326`).
 
@@ -148,10 +146,7 @@ A camada Bronze armazena duas representações complementares fornecidas pela FU
 
 ## 6. Estabelecimentos de Saúde — DATASUS / CNES (`src/bronze/data/datasus/cnes_aux/`)
 
-Todos os arquivos do CNES utilizam ponto e vírgula (`;`) como separador de colunas e aspas duplas (`"`) como delimitador de strings.
-
 ### 6.1 `tbEstabelecimento202603.csv` (Tabela Principal — 55 colunas)
-Abaixo estão especificadas as colunas efetivamente consumidas pelo pipeline `ETLDimHospitais` ([`etl_dim_hospitais.py`](../silver/etl/etl_dim_hospitais.py)) dentre as 55 colunas do dump relacional do Ministério da Saúde:
 
 | Coluna Nativa | Tipo Pandas | Nulável | Exemplo Real | Especificação Técnica e Tratamento |
 |:---|:---:|:---:|:---|:---|
@@ -162,32 +157,86 @@ Abaixo estão especificadas as colunas efetivamente consumidas pelo pipeline `ET
 | `NO_LOGRADOURO`, `NU_ENDERECO`, `NO_BAIRRO`, `CO_CEP` | `object` (`str`) | Sim | `'RUA DO SOL'`, `'120'`, `'CENTRO'`, `'53000000'` | Dados de endereço postal do estabelecimento. |
 | `TP_UNIDADE` / `CO_TIPO_UNIDADE` | `object` (`str`) | Sim | `'02'`, `'05'` | Código numérico da tipologia da unidade (chave estrangeira para `tbTipoUnidade`). |
 | `CO_ESTADO_GESTOR` | `object` (`str`) | Sim | `'26'` | Código numérico IBGE de 2 dígitos da Unidade Federativa gestora. |
-| `CO_MUNICIPIO_GESTOR` | `object` (`str`) | Não | `'260960'` | Código IBGE de **6 dígitos** (sem dígito verificador) do município gestor. |
+| `CO_MUNICIPIO_GESTOR` | `object` (`str`) | Não | `'260960'` | Código IBGE de **6 dígitos** do município gestor. |
 | `NU_LATITUDE` | `object` / `float64` | Sim (`NaN`) | `-8.0089` | Latitude cadastrada manualmente. Sujeita a inversão com longitude ou erro de sinal, tratada por `normalizar_par_coordenadas()`. |
 | `NU_LONGITUDE` | `object` / `float64` | Sim (`NaN`) | `-34.8553` | Longitude cadastrada manualmente. |
 | `TP_ESTAB_SEMPRE_ABERTO` | `object` (`str`) | Sim | `'S'` / `'N'` | Indica se o estabelecimento opera em regime ininterrupto de 24 horas (`funciona_24h`). |
 | `TP_GESTAO` | `object` (`str`) | Sim | `'M'` / `'E'` / `'D'` | Modalidade de gestão do SUS (`M` = Municipal, `E` = Estadual, `D` = Dupla). |
-| `CO_NATUREZA_JUR` | `object` (`str`) | Sim | `'1244'` | Código CONCLA da natureza jurídica da instituição (Pública, Privada, Filantrópica). |
+| `CO_NATUREZA_JUR` | `object` (`str`) | Sim | `'1244'` | Código CONCLA da natureza jurídica da instituição. |
 
 ---
 
-### 6.2 `tbMunicipio202603.csv` (Tabela Auxiliar de Municípios — 13 colunas)
+## 7. ONS — Interrupção de Carga (`INTERRUPCAO_CARGA.parquet`)
 
-| Coluna Nativa | Tipo Pandas | Nulável | Exemplo Real | Especificação Técnica |
+Base consolidada do Operador Nacional do Sistema Elétrico contendo 8.395 registros de ocorrências com corte de carga severo ($\ge 100\text{ MW}$) apuradas entre 2007 e Novembro de 2026.
+
+* **Origem:** `https://ons-aws-prod-opendata.s3.amazonaws.com/dataset/interrupcao_carga/INTERRUPCAO_CARGA.parquet`
+* **Formato:** Apache Parquet (Snappy).
+
+| Coluna Nativa | Tipo Parquet | Tipo Pandas | Exemplo Real | Especificação Técnica e Domínio |
 |:---|:---:|:---:|:---|:---|
-| `CO_MUNICIPIO` | `int64` | Não | `521971` | Código IBGE de 6 dígitos (chave de junção com `CO_MUNICIPIO_GESTOR` de `tbEstabelecimento`). |
-| `NO_MUNICIPIO` | `object` (`str`) | Não | `'SANTO ANTONIO DA BARRA'` | Nome do município no cadastro do Ministério da Saúde. |
-| `CO_SIGLA_ESTADO` | `object` (`str`) | Não | `'GO'` | Sigla de 2 letras da Unidade Federativa (`uf`). |
-| `NU_POPULACAO` | `float64` | Sim | `nan` | População estimada cadastrada na base do DATASUS. |
+| `cod_perturbacao` | `string` | `object` | `'0413/2007'` | Código oficial de registro do distúrbio no ONS. |
+| `din_interrupcaocarga` | `timestamp[ns]` | `datetime64[ns]` | `2024-09-14 15:20:00` | Data e hora de início do evento com corte de suprimento. |
+| `id_subsistema` | `string` | `object` | `'SE'` | Código do subsistema elétrico (`SE`, `S`, `NE`, `N`). |
+| `nom_subsistema` | `string` | `object` | `'SUDESTE'` | Nome por extenso da região eletroenergética. |
+| `id_estado` | `string` | `object` | `'GO'` | Sigla da Unidade Federativa da ocorrência. |
+| `nom_agente` | `string` | `object` | `'EQUATORIAL GOIÁS'` | Concessionária ou agente de transmissão/distribuição afetado. |
+| `val_cargainterrompida_mw` | `double` | `float64` | `185.4` | Montante instantâneo de carga cortada em Megawatts (MW). |
+| `val_tempomedio_minutos` | `double` | `float64` | `45.0` | Duração média em minutos da interrupção. |
+| `val_energianaosuprida_mwh` | `double` | `float64` | `139.05` | Energia Não Suprida (ENS) estimada em Megawatt-hora. |
+| `flg_envolveuredebasica` | `string` | `object` | `'S'` | Indicador (`'S'`/`'N'`) de envolvimento da Rede Básica ($\ge 230\text{ kV}$). |
+| `flg_envolveuredeoperacao` | `string` | `object` | `'S'` | Indicador (`'S'`/`'N'`) de envolvimento da Rede de Operação. |
 
 ---
 
-### 6.3 `tbTipoUnidade202603.csv` (Domínio de Tipologias — 2 colunas)
+## 8. ONS — Cadastro Físico e Elétrico de Linhas de Transmissão (`LINHA_TRANSMISSAO.parquet`)
 
-| Coluna Nativa | Tipo Pandas | Nulável | Exemplo Real | Especificação Técnica |
-|:---|:---:|:---:|:---|:---|
-| `CO_TIPO_UNIDADE` | `int64` | Não | `5` / `69` | Código numérico da tipologia (ex.: `05` = Hospital Geral, `07` = Hospital Especializado, `73` = Pronto Atendimento). |
-| `DS_TIPO_UNIDADE` | `object` (`str`) | Não | `'HOSPITAL GERAL'` | Descrição textual da tipologia, utilizada por `classificar_categoria_unidade()` em `etl_dim_hospitais.py`. |
+Cadastro técnico contendo 2.346 linhas de transmissão em operação comercial no Sistema Interligado Nacional.
+
+* **Origem:** `https://ons-aws-prod-opendata.s3.amazonaws.com/dataset/linha_transmissao/LINHA_TRANSMISSAO.parquet`
+* **Formato:** Apache Parquet (Snappy, 37 colunas).
+
+| Coluna Nativa | Tipo Parquet | Exemplo Real | Especificação de Engenharia Elétrica |
+|:---|:---:|:---|:---|
+| `nom_linhadetransmissao` | `string` | `'LT 500 kV Itumbiara / Rio Verde C1'` | Denominação oficial da LT. |
+| `cod_equipamento` | `string` | `'LT-ITB-RVD-500-1'` | Código identificador nos Procedimentos de Rede. |
+| `val_niveltensao_kv` | `double` | `500.0` | Tensão nominal de operação em kV. |
+| `val_comprimento` | `double` | `182.5` | Extensão física do vão em quilômetros. |
+| `nom_subestacao_de`, `nom_subestacao_para` | `string` | `'ITUMBIARA'`, `'RIO VERDE'` | Subestações terminais de conexão. |
+| `num_barra_de`, `num_barra_para` | `int64` | `6980`, `6950` | Números das barras elétricas para modelagem em grafo (`NetworkX`). |
+| `val_resistencia`, `val_reatancia`, `val_shunt` | `double` | `0.0082`, `0.0874`, `1.452` | Parâmetros de sequência positiva ($R, X, B$) para simulação de fluxo e contingência $N-1$. |
+| `nom_agenteproprietario` | `string` | `'FURNAS'` | Agente transmissor titular do ativo. |
+
+---
+
+## 9. Open-Meteo — Observações Meteorológicas de Superfície (`clima_horario_openmeteo.parquet`)
+
+* **Origem:** `https://api.open-meteo.com/v1/forecast` e `archive-api.open-meteo.com/v1/archive`
+* **Formato:** Apache Parquet gerado a partir do payload JSON/FlatBuffers.
+
+| Coluna | Tipo Polars / Pandas | Exemplo Real | Descrição Técnica |
+|:---|:---:|:---|:---|
+| `timestamp` | `datetime64[ns]` | `2026-11-09 14:00:00` | Data e hora da leitura horária (fuso local `America/Sao_Paulo`). |
+| `latitude`, `longitude` | `float64` | `-22.42`, `-45.45` | Ponto geográfico de consulta WGS84. |
+| `wind_speed_10m_kmh` | `float64` | `18.5` | Velocidade do vento a 10 metros da superfície em km/h. |
+| `wind_direction_10m_deg` | `float64` | `135.0` | Azimute de origem do vento em graus ($0^\circ$ a $360^\circ$). |
+| `wind_gusts_10m_kmh` | `float64` | `32.0` | Velocidade da rajada máxima de vento em km/h. |
+| `relative_humidity_2m_pct` | `float64` | `28.0` | Umidade relativa do ar a 2 metros de altura em percentual ($0$ a $100\%$). |
+
+---
+
+## 10. INMET — Avisos Meteorológicos Ativos (`avisos_ativos_inmet.json`)
+
+* **Origem:** `https://apiprevmet3.inmet.gov.br/avisos/ativos`
+* **Formato:** JSON RFC 7946 com geometrias GeoJSON.
+
+| Campo | Tipo JSON | Exemplo Real | Aplicação no Sistema de Alerta |
+|:---|:---:|:---|:---|
+| `id` / `aviso_id` | `int` / `string` | `89412` | Identificador do aviso no Instituto Nacional de Meteorologia. |
+| `descricao` | `string` | `'Baixa Umidade'` | Categoria do evento adverso (ex.: `'Baixa Umidade'`, `'Tempestade'`, `'Onda de Calor'`). |
+| `severidade` | `string` | `'Perigo Potencial'` | Nível de gravidade (`'Perigo Potencial'`, `'Perigo'`, `'Grande Perigo'`). |
+| `inicio`, `fim` | `string` (ISO) | `'2026-11-09T12:00:00-03:00'` | Janela temporal de vigência do alerta. |
+| `poligono` | `string` / `geometry` | `'POLYGON((...))'` | Delimitação territorial da área sob risco meteorológico extremo. |
 
 ---
 
