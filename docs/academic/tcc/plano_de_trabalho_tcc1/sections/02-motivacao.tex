@@ -1,0 +1,14 @@
+\section{Motivação e Justificativa da Evolução do SIRDA 1.0}
+\label{sc:motivacao}
+
+A motivação deste trabalho apoia-se na necessidade de superar quatro limitações arquiteturais e operacionais críticas identificadas durante a homologação do \textbf{SIRDA 1.0} (Iniciação Científica):
+
+\textbf{1. Monitoramento Passivo vs. Resposta Ativa (\textit{Push Intelligence}):} O SIRDA 1.0 consolidou dashboards táticos no Apache Superset, mas sua operação depende de inspeção visual humana contínua. Em episódios de múltiplos focos simultâneos, esse modelo gera severa sobrecarga cognitiva \cite{endsley1995toward} e atraso no envio de relatórios de alerta para brigadas de campo e centros de manobra elétrica.
+
+\textbf{2. Barreira Técnica de Consulta Operacional:} Operadores de campo da Defesa Civil e brigadistas não dominam o dialeto SQL colunar do Apache Druid nem código em Python. No SIRDA 1.0, investigações analíticas ad-hoc dependiam de um engenheiro de dados, retardando o despacho operacional.
+
+\textbf{3. Simplificação Geométrica Isotrópica:} O SIRDA 1.0 emprega buffers circulares estáticos (raios equidistantes de 5 km a 15 km). No mundo físico, rajadas de vento registradas pelo ECMWF ERA5 (que atingiram 48,2 km/h nos episódios críticos de 2024 com umidade $< 15\%$) associadas a pastagens dessecadas (queima em 89,3\% do Cerrado \cite{mapbiomas2026fogo}) deformam a frente em elipses convexas. O modelo circular superestima o risco a barlavento e subestima o avanço rápido a sotavento em direção às linhas de transmissão.
+
+\textbf{4. Ausência de Validação Empírica com Apagões Reais:} O SIRDA 1.0 formulou índices teóricos de grafos, mas carecia de confronto com ocorrências reais. O ONS cataloga 8.395 interrupções forçadas de carga entre 2007 e 2026 (717 GW acumulados) \cite{ons2026dadosabertos}. Demonstrar que a Rede Básica ($\ge 230$ kV) responde por 83,64\% desses cortes e que os super-hubs do grafo coincidem com os gargalos reais é indispensável para validação científica.
+
+A evolução para o \textbf{SIRDA 2.0} justifica-se por transpor a plataforma de um painel passivo para um sistema autônomo de inteligência ativa, emitindo relatórios situacionais (ICS-209) em $< 30$ segundos via agentes de IA determinísticos sem alucinações.

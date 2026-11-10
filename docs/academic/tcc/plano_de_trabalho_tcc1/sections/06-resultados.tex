@@ -1,0 +1,33 @@
+\section{Resultados Preliminares e Resultados Esperados}
+\label{sc:resultados}
+
+\subsection{Resultados Preliminares da IC e Triangulação Empírica}
+A viabilidade técnica do ecossistema assenta-se sobre os resultados consolidados na Iniciação Científica:
+\begin{enumerate}
+    \item \textbf{Engenharia de Dados e Streaming:} Pipeline Medallion com mais de 4,05 milhões de registros, operando consultas P95 $< 500\text{ ms}$ sob concorrência no Apache Druid e dashboards no Apache Superset;
+    \item \textbf{Topologia de Transmissão (NetworkX):} Modelagem do SIN com 627 subestações e 1.817 linhas de transmissão $\ge 230$ kV, mapeando nós de Risco Extremo como SE Rio Verde Norte (GO, $C_B=100{,}0$), SE Assis (SP, $C_B=98{,}2$) e SE Samambaia (DF/GO, $C_B=89{,}3$);
+    \item \textbf{Validação Estatística Frente a Apagões do ONS:} O cruzamento entre as tabelas fato do Druid (\textit{fato\_eventos\_incendio} com 147.560 eventos e \textit{fato\_focos\_incendio} com 3,33 milhões de registros) e o histórico de 8.395 desligamentos do ONS (717 GW cortados entre 2007 e 2026) comprovou que \textbf{83,64\% dos cortes ocorrem na Rede Básica}, confirmando as hipóteses com significância estatística ($p < 0{,}05$), conforme a Tabela \ref{tab:validacao_triangulada_tcc}.
+\end{enumerate}
+
+\begin{table}[htbp]
+\centering
+\scriptsize
+\caption{Validação Estatística Cruzada dos Três Pilares: SIRDA vs. Histórico Operacional ONS.}
+\label{tab:validacao_triangulada_tcc}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Hipótese Avaliada no Modelo} & \textbf{Pearson ($r$)} & \textbf{$p$-valor} & \textbf{Spearman ($\rho$)} & \textbf{$p$-valor} \\
+\midrule
+Ameaça às Linhas ($I_{\text{linha}}$ Fato) vs. Severidade Média ONS (MW/ev) & \textbf{+0,600} & \textbf{0,039} & +0,378 & 0,226 \\
+Eventos Fato $\le 15$ km de LTs vs. Carga Cortada ONS (MW)                  & \textbf{+0,607} & \textbf{0,036} & +0,413 & 0,183 \\
+Capacidade de Subestações (MW) vs. Carga Cortada ONS por UF                 & \textbf{+0,679} & \textbf{< 0,001} & \textbf{+0,616} & \textbf{0,001} \\
+Soma de Betweenness Centrality ($\sum C_B$) vs. Carga Cortada ONS por UF   & \textbf{+0,483} & \textbf{0,011} & \textbf{+0,405} & \textbf{0,036} \\
+Subestações de Risco Extremo ($N_{\text{extremo}}$) vs. Qtd. Eventos ONS    & \textbf{+0,468} & \textbf{0,014} & +0,332 & 0,090 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A convergência revela uma dupla assinatura sazonal: \textbf{Agosto} atinge o pico de ameaça a linhas no Druid ($126{,}17 \times 10^6$), coincidindo com o recorde de severidade unitária do ONS (\textbf{110,4 MW/evento}); enquanto \textbf{Outubro} atinge o pico de eventos próximos a linhas (8.035 eventos), coincidindo com o recorde de ocorrências de corte (\textbf{982 eventos e 93.751,7 MW}).
+
+\subsection{Resultados Esperados para o TCC02}
+Para a conclusão do trabalho no TCC02, projeta-se: (i) redução do tempo de despacho operacional de horas para $< 30\text{ s}$ via Webhooks com SitRep (ICS-209); (ii) contração de até 40\% na área de alerta a barlavento com modelagem direcional por vento; (iii) aceleração do cruzamento espacial via \textit{hash joins} $O(1)$ na grade Uber H3 (\texttt{uint64}); e (iv) interface conversacional determinística via FastMCP (\textit{Text-to-SQL}) com zero alucinação factual.

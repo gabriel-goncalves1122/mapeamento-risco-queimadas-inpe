@@ -1,0 +1,12 @@
+\section{Revisão Bibliográfica}
+\label{sc:revisao}
+
+O embasamento do trabalho organiza-se em quatro pilares científicos e tecnológicos:
+
+\textbf{1. Propagação Anisotrópica e Combustível (Rothermel e MapBiomas):} Modelos de Rothermel \cite{rothermel1972mathematical} e Van Wagner \cite{vanwagner1969combined} comprovam que a velocidade do vento ($\|\vec{W}\|$) deforma a queima radial em uma elipse convexa deslocada a sotavento. Paralelamente, dados de 40 anos do MapBiomas Fogo (1985--2024) revelam que a área queimada no Cerrado concentra-se em pastagens (38,2\%) e savanas (51,1\%) \cite{mapbiomas2026fogo}. As faixas de servidão de linhas de transmissão, mantidas sem árvores altas, constituem corredores de pastagem contínua altamente inflamáveis sob umidade $< 20\%$.
+
+\textbf{2. Grade Hexagonal Discreta (DGGS / Uber H3):} Junções geométricas tradicionais ($R$-Tree) impõem complexidade $O(N \log M)$ e distorções diagonais. O sistema Uber H3 \cite{uber_h3_2018} discretiza a superfície terrestre em células hexagonais indexadas por inteiros de 64 bits (\texttt{uint64}). O modelo garante equidistância métrica aos 6 vizinhos contíguos e converte o cruzamento espacial entre fogo e rede elétrica em \textit{Hash Joins} $O(1)$ em memória sem trigonometria onerosa em tempo de execução.
+
+\textbf{3. Teoria de Redes Complexas no Setor Elétrico:} A malha de transmissão do SIN opera como rede livre de escala (\textit{Scale-Free Network}), onde poucos nós concentram o fluxo inter-regional \cite{hagberg2008exploring}. O \textit{Betweenness Centrality} identifica subestações críticas cuja contingência sobrecarrega circuitos secundários e ativa o Esquema Regional de Alívio de Carga (ERAC) pelo ONS \cite{ons2026dadosabertos}.
+
+\textbf{4. Consciência Situacional Ativa e IA Agêntica (FastMCP):} A teoria de Endsley \cite{endsley1995toward} preconiza que sistemas críticos exigem percepção e projeção de cenários. Em comandos de incidentes, o relatório padronizado SitRep (ICS-209) é vital para mobilização. O protocolo \textit{Model Context Protocol} (FastMCP) \cite{anthropic2024mcp} permite acoplar LLMs a ferramentas determinísticas (\textit{Text-to-SQL} no Apache Druid e simulação $N-1$ em grafos), gerando relatórios em PDF com garantia de zero alucinação.

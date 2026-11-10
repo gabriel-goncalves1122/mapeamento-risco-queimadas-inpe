@@ -1,0 +1,35 @@
+\section{Cronograma de Atividades do TCC02}
+\label{sc:cronograma}
+
+As atividades planejadas para a conclusão do trabalho no TCC02 estruturam-se em cinco fases:
+\begin{itemize}
+    \item \textbf{F.1 -- Ingestão Climática e Modelagem Anisotrópica:} Séries horárias ERA5/INMET e calibração das elipses de vento (Rothermel / MapBiomas).
+    \item \textbf{F.2 -- Indexação Espacial Uber H3:} Grade hexagonal em \texttt{uint64} e \textit{hash joins} $O(1)$ no DuckDB e Druid.
+    \item \textbf{F.3 -- Motor de Alarmes e Despacho Ativo:} Máquina de estados finita com \textit{cooldown} e webhooks assíncronos (Telegram / HTTP).
+    \item \textbf{F.4 -- Servidor FastMCP e Relatórios SitRep:} Ferramentas determinísticas MCP (\textit{Text-to-SQL}) e gerador PDF (ICS-209).
+    \item \textbf{F.5 -- Bateria Experimental e Redação da Monografia:} Auditoria de acurácia, latência e escrita da monografia final.
+\end{itemize}
+
+\begin{center}
+\footnotesize
+\begin{ganttchart}[
+    y unit title=.26cm,
+    y unit chart=.25cm,
+    x unit=1.45cm,
+    hgrid,
+    vgrid,
+    time slot format=isodate-yearmonth,
+    time slot unit=month,
+    inline,
+    bar height=0.55,
+    bar/.append style={fill=gray!40, inner sep=0pt},
+    bar label font=\tiny\bfseries
+]{2027-03}{2027-07}
+\gantttitlecalendar{year, month} \\
+\ganttbar{F.1: Clima e Elipses}{2027-03}{2027-04} \\
+\ganttbar{F.2: Uber H3 O(1)}{2027-04}{2027-05} \\
+\ganttbar{F.3: Webhooks/Alarmes}{2027-04}{2027-05} \\
+\ganttbar{F.4: FastMCP e SitRep}{2027-05}{2027-06} \\
+\ganttbar{F.5: Testes e Monografia}{2027-06}{2027-07}
+\end{ganttchart}
+\end{center}

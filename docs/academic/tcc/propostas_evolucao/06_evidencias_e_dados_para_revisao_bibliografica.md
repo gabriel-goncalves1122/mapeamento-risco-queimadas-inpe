@@ -6,7 +6,7 @@
 
 ## 1. Vulnerabilidade da Infraestrutura Elétrica do SIN a Perturbações e Queimadas
 - **Total de Eventos de Interrupção Severa Apurados (2007–2026)**: 8,395 eventos (critério ONS $\ge 100\text{ MW}$ por $\ge 10\text{ min}$).
-- **Montante Acumulado de Carga Interrompida**: **717,448.2 MW** (média de 85.5 MW por evento, P95 de 301.6 MW e pico de 6700.0 MW).
+- **Montante Acumulado de Carga Interrompida**: **717,383.5 MW** (média de 85.5 MW por evento, P95 de 301.6 MW e pico de 6700.0 MW).
 - **Duração Média de Restabelecimento**: 58.7 minutos.
 - **Extensão da Malha de Transmissão Mapeada**: **2,346 linhas de transmissão** totalizando **257,839.3 km** sob supervisão do ONS.
 
@@ -22,7 +22,7 @@
 | 7 | Jul | 446 | 5.3% | 29,575.7 |
 | 8 | Ago | 730 | 8.7% | 80,567.2 |
 | 9 | Set | 828 | 9.9% | 66,967.1 |
-| 10 | Out | 982 | 11.7% | 93,816.4 |
+| 10 | Out | 982 | 11.7% | 93,751.7 |
 | 11 | Nov | 776 | 9.2% | 79,382.9 |
 | 12 | Dez | 727 | 8.7% | 56,395.1 |
 
@@ -92,31 +92,130 @@ Demonstração da necessidade da **fusão multissensor** na arquitetura analíti
 
 ---
 
-## 5. Snippets em LaTeX Prontos para Inserção no TFG (`03-revisao.tex`)
-Abaixo estão os trechos exatos de tabelas formatadas em LaTeX para compilação direta no documento:
+## 5. Triangulação Metodológica em Três Pilares (Validação Científica do SIRDA)
+
+Para assegurar rigor metodológico exigido pela banca de TCC/TFG da UNIFEI, a plataforma não se apoia em suposições teóricas isoladas, mas implementa uma **validação cruzada em três pilares analíticos independentes**:
+
+```mermaid
+flowchart TD
+    P1["<b>Pilar 1: Topologia em Grafos (NetworkX)</b><br/>627 subestações, 1.817 LTs &ge; 230 kV<br/>Betweenness Centrality e Risco de Cascata"]
+    P2["<b>Pilar 2: Tabelas Fato Espaço-Temporais (Druid)</b><br/>147.560 eventos ST-DBSCAN (2025)<br/>3.335.198 focos INPE (FRP, I_ameaça)"]
+    P3["<b>Pilar 3: Operação Empírica Real (ONS)</b><br/>8.395 interrupções de carga (2007–2026)<br/>717.384 MW cortados, Rede Básica 83,6%"]
+
+    P1 <-->|"Convergência Espacial:<br/>Corredor Crítico TO-GO-MG-SP"| P2
+    P2 <-->|"Convergência Temporal:<br/>Agosto (Severidade) e Outubro (Volume)"| P3
+    P1 <-->|"Convergência Topológica:<br/>Hubs Extremos vs Desligamentos ERAC"| P3
+```
+
+### 5.1. Pilar 1: Topologia em Grafos (NetworkX)
+- **Base Modelada**: Multigrafo espacial $G = (V, E)$ com **627 subestações** e **1.817 circuitos de transmissão $\ge 230\text{ kV}$** (`SINNetworkCentralityModel`).
+- **Métrica**: Centralidade de Intermediação normalizada ($C_B \in [0, 100]$).
+- **Estrutura de Risco**: Distribuição típica de rede livre de escala (*Scale-Free Network*):
+  - **7 nós sob Risco EXTREMO** ($C_B \in [87{,}68; 100{,}00]$): SE Rio Verde Norte (GO, 100.0), SE Assis (SP, 98.2), SE Marimbondo II (MG/SP, 92.1), SE Trindade (GO, 91.3), SE Samambaia (DF/GO, 89.3), SE Xavantes (GO, 89.2) e SE Bandeirantes (GO, 87.7).
+  - **2 nós sob Risco ALTO** ($C_B \approx 59{,}0$): SE Londrina ESU (PR) e SE Ivaiporã ELS (PR).
+  - **20 nós sob Risco MÉDIO** ($C_B \in [21{,}85; 47{,}33]$): Colinas (TO), Miracema (TO), Gurupi (TO), Serra da Mesa (GO), Bom Jesus da Lapa II (BA), Rio das Éguas (BA).
+
+### 5.2. Pilar 2: Tabelas Fato Espaço-Temporais (Apache Druid)
+- **`fato_eventos_incendio`**: 147.560 eventos clusterizados via ST-DBSCAN com o cálculo determinístico de:
+  $$I_{\text{ameaça\_linha}} = \frac{\text{FRP} \times (1 + \text{risco}) \times \ln(V_{\text{kV}} + 1)}{\max(d_{\text{linha\_km}}, 0{,}1)}$$
+- **`fato_focos_incendio`**: 3.335.198 focos com energia radiativa (FRP), distâncias euclidianas planas (EPSG:5880) e dias sem chuva.
+
+### 5.3. Pilar 3: Operação Empírica Real do SIN (ONS)
+- **Base Analisada**: 8.395 ocorrências forçadas de corte de carga ONS (2007–2026), somando **717.383,55 MW cortados** e **893.325,18 MWh de energia não suprida**.
+- **Predomínio Estrutural**: **83,64% de toda a potência cortada no Brasil** (600.032,77 MW) envolveu diretamente a Rede Básica ($\ge 230\text{ kV}$), validando o recorte do grafo.
+
+---
+
+### 5.4. Tabela de Convergência Sazonal (Fatos Druid vs. Interrupções ONS)
+
+| Mês | Eventos Fato Druid | FRP Total Fato (MW) | Ameaça Linhas Druid ($\sum I_{\text{linha}}$) | Ameaça Subestações Druid ($\sum I_{\text{sub}}$) | Eventos Fato $\le 15\text{ km}$ LTs | Carga Interrompida ONS (MW) | Qtd. Eventos ONS | Severidade Média ONS (MW/ev) |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Jan | 5.366 | 958.671 | 1.497.761 | 178.774 | 1.649 | 60.657,9 | 775 | 78,3 MW |
+| Fev | 3.518 | 483.346 | 977.632 | 94.611 | 1.185 | 59.636,6 | 711 | 83,9 MW |
+| Mar | 3.949 | 830.050 | 1.032.917 | 136.839 | 1.419 | 80.882,2 | 820 | 98,6 MW |
+| Abr | 2.517 | 363.957 | 411.416 | 63.780 | 970 | 41.647,6 | 622 | 67,0 MW |
+| Mai | 5.708 | 3.122.864 | 4.337.997 | 367.844 | 1.606 | 34.930,0 | 513 | 68,1 MW |
+| Jun | 7.241 | 6.567.593 | 5.736.348 | 714.531 | 1.762 | 32.989,5 | 465 | 70,9 MW |
+| Jul | 11.597 | 9.832.756 | 10.171.450 | 1.214.540 | 3.265 | 29.575,7 | 446 | 66,3 MW |
+| **Ago** | **17.788** | **28.418.028** | **126.168.000 (PICO)**| **3.343.282** | **4.977** | **80.567,2** | **730** | **110,4 MW (PICO)** |
+| **Set** | **26.777** | **29.259.020 (PICO)**| **82.304.340** | **4.456.286 (PICO)**| **7.326** | **66.967,1** | **828** | **80,9 MW** |
+| **Out** | **33.651 (PICO)**| **26.979.797** | **48.882.330** | **4.139.120** | **8.035 (PICO)** | **93.751,7 (PICO)**| **982 (PICO)**| **95,5 MW** |
+| Nov | 24.224 | 10.353.613 | 26.973.000 | 1.715.599 | 6.228 | 79.382,9 | 776 | 102,3 MW |
+| Dez | 5.224 | 1.096.428 | 1.657.038 | 197.040 | 1.369 | 56.395,1 | 727 | 77,6 MW |
+
+---
+
+### 5.5. Matriz de Correlação Estatística Cruzada
+
+A correlação entre as métricas teóricas/dinâmicas e as interrupções reais comprovam hipóteses fundamentais:
+
+| Hipótese Científica | Variável X (SIRDA) | Variável Y (ONS Empírico) | Pearson ($r$) | $p$-valor | Spearman ($\rho$) | $p$-valor | Conclusão Técnica |
+| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
+| **Ameaça à Linha vs. Severidade** | $\sum I_{\text{linha}}$ (Fato Druid) | Severidade Média (MW/evento) | **+0,600** | **0,039** | +0,378 | 0,226 | **Validada ($p < 0{,}05$)**: Incêndios severos em LTs geram maiores blocos desarmados. |
+| **Fogo Próximo vs. Carga Cortada** | Eventos Fato $\le 15\text{ km}$ LT | Carga Interrompida (MW) | **+0,607** | **0,036** | +0,413 | 0,183 | **Validada ($p < 0{,}05$)**: A proximidade física à rede comanda o volume de alívio de carga. |
+| **Topologia vs. Volume por UF** | Capacidade Subestações (MW) | Carga Interrompida (MW) | **+0,679** | **< 0,001**| **+0,616** | **0,001** | **Forte correlação estrutural ($p \le 0{,}001$)**. |
+| **Centralidade vs. Volume por UF** | $\sum C_B$ (Betweenness Grafo)| Carga Interrompida (MW) | **+0,483** | **0,011** | **+0,405** | **0,036** | **Validada ($p < 0{,}05$)**: Nós centrais acumulam maiores volumes de desvio. |
+| **Hubs Extremos vs. Frequência** | $N_{\text{extremo}}$ por UF | Quantidade de Eventos ONS | **+0,468** | **0,014** | +0,332 | 0,090 | **Validada ($p < 0{,}05$)**: Estados com nós extremos operam como fusíveis de alívio. |
+
+---
+
+### 5.6. A Rota Espinhal e a Dinâmica do ERAC
+
+A triangulação esclarece a relação entre causa a montante e efeito a jusante no SIN:
+1. **Onde queima e ameaça**: Os maiores valores de $I_{\text{linha}}$ nas tabelas fato ocorrem nos eixos de transmissão de 500 kV que cortam **Tocantins** (76,8M), **Maranhão** (46,4M), **Goiás** (34,9M), **São Paulo** (22,6M) e **Minas Gerais** (12,4M).
+2. **Onde estrangula no Grafo**: A contingência forçada das LTs sobrecarrega os super-hubs do grafo: **SE Colinas $\rightarrow$ SE Miracema $\rightarrow$ SE Gurupi $\rightarrow$ SE Serra da Mesa $\rightarrow$ SE Samambaia $\rightarrow$ SE Trindade $\rightarrow$ SE Rio Verde Norte $\rightarrow$ SE Marimbondo II / SE Assis**.
+3. **Onde ocorre o corte de carga**: As subestações de transmissão não consomem energia; para resguardar a estabilidade de frequência do SIN, o ONS atua o **ERAC**, impondo desligamentos automáticos em distribuidoras a jusante: **Equatorial Pará** (52.956 MW), **Equatorial Goiás** (52.856 MW em 914 eventos) e **Enel São Paulo** (48.218 MW).
+
+---
+
+## 6. Snippets em LaTeX Prontos para Inserção no TFG (`03-revisao.tex` / `05-resultados.tex`)
+
+Abaixo estão os trechos exatos de tabelas formatadas em LaTeX prontas para inclusão na monografia:
 
 ```latex
-% Tabela de Sazonalidade ONS no LaTeX
+% Tabela da Triangulação Sazonal no LaTeX
 \begin{table}[htbp]
 \centering
 \small
-\caption{Distribuição sazonal de eventos de interrupção de carga no Sistema Interligado Nacional (2007--2026). Fonte: Dados Abertos ONS (2026).}
-\label{tab:sazonalidade_ons}
-\begin{tabular}{ccccc}
-\hline
-\textbf{Mês} & \textbf{Período} & \textbf{Ocorrências} & \textbf{\% do Total} & \textbf{Potência Interrompida (MW)} \\
-\hline
-1 & Jan & 775 & 9.2\% & 60,658 \\
-2 & Fev & 711 & 8.5\% & 59,637 \\
-3 & Mar & 820 & 9.8\% & 80,882 \\
-4 & Abr & 622 & 7.4\% & 41,648 \\
-5 & Mai & 513 & 6.1\% & 34,930 \\
-6 & Jun & 465 & 5.5\% & 32,990 \\
-\dots & \dots & \dots & \dots & \dots \\
-10 & Out & 982 & 11.7\% & 93,816 \\
-11 & Nov & 776 & 9.2\% & 79,383 \\
-12 & Dez & 727 & 8.7\% & 56,395 \\
-\hline
+\caption{Triangulação sazonal entre a Ameaça Dinâmica às Linhas de Transmissão (Apache Druid) e as Interrupções Reais de Carga do ONS (2007--2026).}
+\label{tab:triangulacao_sazonal_sin}
+\begin{tabular}{cccccc}
+\toprule
+\textbf{Mês} & \textbf{Eventos Fato} & \textbf{Ameaça Linhas ($I_{\text{linha}}$)} & \textbf{Eventos $\le 15$ km LT} & \textbf{MW Cortados ONS} & \textbf{Severidade (MW/ev)} \\
+\midrule
+Jan & 5.366  & $1{,}50 \times 10^6$  & 1.649 & 60.658 & 78,3 \\
+Fev & 3.518  & $0{,}98 \times 10^6$  & 1.185 & 59.637 & 83,9 \\
+Mar & 3.949  & $1{,}03 \times 10^6$  & 1.419 & 80.882 & 98,6 \\
+Abr & 2.517  & $0{,}41 \times 10^6$  & 970   & 41.648 & 67,0 \\
+Mai & 5.708  & $4{,}34 \times 10^6$  & 1.606 & 34.930 & 68,1 \\
+Jun & 7.241  & $5{,}74 \times 10^6$  & 1.762 & 32.990 & 70,9 \\
+Jul & 11.597 & $10{,}17 \times 10^6$ & 3.265 & 29.576 & 66,3 \\
+\textbf{Ago} & \textbf{17.788} & $\mathbf{126{,}17 \times 10^6}$ & \textbf{4.977} & \textbf{80.567} & \textbf{110,4 (Pico)} \\
+\textbf{Set} & \textbf{26.777} & $\mathbf{82{,}30 \times 10^6}$  & \textbf{7.326} & \textbf{66.967} & \textbf{80,9} \\
+\textbf{Out} & \textbf{33.651 (Pico)} & $\mathbf{48{,}88 \times 10^6}$ & \textbf{8.035 (Pico)} & \textbf{93.752 (Pico)} & \textbf{95,5} \\
+Nov & 24.224 & $26{,}97 \times 10^6$ & 6.228 & 79.383 & 102,3 \\
+Dez & 5.224  & $1{,}66 \times 10^6$  & 1.369 & 56.395 & 77,6 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Tabela de Correlação Estatística dos Três Pilares
+\begin{table}[htbp]
+\centering
+\small
+\caption{Validação estatística paramétrica (Pearson) e não-paramétrica (Spearman) entre as métricas do SIRDA e o histórico operacional do ONS.}
+\label{tab:correlacoes_tres_pilares}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Hipótese Avaliada} & \textbf{Pearson ($r$)} & \textbf{$p$-valor} & \textbf{Spearman ($\rho$)} & \textbf{$p$-valor} \\
+\midrule
+Ameaça às Linhas ($I_{\text{linha}}$) vs. Severidade ONS (MW/ev) & \textbf{+0,600} & \textbf{0,039} & +0,378 & 0,226 \\
+Eventos $\le 15$ km de Linhas vs. Carga Cortada ONS (MW)         & \textbf{+0,607} & \textbf{0,036} & +0,413 & 0,183 \\
+Capacidade Subestações (MW) vs. Carga Cortada ONS (MW)           & \textbf{+0,679} & \textbf{< 0,001} & \textbf{+0,616} & \textbf{0,001} \\
+Soma de Betweenness ($\sum C_B$) vs. Carga Cortada ONS (MW)     & \textbf{+0,483} & \textbf{0,011} & \textbf{+0,405} & \textbf{0,036} \\
+Subestações Extremas ($N_{\text{extremo}}$) vs. Eventos ONS       & \textbf{+0,468} & \textbf{0,014} & +0,332 & 0,090 \\
+\bottomrule
 \end{tabular}
 \end{table}
 ```
+

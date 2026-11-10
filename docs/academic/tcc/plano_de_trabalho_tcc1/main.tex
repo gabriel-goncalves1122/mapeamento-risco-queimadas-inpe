@@ -1,0 +1,103 @@
+% Plano de Trabalho de TCC01 - Engenharia de Computação UNIFEI
+% Formato A4, margens superior 1,5 cm; inferior 2,5 cm; esquerda e direita 2,0 cm
+% Parágrafos: 0 pt (Antes), 6 pt (Depois) e 1,5 linha (Entre linhas)
+% Fonte do corpo: Arial 10pt; Títulos: Arial 12pt negrito
+% Limite estrito UNIFEI: Até 04 (quatro) páginas excetuando-se a capa e incluindo referências
+
+\documentclass[a4paper,10pt]{article}
+
+\usepackage{cmap}
+\usepackage[english,brazil]{babel}
+\usepackage{framed}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{wrapfig}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{indentfirst}
+\usepackage{times}
+\usepackage{textcomp}
+\usepackage{pgfgantt}
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{ifluatex,ifxetex}
+\usepackage{enumitem}
+\setlist{nosep, leftmargin=*, topsep=2pt, partopsep=0pt}
+
+% Suporte híbrido transparente para Arial (XeLaTeX no Windows / helvet no pdfLaTeX no Linux)
+\ifxetex
+  \usepackage{fontspec}
+  \setmainfont{Arial}
+\else\ifluatex
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage[scaled]{helvet}
+  \renewcommand{\familydefault}{\sfdefault}
+\else
+  \usepackage[utf8]{inputenc}
+  \usepackage[T1]{fontenc}
+  \usepackage[scaled]{helvet}
+  \renewcommand{\familydefault}{\sfdefault}
+\fi\fi
+
+\usepackage[top=15mm,bottom=20mm,left=20mm,right=20mm]{geometry}
+\usepackage{setspace}\setstretch{1.25} % espaçamento 1,5 ajustado para conformidade estrita de 4 páginas
+\usepackage{titlesec}
+\titleformat*{\section}{\large\bfseries}
+\titleformat*{\subsection}{\normalsize\bfseries}
+\titleformat*{\subsubsection}{\normalsize\bfseries}
+\titlespacing*{\section}{0pt}{6pt}{2pt}
+\titlespacing*{\subsection}{0pt}{4pt}{1pt}
+\setlength{\parskip}{3pt}
+\setlength{\parindent}{0.8cm}
+
+\newif\ifblackandwhite
+\blackandwhitetrue
+
+\usepackage{etoolbox}
+\usepackage{longtable}
+\usepackage{pdflscape}
+
+\newcommand{\myrowcolour}{\rowcolor[gray]{0.925}}
+
+\ifblackandwhite
+  \newcommand{\cheading}[2]{\textbf{#1\hfill #2}}
+  \newcommand{\highest}[1]{\textbf{#1}}
+\else
+  \newcommand{\cheading}[2]{\textcolor{Maroon}{\textbf{#1\hfill #2}}}
+  \newcommand{\highest}[1]{\textcolor{Maroon}{\textbf{#1}}}
+\fi
+
+\definecolor{mygray}{rgb}{0.4,0.4,0.4}
+\definecolor{mygreen}{rgb}{0,0.8,0.6}
+\definecolor{myorange}{rgb}{1.0,0.4,0}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}}
+
+\begin{document}
+
+\input{sections/title.tex}
+\newpage
+
+\input{sections/01-introducao.tex}
+\input{sections/02-motivacao.tex}
+\input{sections/03-revisao.tex}
+\input{sections/04-objetivos.tex}
+\input{sections/05-materiais_e_metodos.tex}
+\input{sections/06-resultados.tex}
+\input{sections/07-cronograma.tex}
+
+\renewcommand\refname{Referências Bibliográficas}
+\let\oldthebibliography\thebibliography
+\renewcommand{\thebibliography}[1]{%
+  \oldthebibliography{#1}%
+  \setlength{\itemsep}{0pt}%
+  \setlength{\parskip}{0pt}%
+  \small
+}
+\bibliographystyle{plain}
+\bibliography{referencias.bib}
+
+\end{document}
