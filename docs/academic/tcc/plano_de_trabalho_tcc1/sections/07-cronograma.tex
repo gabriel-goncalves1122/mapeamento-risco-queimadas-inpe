@@ -1,35 +1,29 @@
 \section{Cronograma de Atividades do TCC02}
 \label{sc:cronograma}
 
-As atividades planejadas para a conclusão do trabalho no TCC02 estruturam-se em cinco fases:
-\begin{itemize}
-    \item \textbf{F.1 -- Ingestão Climática e Modelagem Anisotrópica:} Séries horárias ERA5/INMET e calibração das elipses de vento (Rothermel / MapBiomas).
-    \item \textbf{F.2 -- Indexação Espacial Uber H3:} Grade hexagonal em \texttt{uint64} e \textit{hash joins} $O(1)$ no DuckDB e Druid.
-    \item \textbf{F.3 -- Motor de Alarmes e Despacho Ativo:} Máquina de estados finita com \textit{cooldown} e webhooks assíncronos (Telegram / HTTP).
-    \item \textbf{F.4 -- Servidor FastMCP e Relatórios SitRep:} Ferramentas determinísticas MCP (\textit{Text-to-SQL}) e gerador PDF (ICS-209).
-    \item \textbf{F.5 -- Bateria Experimental e Redação da Monografia:} Auditoria de acurácia, latência e escrita da monografia final.
-\end{itemize}
+O cronograma de execução para o TCC02 distribui-se em seis etapas sequenciais entre março e agosto de 2027:
 
 \begin{center}
 \footnotesize
 \begin{ganttchart}[
-    y unit title=.26cm,
-    y unit chart=.25cm,
-    x unit=1.45cm,
+    y unit title=0.42cm,
+    y unit chart=0.44cm,
+    x unit=1.40cm,
     hgrid,
     vgrid,
     time slot format=isodate-yearmonth,
     time slot unit=month,
-    inline,
-    bar height=0.55,
-    bar/.append style={fill=gray!40, inner sep=0pt},
-    bar label font=\tiny\bfseries
-]{2027-03}{2027-07}
+    bar height=0.58,
+    bar/.append style={fill=gray!45, draw=black!70, line width=0.4pt},
+    bar label font=\footnotesize\bfseries,
+    title label font=\footnotesize\bfseries
+]{2027-03}{2027-08}
 \gantttitlecalendar{year, month} \\
-\ganttbar{F.1: Clima e Elipses}{2027-03}{2027-04} \\
-\ganttbar{F.2: Uber H3 O(1)}{2027-04}{2027-05} \\
-\ganttbar{F.3: Webhooks/Alarmes}{2027-04}{2027-05} \\
-\ganttbar{F.4: FastMCP e SitRep}{2027-05}{2027-06} \\
-\ganttbar{F.5: Testes e Monografia}{2027-06}{2027-07}
+\ganttbar{F.1: Dados Climáticos e Elipses de Vento}{2027-03}{2027-03} \\
+\ganttbar{F.2: Malha H3 e Testes em Batch (DuckDB)}{2027-03}{2027-04} \\
+\ganttbar{F.3: Simulação de Streaming (Kafka / Druid)}{2027-04}{2027-05} \\
+\ganttbar{F.4: Motor de Alertas e Webhooks (Cooldown)}{2027-05}{2027-06} \\
+\ganttbar{F.5: Servidor FastMCP, RAG e Relatórios PDF}{2027-06}{2027-07} \\
+\ganttbar{F.6: Validação Final e Escrita do TCC02}{2027-07}{2027-08}
 \end{ganttchart}
 \end{center}

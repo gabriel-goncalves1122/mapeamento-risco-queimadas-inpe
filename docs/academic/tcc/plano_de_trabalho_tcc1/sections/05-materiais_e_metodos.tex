@@ -1,17 +1,13 @@
 \section{Materiais e Métodos}
 \label{sc:materiais_e_metodos}
 
-\subsection{Padrão Arquitetural e Stack Tecnológico}
-O sistema segue o padrão \textbf{FCIS (\textit{Functional Core, Imperative/OO Shell})}: os cálculos matemáticos de elipses de vento, indexação hexagonal e limpeza de dados são funções puras e vetorizadas (\textit{DataFrame $\rightarrow$ DataFrame}), enquanto conexões de rede (Kafka, Druid, FastMCP) são gerenciadas por classes com \textit{Context Managers} e injeção de dependência em Python 3.12 (gerenciador Astral \texttt{uv}).
-
-A stack integra: (i) Dagster para orquestração e Apache Kafka para streaming; (ii) Apache Druid e DuckDB (\textit{spatial} + \textit{h3}) para consultas analíticas e arquivos GeoParquet; (iii) Biblioteca \texttt{h3-py} (\texttt{uint64}), Apache Superset e NetworkX para grafos da rede elétrica; (iv) Servidor FastMCP com geração de relatórios em PDF e envio assíncrono de Webhooks; e (v) Bases públicas: INPE (BDQueimadas), ERA5, MapBiomas Fogo 5.1, FUNAI, CNES/SUS, DNIT e ONS.
+\subsection{Stack Tecnológico e Arquitetura}
+O projeto preserva o padrão \textbf{FCIS} em Python 3.12 (gerenciado via Astral \texttt{uv}), separando transformações puras e vetorizadas (\textit{DataFrame $\rightarrow$ DataFrame}) da camada de infraestrutura e rede. A stack compreende: (i) \textbf{Orquestração e Mensageria:} Dagster (podendo incluir também a implementação e avaliação do Apache Airflow) e Apache Kafka; (ii) \textbf{Armazenamento Híbrido:} DuckDB (extensões \texttt{spatial}, \texttt{h3} e \texttt{vss}) para processamento analítico em lote sobre \texttt{GeoParquet} e memória vetorial RAG, aliado ao Apache Druid para ingestão em \textit{streaming} e visualização no Apache Superset; e (iii) \textbf{Camada de Inteligência e Ação:} Biblioteca \texttt{h3-py}, NetworkX, servidor FastMCP, compilador PDF e despacho assíncrono de Webhooks.
 
 \subsection{Procedimentos Metodológicos}
-O desenvolvimento organiza-se em cinco etapas:
 \begin{enumerate}
-    \item \textbf{Ingestão e Validação (Bronze):} Coleta automatizada de focos de calor e séries de vento/umidade validados via contratos Pydantic;
-    \item \textbf{Grade H3 e Elipses de Vento (Silver):} Mapeamento nas resoluções H3 7 ($\sim 5\text{ km}^2$) e 9 ($\sim 0,1\text{ km}^2$). Cálculo da elipse na direção do vento ($a = R_0 \cdot [1 + 0{,}25 \cdot \|\vec{W}\|]$), ajustada pelo tipo de vegetação local;
-    \item \textbf{Enriquecimento Analítico (Gold):} Cruzamento rápido via H3 ($O(1)$) e carga no Apache Druid mantendo chaves e métricas de ameaça: $I_{\text{linha}} = [\text{FRP} \cdot (1 + \text{risco}) \cdot \ln(V_{\text{kV}} + 1)] / \max(d_{\text{km}}, 0{,}1)$;
-    \item \textbf{Alertas e Relatórios via IA (FastMCP e Webhooks):} Disparo automático de avisos com janela de supressão de 6h e uso do FastMCP para consultar o Druid e gerar relatórios SitRep em PDF;
-    \item \textbf{Bateria de Testes e Validação:} Comparação entre raios circulares e elípticos, medição de desempenho via \texttt{docker stats} e cruzamento estatístico com os registros de quedas de energia do ONS.
+    \item \textbf{Validação em Lote (Bronze/Silver no DuckDB):} Ingestão validada por contratos Pydantic e pré-indexação dos mapas estáticos (FUNAI, SUS, DNIT, ONS e MapBiomas) em células hexagonais H3 nas resoluções 7 ($\sim 5{,}16\text{ km}^2$) e 9 ($\sim 0{,}10\text{ km}^2$);
+    \item \textbf{Cálculo Anisotrópico e Simulação de \textit{Streaming} (Gold):} Geração dos perímetros elípticos orientados pelo vento nos eventos ST-DBSCAN, validada em lote no DuckDB e posteriormente publicada em fluxo contínuo no Kafka para consumo em tempo real pelo Apache Druid;
+    \item \textbf{Acoplamento do RAG, FastMCP e Webhooks:} Indexação de relatórios técnicos do ONS e manuais operacionais no DuckDB (\texttt{vss}); exposição de ferramentas de consulta segura no FastMCP e disparo automático de boletins PDF sob regras de \textit{cooldown};
+    \item \textbf{Protocolo de Testes e Avaliação do Agente:} Benchmark comparativo de tempo de junção ($R$-Tree vs. H3 no DuckDB), sensibilidade das elipses frente aos desligamentos do ONS e avaliação do assistente FastMCP e RAG via conjunto com 30 perguntas operacionais de referência, quantificando a taxa de execução correta e a ausência de alucinações numéricas.
 \end{enumerate}

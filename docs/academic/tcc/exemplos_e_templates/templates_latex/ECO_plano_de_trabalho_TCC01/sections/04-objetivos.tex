@@ -2,15 +2,14 @@
 \label{sc:objetivos}
 
 \subsection{Objetivo Geral}
-Desenvolver e validar a evolução da plataforma analítica geoespacial para o \textbf{SIRDA 2.0}, integrando modelagem direcional de propagação do fogo por vento e vegetação, indexação espacial em hexágonos (Uber H3), envio automático de alertas (Webhooks) e um assistente de consultas em linguagem natural e geração de relatórios (via FastMCP) para apoiar o monitoramento de infraestruturas e territórios críticos no Brasil.
+Desenvolver e validar uma arquitetura de integração de modelos de linguagem e automação de fluxos para apoio à tomada de decisão baseada em dados, materializada na evolução da plataforma geoespacial \textbf{SIRDA 2.0} com modelagem elíptica de propagação do fogo, indexação hexagonal Uber H3 em arquitetura híbrida (DuckDB e Apache Druid), despacho ativo de alertas (Webhooks) e assistente via protocolo MCP com RAG.
 
 \subsection{Objetivos Específicos}
 \begin{enumerate}
     \setlength\itemsep{0em}
-    \item \textbf{Integração de Dados de Clima e Energia:} Incorporar ao pipeline dados horários de velocidade e direção do vento (ERA5 / INMET) e a base histórica de interrupções de carga do ONS;
-    \item \textbf{Indexação Espacial em Hexágonos (Uber H3):} Implementar a grade hexagonal Uber H3 (\texttt{uint64}) nas resoluções 7 e 9, convertendo o cruzamento geográfico em comparações diretas em memória ($O(1)$);
-    \item \textbf{Modelagem Elíptica de Avanço do Fogo:} Desenvolver o cálculo de áreas de risco em formato elíptico orientado pelo vento (modelo de Rothermel) e pelo tipo de vegetação (MapBiomas Fogo);
-    \item \textbf{Módulo de Alertas Automáticos:} Construir um serviço de envio de avisos via Webhooks (Telegram e REST) com controle de intervalo (\textit{cooldown} de 6h) para evitar alertas duplicados;
-    \item \textbf{Assistente de Consultas e Relatórios (FastMCP):} Desenvolver um servidor MCP conectado ao Apache Druid para responder perguntas em português e gerar boletins padronizados em PDF (padrão ICS-209);
-    \item \textbf{Validação Experimental:} Comparar a precisão das elipses de vento frente aos círculos fixos, medir o tempo de geração dos relatórios e validar os indicadores frente ao histórico de desligamentos do ONS.
+    \item \textbf{Pipeline em Lote e Simulação de \textit{Streaming}:} Integrar séries horárias de vento (ERA5/INMET), combustível vegetal (MapBiomas) e apagões (ONS), executando inicialmente o processamento em lote (\textit{batch}) no DuckDB para validação e, na sequência, simulando o fluxo em \textit{streaming} via Kafka para o Apache Druid;
+    \item \textbf{Indexação Hexagonal H3 e Elipses de Vento:} Implementar a conversão espacial em células Uber H3 (\texttt{uint64}) nas resoluções 7 e 9 e o cálculo de zonas elípticas orientadas pelo vento;
+    \item \textbf{Automação de Alertas via Webhooks:} Desenvolver o módulo de notificações ativas (Telegram e REST) com controle de intervalo (\textit{cooldown}) configurável para suprimir avisos redundantes;
+    \item \textbf{Servidor FastMCP, RAG e Boletins PDF:} Construir o servidor MCP integrado à busca vetorial RAG no DuckDB e às tabelas analíticas para responder consultas em português e compilar boletins SitRep (ICS-209) em PDF;
+    \item \textbf{Avaliação Experimental e Benchmark do Assistente:} Medir o ganho de desempenho das junções H3 no DuckDB frente a árvores espaciais, a redução de falsos alarmes pelas elipses de vento e a precisão do assistente FastMCP por meio de um \textit{benchmark} de consultas operacionais com gabarito de referência (\textit{ground truth}), avaliando a acurácia de execução das consultas (*Execution Accuracy*) e a fidelidade factual dos relatórios em PDF.
 \end{enumerate}

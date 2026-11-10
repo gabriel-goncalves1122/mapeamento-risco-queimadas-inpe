@@ -13,7 +13,6 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage[colorinlistoftodos]{todonotes}
-\usepackage{wrapfig}
 \usepackage{listings}
 \usepackage{color}
 \usepackage{indentfirst}
@@ -24,7 +23,7 @@
 \usepackage{colortbl}
 \usepackage{ifluatex,ifxetex}
 \usepackage{enumitem}
-\setlist{nosep, leftmargin=*, topsep=2pt, partopsep=0pt}
+\setlist{nosep, leftmargin=*, topsep=2.5pt, partopsep=0pt, itemsep=1.5pt}
 
 % Suporte híbrido transparente para Arial (XeLaTeX no Windows / helvet no pdfLaTeX no Linux)
 \ifxetex
@@ -43,14 +42,14 @@
 \fi\fi
 
 \usepackage[top=15mm,bottom=18mm,left=20mm,right=20mm]{geometry}
-\usepackage{setspace}\setstretch{1.16} % espaçamento ajustado para conformidade estrita de 4 páginas
+\usepackage{setspace}\setstretch{1.15} % espaçamento equilibrado para leitura fluida em 4 páginas de conteúdo
 \usepackage{titlesec}
 \titleformat*{\section}{\large\bfseries}
 \titleformat*{\subsection}{\normalsize\bfseries}
 \titleformat*{\subsubsection}{\normalsize\bfseries}
-\titlespacing*{\section}{0pt}{5pt}{2pt}
-\titlespacing*{\subsection}{0pt}{3pt}{1pt}
-\setlength{\parskip}{2.2pt}
+\titlespacing*{\section}{0pt}{5.5pt}{2pt}
+\titlespacing*{\subsection}{0pt}{3.5pt}{1.5pt}
+\setlength{\parskip}{2.4pt}
 \setlength{\parindent}{0.8cm}
 
 \newif\ifblackandwhite
@@ -93,7 +92,7 @@
 \let\oldthebibliography\thebibliography
 \renewcommand{\thebibliography}[1]{%
   \oldthebibliography{#1}%
-  \setlength{\itemsep}{0pt}%
+  \setlength{\itemsep}{1pt}%
   \setlength{\parskip}{0pt}%
   \footnotesize
 }

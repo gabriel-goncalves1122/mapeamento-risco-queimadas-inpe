@@ -2,32 +2,34 @@
 \label{sc:resultados}
 
 \subsection{Resultados Consolidados na Iniciação Científica}
-O trabalho parte de resultados práticos já alcançados e validados na etapa de Iniciação Científica:
+Os experimentos concluídos e documentados no Relatório Final da IC \cite{sampaio2026ic} entregam três bases quantitativas:
 \begin{enumerate}
-    \item \textbf{Desempenho Técnico e \texttt{docker stats}:} Arquitetura com 4,05 milhões de registros ($\sim 850\text{ MB}$ no Druid). Nos testes de estresse sob 16 usuários simultâneos, o perfil de 2 vCPUs sustentou $\sim 2{,}0\text{ QPS}$ com \textbf{0\% de erro} e consultas P95 $< 500\text{ ms}$, com queda expressiva de uso de CPU/RAM via cache do Broker;
-    \item \textbf{Padrões Analíticos Multissetoriais (2025):} A análise de 3,33 milhões de focos e 147,5 mil eventos (ST-DBSCAN) destacou a TI Parque do Araguaia (TO) em 1º lugar nacional em pressão térmica acumulada antes dos incêndios na Aldeia Canoanã \cite{g1_canoana_2026}, além de mapear a pressão sobre hospitais do SUS e rodovias federais;
-    \item \textbf{Correlação com Quedas de Energia do ONS:} Na malha elétrica (627 subestações e 1.817 linhas $\ge 230$ kV no NetworkX), o cruzamento dos eventos do Druid com 8.395 interrupções do ONS (717 GW entre 2007 e 2026) mostrou que \textbf{83,64\% dos cortes ocorrem na Rede Básica}, com correlações estatisticamente significativas ($p < 0{,}05$), conforme a Tabela \ref{tab:validacao_triangulada_tcc}.
+    \item \textbf{Eficiência Computacional (\texttt{docker stats}):} Os 4,05 milhões de registros ocuparam apenas $\sim 850\text{ MB}$ no Apache Druid (compressão LZ4). Sob estresse de 1 a 16 consultas simultâneas (perfis de 1,0, 1,5 e 2,0 vCPUs), a configuração de 2 vCPUs sustentou vazão de $\sim 2{,}0\text{ QPS}$ com \textbf{0\% de erro} e latência P95 $< 500\text{ ms}$, atingindo ganho de vazão de até \textbf{38,8 vezes} frente a alocações fragmentadas graças à indexação prévia em memória e ao cache do Broker \cite{sampaio2026ic};
+    \item \textbf{Retrato Analítico de 1 Ano de Queimadas (2025):} A agregação de 3,33 milhões de focos em 147,5 mil eventos (ST-DBSCAN) identificou a Terra Indígena Parque do Araguaia (TO) em 1º lugar nacional no índice de pressão térmica antes do incêndio na Aldeia Canoanã \cite{g1_canoana_2026}, além de quantificar a exposição de 7.386 hospitais do SUS e 7.690 trechos de rodovias federais;
+    \item \textbf{Cruzamento Estatístico com o Histórico de Apagões do ONS:} Confrontando o grafo da Rede Básica ($\ge 230$ kV: 627 subestações e 1.817 linhas) e os eventos de fogo com as 8.395 interrupções do ONS (2007--2026), verificou-se que \textbf{83,64\% da carga cortada no país (600,0 GW) ocorre na Rede Básica}. Para testar se os índices formulados na Seção \ref{sc:revisao} acompanham as quedas reais de energia, aplicaram-se na Tabela \ref{tab:validacao_triangulada_tcc} três métricas estatísticas: o coeficiente de \textbf{Pearson ($r \in [-1, +1]$)}, que mede a proporção linear direta entre os volumes; o coeficiente de \textbf{Spearman ($\rho \in [-1, +1]$)}, que avalia se a ordem (ranking) dos meses e estados mais críticos coincide; e o \textbf{$p$-valor}, que atesta significância estatística quando $p < 0{,}05$ (mais de 95\% de confiança de que a relação não é aleatória).
 \end{enumerate}
 
 \begin{table}[htbp]
 \centering
-\scriptsize
-\caption{Correlação Estatística entre os Indicadores do Projeto (SIRDA) e o Histórico Oficial do ONS.}
+\small
+\renewcommand{\arraystretch}{1.28}
+\setlength{\tabcolsep}{5.2pt}
+\caption{Correlação linear (Pearson $r$), de ranking (Spearman $\rho$) e significância ($p$-valor) entre os índices da plataforma \cite{sampaio2026ic} e os desligamentos oficiais do ONS (2007--2026).}
 \label{tab:validacao_triangulada_tcc}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Relação Analisada} & \textbf{Pearson ($r$)} & \textbf{$p$-valor} & \textbf{Spearman ($\rho$)} & \textbf{$p$-valor} \\
+\textbf{Indicador Calculado (SIRDA) vs. Registro Oficial (ONS)} & \textbf{Pearson ($r$)} & \textbf{$p$-valor} & \textbf{Spearman ($\rho$)} & \textbf{$p$-valor} \\
 \midrule
-Ameaça às Linhas ($I_{\text{linha}}$ Fato) vs. Severidade Média ONS (MW/ev) & \textbf{+0,600} & \textbf{0,039} & +0,378 & 0,226 \\
-Eventos Fato $\le 15$ km de LTs vs. Carga Cortada ONS (MW)                  & \textbf{+0,607} & \textbf{0,036} & +0,413 & 0,183 \\
-Capacidade de Subestações (MW) vs. Carga Cortada ONS por UF                 & \textbf{+0,679} & \textbf{< 0,001} & \textbf{+0,616} & \textbf{0,001} \\
-Soma de Betweenness Centrality ($\sum C_B$) vs. Carga Cortada ONS por UF   & \textbf{+0,483} & \textbf{0,011} & \textbf{+0,405} & \textbf{0,036} \\
-Subestações de Risco Extremo ($N_{\text{extremo}}$) vs. Qtd. Eventos ONS    & \textbf{+0,468} & \textbf{0,014} & +0,332 & 0,090 \\
+Índice de Ameaça às Linhas ($I_{\text{linha}}$) vs. Severidade por Queda (MW/ev) & \textbf{+0,600} & \textbf{0,039} & +0,378 & 0,226 \\
+Incêndios Próximos ($\le 15$ km de LTs) vs. Carga Cortada Total (MW)             & \textbf{+0,607} & \textbf{0,036} & +0,413 & 0,183 \\
+Potência Instalada nas Subestações (MW) vs. Carga Cortada por UF                 & \textbf{+0,679} & \textbf{< 0,001} & \textbf{+0,616} & \textbf{0,001} \\
+Centralidade no Grafo ($\sum C_B$) vs. Carga Cortada por Estado (UF)             & \textbf{+0,483} & \textbf{0,011} & \textbf{+0,405} & \textbf{0,036} \\
+Subestações em Risco Extremo ($N_{\text{extremo}}$) vs. Total de Quedas ONS      & \textbf{+0,468} & \textbf{0,014} & +0,332 & 0,090 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Os dados mostram dois picos sazonais claros: \textbf{Agosto} concentra a maior intensidade térmica perto de linhas no Druid ($126{,}17 \times 10^6$), coincidindo com a maior média de carga cortada por queda no ONS (\textbf{110,4 MW/evento}); já \textbf{Outubro} concentra o maior número de incêndios próximos à rede (8.035 eventos), coincidindo com o pico histórico de desligamentos no ONS (\textbf{982 quedas e 93.751,7 MW}).
+Os dados revelam dois regimes sazonais distintos no trimestre seco: \textbf{Agosto} registra o pico de intensidade térmica próxima às linhas ($\sum I_{\text{linha}} = 126{,}17 \times 10^6$), coincidindo com a maior severidade média de corte no ONS (\textbf{110,4 MW/queda}); já \textbf{Outubro} concentra a maior quantidade de incêndios a $\le 15\text{ km}$ da rede (8.035 eventos), coincidindo com o recorde histórico de desligamentos no ONS (\textbf{982 quedas} e \textbf{93.751,7 MW} cortados).
 
 \subsection{Resultados Esperados para o TCC02}
-Ao final do TCC02, espera-se entregar: (i) geração automática de alertas e boletins em PDF em menos de 30 segundos via Webhooks; (ii) redução de falsos alarmes contra o vento por meio da modelagem elíptica; (iii) ganho de velocidade no cruzamento espacial com a grade hexagonal Uber H3; e (iv) assistente via FastMCP capaz de responder consultas em português usando exclusivamente os dados verificados do banco.
+Espera-se alcançar: (i) aceleração das junções espaciais em lote via grade Uber H3 no DuckDB seguida de simulação contínua no Apache Druid; (ii) redução de falsos positivos a barlavento com os buffers elípticos; e (iii) emissão automática de alertas e boletins SitRep em PDF em $< 30\text{ segundos}$ com 100\% de fidelidade aos dados via FastMCP e RAG.
