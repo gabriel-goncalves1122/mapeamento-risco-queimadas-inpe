@@ -1,22 +1,21 @@
 \section{Cronograma de Atividades do TCC02}
 \label{sc:cronograma}
 
-As atividades planejadas para o TCC02 estruturam-se em cinco fases:
+As atividades planejadas para a conclusão do trabalho no TCC02 estruturam-se em cinco fases:
 \begin{itemize}
-    \setlength\itemsep{0em}
-    \item \textbf{F.1 -- Modelagem Anisotrópica e Clima:} Ingestão ERA5/INMET e calibração da elipse de vento (Rothermel).
-    \item \textbf{F.2 -- Indexação Hexagonal H3:} Implementação da grade Uber H3 (\texttt{uint64}) e \textit{hash joins} em $O(1)$.
-    \item \textbf{F.3 -- Motor de Alarmes e Webhooks:} Máquina de estados de \textit{cooldown} e despacho assíncrono para Telegram/HTTP.
-    \item \textbf{F.4 -- Servidor FastMCP e SitRep:} Servidor MCP (\textit{Text-to-SQL} no Druid) e gerador de PDF (ICS-209).
-    \item \textbf{F.5 -- Validação Experimental e Monografia:} Testes de latência, análise comparativa e redação final.
+    \item \textbf{F.1 -- Ingestão Climática e Modelagem Anisotrópica:} Séries horárias ERA5/INMET e calibração das elipses de vento (Rothermel / MapBiomas).
+    \item \textbf{F.2 -- Indexação Espacial Uber H3:} Grade hexagonal em \texttt{uint64} e \textit{hash joins} $O(1)$ no DuckDB e Druid.
+    \item \textbf{F.3 -- Motor de Alarmes e Despacho Ativo:} Máquina de estados finita com \textit{cooldown} e webhooks assíncronos (Telegram / HTTP).
+    \item \textbf{F.4 -- Servidor FastMCP e Relatórios SitRep:} Ferramentas determinísticas MCP (\textit{Text-to-SQL}) e gerador PDF (ICS-209).
+    \item \textbf{F.5 -- Bateria Experimental e Redação da Monografia:} Auditoria de acurácia, latência e escrita da monografia final.
 \end{itemize}
 
 \begin{center}
-\small
+\footnotesize
 \begin{ganttchart}[
-    y unit title=.34cm,
-    y unit chart=.32cm,
-    x unit=1.6cm,
+    y unit title=.26cm,
+    y unit chart=.25cm,
+    x unit=1.45cm,
     hgrid,
     vgrid,
     time slot format=isodate-yearmonth,
@@ -24,7 +23,7 @@ As atividades planejadas para o TCC02 estruturam-se em cinco fases:
     inline,
     bar height=0.55,
     bar/.append style={fill=gray!40, inner sep=0pt},
-    bar label font=\scriptsize\bfseries
+    bar label font=\tiny\bfseries
 ]{2027-03}{2027-07}
 \gantttitlecalendar{year, month} \\
 \ganttbar{F.1: Clima e Elipses}{2027-03}{2027-04} \\

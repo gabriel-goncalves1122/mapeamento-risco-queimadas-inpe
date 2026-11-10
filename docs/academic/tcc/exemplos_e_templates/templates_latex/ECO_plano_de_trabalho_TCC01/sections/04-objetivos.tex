@@ -2,15 +2,15 @@
 \label{sc:objetivos}
 
 \subsection{Objetivo Geral}
-Desenvolver, implementar e validar uma arquitetura de inteligência geoespacial ativa (\textit{Actionable GeoAI DataOps}) para mitigação do risco de incêndios sobre infraestruturas do SIN e áreas protegidas, integrando modelagem anisotrópica por vento, indexação Uber H3, alarmes via Webhooks e agentes de IA para relatórios situacionais.
+Desenvolver e validar a evolução da plataforma analítica geoespacial para o \textbf{SIRDA 2.0}, integrando modelagem direcional de propagação do fogo por vento e vegetação, indexação espacial em hexágonos (Uber H3), envio automático de alertas (Webhooks) e um assistente de consultas em linguagem natural e geração de relatórios (via FastMCP) para apoiar o monitoramento de infraestruturas e territórios críticos no Brasil.
 
 \subsection{Objetivos Específicos}
 \begin{enumerate}
     \setlength\itemsep{0em}
-    \item Integrar dados horários de vento (ECMWF ERA5 / INMET) e histórico de perturbações do ONS ao pipeline Medallion;
-    \item Discretizar feições e calcular o risco espacial via células hexagonais Uber H3 (\texttt{uint64}), substituindo junções geométricas por \textit{hash joins} $O(1)$;
-    \item Desenvolver e calibrar o algoritmo de buffers elípticos anisotrópicos governado pelo modelo de Rothermel e classes de combustível do MapBiomas Fogo;
-    \item Construir o motor de alarmes com máquina de estados de \textit{cooldown} (anti-spam) e despacho assíncrono via Webhooks (Telegram e HTTP/REST);
-    \item Implementar servidor FastMCP dotado de ferramentas determinísticas (\textit{Text-to-SQL} no Apache Druid e grafo elétrico NetworkX) para geração automática de relatórios executivos no padrão ICS-209 com garantia de zero alucinação;
-    \item Avaliar a acurácia espacial, a latência de triagem ($< 30\text{ s}$) e a fidelidade factual do sistema frente a métodos isotrópicos tradicionais.
+    \item \textbf{Integração de Dados de Clima e Energia:} Incorporar ao pipeline dados horários de velocidade e direção do vento (ERA5 / INMET) e a base histórica de interrupções de carga do ONS;
+    \item \textbf{Indexação Espacial em Hexágonos (Uber H3):} Implementar a grade hexagonal Uber H3 (\texttt{uint64}) nas resoluções 7 e 9, convertendo o cruzamento geográfico em comparações diretas em memória ($O(1)$);
+    \item \textbf{Modelagem Elíptica de Avanço do Fogo:} Desenvolver o cálculo de áreas de risco em formato elíptico orientado pelo vento (modelo de Rothermel) e pelo tipo de vegetação (MapBiomas Fogo);
+    \item \textbf{Módulo de Alertas Automáticos:} Construir um serviço de envio de avisos via Webhooks (Telegram e REST) com controle de intervalo (\textit{cooldown} de 6h) para evitar alertas duplicados;
+    \item \textbf{Assistente de Consultas e Relatórios (FastMCP):} Desenvolver um servidor MCP conectado ao Apache Druid para responder perguntas em português e gerar boletins padronizados em PDF (padrão ICS-209);
+    \item \textbf{Validação Experimental:} Comparar a precisão das elipses de vento frente aos círculos fixos, medir o tempo de geração dos relatórios e validar os indicadores frente ao histórico de desligamentos do ONS.
 \end{enumerate}

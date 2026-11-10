@@ -2,15 +2,15 @@
 \label{sc:objetivos}
 
 \subsection{Objetivo Geral}
-Desenvolver, implementar e validar a evolução da plataforma analítica geoespacial para o \textbf{SIRDA 2.0 (\textit{Actionable GeoAI DataOps})}, integrando modelagem física anisotrópica por vento, indexação espacial hexagonal Uber H3, alarmes proativos multicanal com controle de reincidência (\textit{cooldown}) e agentes de inteligência artificial determinísticos via FastMCP para despacho automatizado de relatórios situacionais (SitRep) e mitigação de risco no SIN.
+Desenvolver e validar a evolução da plataforma analítica geoespacial para o \textbf{SIRDA 2.0}, integrando modelagem direcional de propagação do fogo por vento e vegetação, indexação espacial em hexágonos (Uber H3), envio automático de alertas (Webhooks) e um assistente de consultas em linguagem natural e geração de relatórios (via FastMCP) para apoiar o monitoramento de infraestruturas e territórios críticos no Brasil.
 
 \subsection{Objetivos Específicos}
 \begin{enumerate}
     \setlength\itemsep{0em}
-    \item \textbf{Ingestão de Séries Meteorológicas e Dados ONS:} Integrar ao pipeline Medallion os dados horários de velocidade e azimute de vento (ECMWF ERA5 / INMET) e o catálogo histórico de interrupções de carga forçadas da Rede Básica do ONS;
-    \item \textbf{Indexação Hexagonal Discreta (Uber H3):} Implementar a grade espacial Uber H3 (\texttt{uint64}) nas resoluções 7 e 9, convertendo junções geométricas espaciais tradicionais em \textit{hash joins} de tempo constante $O(1)$;
-    \item \textbf{Modelagem de Risco Anisotrópico:} Desenvolver e calibrar o algoritmo de buffers elípticos acoplado ao modelo de propagação de Rothermel e à matriz de combustibilidade da Coleção 5.1 do MapBiomas Fogo;
-    \item \textbf{Motor de Alarmes e Despacho Ativo:} Projetar e implementar um subsistema de alertas proativos com máquina de estados finita de \textit{cooldown} (janela de supressão de 6h para evitar sobrecarga) e despacho assíncrono via Webhooks (Telegram e HTTP/REST);
-    \item \textbf{Servidor FastMCP e Agente Text-to-DruidSQL:} Desenvolver um servidor baseado no \textit{Model Context Protocol} munido de ferramentas determinísticas para execução de consultas analíticas sem alucinação no Apache Druid e geração instantânea de boletins executivos em PDF no padrão ICS-209;
-    \item \textbf{Validação Estatística e Triangulação em Três Pilares:} Auditar a precisão espacial frente a buffers circulares, medir o tempo de triagem operacional ($< 30\text{ segundos}$) e validar a convergência estatística multivariada entre os grafos NetworkX, os eventos do Druid e o histórico empírico do ONS.
+    \item \textbf{Integração de Dados de Clima e Energia:} Incorporar ao pipeline dados horários de velocidade e direção do vento (ERA5 / INMET) e a base histórica de interrupções de carga do ONS;
+    \item \textbf{Indexação Espacial em Hexágonos (Uber H3):} Implementar a grade hexagonal Uber H3 (\texttt{uint64}) nas resoluções 7 e 9, convertendo o cruzamento geográfico em comparações diretas em memória ($O(1)$);
+    \item \textbf{Modelagem Elíptica de Avanço do Fogo:} Desenvolver o cálculo de áreas de risco em formato elíptico orientado pelo vento (modelo de Rothermel) e pelo tipo de vegetação (MapBiomas Fogo);
+    \item \textbf{Módulo de Alertas Automáticos:} Construir um serviço de envio de avisos via Webhooks (Telegram e REST) com controle de intervalo (\textit{cooldown} de 6h) para evitar alertas duplicados;
+    \item \textbf{Assistente de Consultas e Relatórios (FastMCP):} Desenvolver um servidor MCP conectado ao Apache Druid para responder perguntas em português e gerar boletins padronizados em PDF (padrão ICS-209);
+    \item \textbf{Validação Experimental:} Comparar a precisão das elipses de vento frente aos círculos fixos, medir o tempo de geração dos relatórios e validar os indicadores frente ao histórico de desligamentos do ONS.
 \end{enumerate}

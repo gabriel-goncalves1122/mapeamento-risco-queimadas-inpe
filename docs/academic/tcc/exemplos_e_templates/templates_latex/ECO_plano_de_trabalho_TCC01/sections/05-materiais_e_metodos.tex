@@ -2,17 +2,16 @@
 \label{sc:materiais_e_metodos}
 
 \subsection{Padrão Arquitetural e Stack Tecnológico}
-O sistema adota o padrão \textbf{FCIS (\textit{Functional Core, Imperative/OO Shell})}. As transformações matemáticas, sanitizações e cálculos de elipse são modelados como funções puras, sem estado e vetorizadas (\textit{DataFrame $\rightarrow$ DataFrame}). A casca orientada a objetos é restrita ao gerenciamento determinístico de conexões e soquetes (Kafka, Druid, FastMCP) via \textit{Context Managers} com injeção de dependência. O ecossistema é operado em Python 3.12 sob governança do gerenciador Astral \texttt{uv}.
+O sistema segue o padrão \textbf{FCIS (\textit{Functional Core, Imperative/OO Shell})}: os cálculos matemáticos de elipses de vento, indexação hexagonal e limpeza de dados são funções puras e vetorizadas (\textit{DataFrame $\rightarrow$ DataFrame}), enquanto conexões de rede (Kafka, Druid, FastMCP) são gerenciadas por classes com \textit{Context Managers} e injeção de dependência em Python 3.12 (gerenciador Astral \texttt{uv}).
 
-A infraestrutura tecnológica integra: (i) Dagster para orquestração; (ii) Apache Kafka para mensageria; (iii) Apache Druid (OLAP colunar particionado por tempo) e DuckDB (\textit{spatial} e \textit{h3}) para persistência em GeoParquet; (iv) Apache Superset com camadas H3 (\textit{deck.gl}) e biblioteca \texttt{h3-py} para indexação em \texttt{uint64}; (v) Servidor FastMCP para interface LLM determinística, templates WeasyPrint/Markdown e despachante assíncrono de Webhooks; e (vi) Bases de dados: INPE VIIRS (375 m) e GOES-19 (10 min), reanálise horária ERA5, dados abertos ONS e MapBiomas Fogo.
+A stack integra: (i) Dagster para orquestração e Apache Kafka para streaming; (ii) Apache Druid e DuckDB (\textit{spatial} + \textit{h3}) para consultas analíticas e arquivos GeoParquet; (iii) Biblioteca \texttt{h3-py} (\texttt{uint64}), Apache Superset e NetworkX para grafos da rede elétrica; (iv) Servidor FastMCP com geração de relatórios em PDF e envio assíncrono de Webhooks; e (v) Bases públicas: INPE (BDQueimadas), ERA5, MapBiomas Fogo 5.1, FUNAI, CNES/SUS, DNIT e ONS.
 
 \subsection{Procedimentos Metodológicos}
-A metodologia estrutura-se em cinco etapas sequenciais:
+O desenvolvimento organiza-se em cinco etapas:
 \begin{enumerate}
-    \setlength\itemsep{0em}
-    \item \textbf{Ingestão Contratual (Bronze):} Coleta de anomalias térmicas e séries climáticas com validação via Pydantic;
-    \item \textbf{Indexação H3 e Modelagem Anisotrópica (Silver):} Discretização das feições de interesse nas resoluções H3 7 ($\sim 5\text{ km}^2$) e 9 ($\sim 0,1\text{ km}^2$). Cálculo dos semieixos ($a, b$) e azimute da elipse acoplados ao vetor de vento e à carga combustível local;
-    \item \textbf{Agregação e Carga Analítica (Gold):} Cruzamento das células H3 ativas contra a infraestrutura via \textit{hash joins} $O(1)$. Carga da tabela Fato no Druid no modelo analítico Snowflake (estritamente FKs numéricas, métricas e timestamps);
-    \item \textbf{Inteligência Ativa (MCP e Webhooks):} Avaliação periódica de limiares críticos com máquina de \textit{cooldown} (janela de 6h). Ativação do FastMCP para executar \textit{golden queries} no Druid, disparando o boletim SitRep (ICS-209);
-    \item \textbf{Validação Experimental:} Comparação de falsos positivos entre buffers circulares e elípticos, auditoria de latência de ponta a ponta ($< 30\text{ s}$) e teste de consistência factual das respostas do agente de IA.
+    \item \textbf{Ingestão e Validação (Bronze):} Coleta automatizada de focos de calor e séries de vento/umidade validados via contratos Pydantic;
+    \item \textbf{Grade H3 e Elipses de Vento (Silver):} Mapeamento nas resoluções H3 7 ($\sim 5\text{ km}^2$) e 9 ($\sim 0,1\text{ km}^2$). Cálculo da elipse na direção do vento ($a = R_0 \cdot [1 + 0{,}25 \cdot \|\vec{W}\|]$), ajustada pelo tipo de vegetação local;
+    \item \textbf{Enriquecimento Analítico (Gold):} Cruzamento rápido via H3 ($O(1)$) e carga no Apache Druid mantendo chaves e métricas de ameaça: $I_{\text{linha}} = [\text{FRP} \cdot (1 + \text{risco}) \cdot \ln(V_{\text{kV}} + 1)] / \max(d_{\text{km}}, 0{,}1)$;
+    \item \textbf{Alertas e Relatórios via IA (FastMCP e Webhooks):} Disparo automático de avisos com janela de supressão de 6h e uso do FastMCP para consultar o Druid e gerar relatórios SitRep em PDF;
+    \item \textbf{Bateria de Testes e Validação:} Comparação entre raios circulares e elípticos, medição de desempenho via \texttt{docker stats} e cruzamento estatístico com os registros de quedas de energia do ONS.
 \end{enumerate}
